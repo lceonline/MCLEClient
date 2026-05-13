@@ -16,6 +16,7 @@
 #include "com.mojang.nbt.h"
 #include "EntityIO.h"
 
+
 unordered_map<wstring, entityCreateFn> *EntityIO::idCreateMap = new unordered_map<wstring, entityCreateFn>;
 unordered_map<eINSTANCEOF, wstring, eINSTANCEOFKeyHash, eINSTANCEOFKeyEq> *EntityIO::classIdMap = new unordered_map<eINSTANCEOF, wstring, eINSTANCEOFKeyHash, eINSTANCEOFKeyEq>;
 unordered_map<int, entityCreateFn> *EntityIO::numCreateMap = new unordered_map<int, entityCreateFn>;
@@ -45,7 +46,7 @@ void EntityIO::staticCtor()
 {
 	setId(ItemEntity::create, eTYPE_ITEMENTITY,  L"Item", 1);
 	setId(ExperienceOrb::create, eTYPE_EXPERIENCEORB, L"XPOrb", 2);
-
+	setId(Guardian::create, eTYPE_ELDER_GUARDIAN, L"ElderGuardian", 4, eMinecraftColour_Mob_ElderGuardian_Colour1, eMinecraftColour_Mob_ElderGuardian_Colour2, IDS_ELDER_GUARDIAN);
 	setId(LeashFenceKnotEntity::create, eTYPE_LEASHFENCEKNOT, L"LeashKnot", 8);
 	setId(Painting::create, eTYPE_PAINTING, L"Painting", 9);
 	setId(Arrow::create, eTYPE_ARROW, L"Arrow", 10);
@@ -72,6 +73,8 @@ void EntityIO::staticCtor()
 	setId(MinecartHopper::create, eTYPE_MINECART_HOPPER, L"MinecartHopper", 46);
 	setId(MinecartSpawner::create, eTYPE_MINECART_SPAWNER, L"MinecartSpawner", 47);
 
+
+
 	setId(Mob::create, eTYPE_MOB, L"Mob", 48);
 	setId(Monster::create, eTYPE_MONSTER, L"Monster", 49);
 
@@ -93,6 +96,13 @@ void EntityIO::staticCtor()
 	setId(Bat::create, eTYPE_BAT, L"Bat", 65, eMinecraftColour_Mob_Bat_Colour1, eMinecraftColour_Mob_Bat_Colour2, IDS_BAT);
 	setId(Witch::create, eTYPE_WITCH, L"Witch", 66, eMinecraftColour_Mob_Witch_Colour1, eMinecraftColour_Mob_Witch_Colour2, IDS_WITCH);
 
+	setId(Endermite::create, eTYPE_ENDERMITE, L"Endermite", 67,
+      eMinecraftColour_Mob_Endermite_Colour1,
+      eMinecraftColour_Mob_Endermite_Colour2, IDS_ENDERMITE);
+
+	setId(Guardian::create, eTYPE_GUARDIAN, L"Guardian", 68, eMinecraftColour_Mob_Guardian_Colour1, eMinecraftColour_Mob_Guardian_Colour2, IDS_GUARDIAN);
+	
+
 	setId(Pig::create, eTYPE_PIG, L"Pig", 90, eMinecraftColour_Mob_Pig_Colour1, eMinecraftColour_Mob_Pig_Colour2, IDS_PIG);
 	setId(Sheep::create, eTYPE_SHEEP, L"Sheep", 91, eMinecraftColour_Mob_Sheep_Colour1, eMinecraftColour_Mob_Sheep_Colour2, IDS_SHEEP);
 	setId(Cow::create, eTYPE_COW, L"Cow", 92, eMinecraftColour_Mob_Cow_Colour1, eMinecraftColour_Mob_Cow_Colour2, IDS_COW);
@@ -104,6 +114,13 @@ void EntityIO::staticCtor()
 	setId(Ocelot::create, eTYPE_OCELOT, L"Ozelot", 98, eMinecraftColour_Mob_Ocelot_Colour1, eMinecraftColour_Mob_Ocelot_Colour2, IDS_OZELOT);
 	setId(VillagerGolem::create, eTYPE_VILLAGERGOLEM, L"VillagerGolem", 99);
 	setId(EntityHorse::create, eTYPE_HORSE, L"EntityHorse", 100, eMinecraftColour_Mob_Horse_Colour1, eMinecraftColour_Mob_Horse_Colour2, IDS_HORSE);
+	setId(Rabbit::create, eTYPE_RABBIT, L"Rabbit", 101,
+      eMinecraftColour_Mob_Rabbit_Colour1,
+      eMinecraftColour_Mob_Rabbit_Colour2, IDS_RABBIT);
+
+	setId(ArmorStand::create, eTYPE_ARMORSTAND, L"ArmorStand", 102);
+
+	//change IDS_Endermite later
 
 	setId(Villager::create, eTYPE_VILLAGER, L"Villager", 120, eMinecraftColour_Mob_Villager_Colour1, eMinecraftColour_Mob_Villager_Colour2, IDS_VILLAGER);
 
@@ -111,6 +128,7 @@ void EntityIO::staticCtor()
 
 	// 4J Added
 	setId(DragonFireball::create, eTYPE_DRAGON_FIREBALL, L"DragonFireball", 1000);
+
 
 	// 4J-PB - moved to allow the eggs to be named and coloured in the Creative Mode menu
 	// 4J Added for custom spawn eggs
@@ -125,6 +143,8 @@ void EntityIO::staticCtor()
 	setId(Ocelot::create,		eTYPE_OCELOT,	L"Ozelot",		98 | ((Ocelot::TYPE_SIAMESE + 1) << 12),		eMinecraftColour_Mob_Ocelot_Colour1,	eMinecraftColour_Mob_Ocelot_Colour2,	IDS_OZELOT );
 	setId(Spider::create,		eTYPE_SPIDER,	L"Spider",		52 | (2 << 12),									eMinecraftColour_Mob_Spider_Colour1,	eMinecraftColour_Mob_Spider_Colour2,	IDS_SKELETON );
 #endif
+
+
 }
 
 shared_ptr<Entity> EntityIO::newEntity(const wstring& id, Level *level)

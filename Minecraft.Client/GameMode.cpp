@@ -180,3 +180,7 @@ void GameMode::handleDebugOptions(unsigned int uiVal, shared_ptr<Player> player)
 {
 	player->SetDebugOptions(uiVal);
 }
+bool GameMode::isSpectator()
+{
+    return gameType == GameType::SPECTATOR;
+}

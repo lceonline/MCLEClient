@@ -15,6 +15,7 @@ void StructureRecipies::addRecipes(Recipes *r)
 		L'#', Tile::sand,
 		L'S');
 
+
 	r->addShapedRecipy(new ItemInstance(Tile::sandStone, 4, SandStoneTile::TYPE_SMOOTHSIDE), //
 		L"ssczg",
 		L"##", //
@@ -31,6 +32,35 @@ void StructureRecipies::addRecipes(Recipes *r)
 		L'#', new ItemInstance(Tile::stoneSlabHalf, 1, StoneSlabTile::SAND_SLAB),
 		L'S');
 
+
+	r->addShapedRecipy(new ItemInstance(Tile::red_sandstone), //
+		L"ssczg",
+		L"##", //
+		L"##", //
+
+		L'#',new ItemInstance(Tile::sand, 1, SandTile::RED_SAND),
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::red_sandstone, 4, RedSandStoneTile::TYPE_SMOOTHSIDE), //
+		L"ssczg",
+		L"##", //
+		L"##", //
+
+		L'#', new ItemInstance(Tile::red_sandstone),
+		L'S');
+
+
+	r->addShapedRecipy(new ItemInstance(Tile::red_sandstone, 1, RedSandStoneTile::TYPE_HEIROGLYPHS), //
+		L"ssczg",
+		L"#", //
+		L"#", //
+
+		L'#', new ItemInstance(Tile::stoneSlab2Half, 1, StoneSlabTile2::RED_SANDSTONE_SLAB),
+		L'S');
+
+
+	
+
 	r->addShapedRecipy(new ItemInstance(Tile::quartzBlock, 1, QuartzBlockTile::TYPE_CHISELED), //
 		L"ssczg",
 		L"#", //
@@ -46,6 +76,8 @@ void StructureRecipies::addRecipes(Recipes *r)
 
 		L'#', new ItemInstance(Tile::quartzBlock, 1, QuartzBlockTile::TYPE_DEFAULT),
 		L'S');
+	
+	
 
 	// 4J Stu - Changed the order, as the blocks that go with sandstone cause a 3-icon scroll
 	// that touches the text "Structures" in the title in 720 fullscreen.
@@ -92,11 +124,32 @@ void StructureRecipies::addRecipes(Recipes *r)
 		L'S');
 
 	r->addShapedRecipy(new ItemInstance(Tile::stoneBrick, 4), //
-		L"ssctg",
+		L"ssczg",
 		L"##", //
 		L"##", //
 
-		L'#', Tile::stone,
+		L'#', new ItemInstance(Tile::stone, 1, 0),
+		L'S');
+	r->addShapedRecipy(new ItemInstance(Tile::stoneBrick, 1, SmoothStoneBrickTile::TYPE_DETAIL), //
+		L"ssczg",
+		L"#", //
+		L"#", //
+
+		L'#', new ItemInstance(Tile::stoneSlabHalf, 1, StoneSlabTile::SMOOTHBRICK_SLAB),
+		L'S');
+	r->addShapedRecipy(new ItemInstance(Tile::stoneBrick, 1, SmoothStoneBrickTile::TYPE_MOSSY), //
+		L"sczc zg",                       
+		L"#1",             
+		L'#', new ItemInstance(Tile::stoneBrick,1),  
+		L'1', new ItemInstance(Tile::vine, 1),        
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::mossyCobblestone, 1), //
+		L"sczc zg",
+		L"#1", //
+
+		L'#', new ItemInstance(Tile::cobblestone,1),
+		L'1', new ItemInstance(Tile::vine, 1),
 		L'S');
 
 	// 4J Stu - Move this into "Recipes" to change the order things are displayed on the crafting menu
@@ -121,6 +174,24 @@ void StructureRecipies::addRecipes(Recipes *r)
 
 // Stained Glass block + pane per color
 for (int i = 0; i < 16; i++)
+{
+    r->addShapedRecipy(new ItemInstance(Tile::stained_glass, 8, ColoredTile::getItemAuxValueForTileData(i)),
+        L"sssczczg",
+        L"###",
+        L"#X#",
+        L"###",
+        L'#', new ItemInstance(Tile::glass),
+        L'X', new ItemInstance(Item::dye_powder, 1, i),
+        L'D');
+    r->addShapedRecipy(new ItemInstance(Tile::stained_glass_pane, 16, ColoredTile::getItemAuxValueForTileData(i)),
+        L"ssczg",
+        L"###",
+        L"###",
+        L'#', new ItemInstance(Tile::stained_glass, 1, ColoredTile::getItemAuxValueForTileData(i)),
+        L'D');
+}
+
+		for (int i = 0; i < 16; i++)
 {
     r->addShapedRecipy(new ItemInstance(Tile::stained_glass, 8, ColoredTile::getItemAuxValueForTileData(i)),
         L"sssczczg",

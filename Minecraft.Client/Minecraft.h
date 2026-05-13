@@ -79,6 +79,7 @@ private:
 	static void levelTickUpdateFunc(void* pParam);
 	static void levelTickThreadInitFunc();
 
+
 public:
 	int width, height;
 	int width_phys, height_phys; // 4J - added
@@ -91,7 +92,8 @@ public:
 	Level *oldLevel; // 4J Stu added to keep a handle on an old level so we can delete it
 	//HANDLE m_hPlayerRespawned; // 4J Added so we can wait in menus until it is done (for async in multiplayer)
 public:
-
+	bool inventoryWasHeld = false;
+	int achID = 0;
 	MultiPlayerLevel *level;
 	LevelRenderer *levelRenderer;
 	shared_ptr<MultiplayerLocalPlayer> player;
@@ -122,7 +124,7 @@ public:
 	void storeExtraLocalPlayer(int idx);
 	void updatePlayerViewportAssignments();
 	int unoccupiedQuadrant;	// 4J - added
-
+	ItemInHandRenderer* getItemInHandRenderer() const { return localitemInHandRenderers[localPlayerIdx]; };
 	shared_ptr<LivingEntity> cameraTargetPlayer;
 	shared_ptr<LivingEntity> crosshairPickMob;
 	ParticleEngine *particleEngine;

@@ -24,12 +24,19 @@
 #define CHECKFORAVAILABLETEXTUREPACKS_TIMER_TIME 50
 #endif
 
-int UIScene_LoadMenu::m_iDifficultyTitleSettingA[4]=
+int UIScene_LoadMenu::m_iDifficultyTitleSettingA[5]=
 {
 	IDS_DIFFICULTY_TITLE_PEACEFUL,
 	IDS_DIFFICULTY_TITLE_EASY,
 	IDS_DIFFICULTY_TITLE_NORMAL,
-	IDS_DIFFICULTY_TITLE_HARD
+	IDS_DIFFICULTY_TITLE_HARD,
+	IDS_GAMEMODE_HARDCORE
+};
+int UIScene_LoadMenu::m_iGamemodes[3] =
+{
+	IDS_GAMEMODE_SURVIVAL,
+	IDS_GAMEMODE_CREATIVE,
+	IDS_GAMEMODE_ADVENTURE
 };
 
 int UIScene_LoadMenu::LoadSaveDataThumbnailReturned(LPVOID lpParam,PBYTE pbThumbnail,DWORD dwThumbnailBytes)
@@ -53,6 +60,7 @@ int UIScene_LoadMenu::LoadSaveDataThumbnailReturned(LPVOID lpParam,PBYTE pbThumb
 			app.DebugPrintf("Thumbnail data is nullptr, or has size 0\n");
 			pClass->m_bThumbnailGetFailed = true;
 		}
+		pClass->m_bRetrievingSaveThumbnail = false;
 	}
 
 	return 0;
@@ -69,7 +77,7 @@ UIScene_LoadMenu::UIScene_LoadMenu(int iPad, void *initData, UILayer *parentLaye
 	m_labelSeed.init(L"");
 	m_labelCreatedMode.init(app.GetString(IDS_CREATED_IN_SURVIVAL));
 
-	m_buttonGamemode.init(app.GetString(IDS_GAMEMODE_SURVIVAL),eControl_GameMode);
+	m_sliderGamemode.init(app.GetString(IDS_GAMEMODE_SURVIVAL),eControl_GameMode,0,2,0);
 	m_buttonMoreOptions.init(app.GetString(IDS_MORE_OPTIONS),eControl_MoreOptions);
 	m_buttonLoadWorld.init(app.GetString(IDS_LOAD),eControl_LoadWorld);
 	m_texturePackList.init(app.GetString(IDS_DLC_MENU_TEXTUREPACKS), eControl_TexturePackList);
@@ -99,6 +107,7 @@ UIScene_LoadMenu::UIScene_LoadMenu(int iPad, void *initData, UILayer *parentLaye
 	m_bIsSaveOwner = true;
 
 	m_bSaveThumbnailReady = false;
+	m_bRetrievingSaveThumbnail = true;
 	m_bShowTimer = false;
 	m_pDLCPack = nullptr;
 	m_bAvailableTexturePacksChecked=false;
@@ -108,8 +117,7 @@ UIScene_LoadMenu::UIScene_LoadMenu(int iPad, void *initData, UILayer *parentLaye
 	m_bThumbnailGetFailed = false;
 	m_seed = 0;
 	m_bIsCorrupt = false;
-	m_pbThumbnailData = nullptr;
-	m_uiThumbnailSize = 0;
+	m_bHardcore = false;
 
 	m_bMultiplayerAllowed = ProfileManager.IsSignedInLive( m_iPad ) && ProfileManager.AllowedToPlayMultiplayer(m_iPad);
 	// 4J-PB - read the settings for the online flag. We'll only save this setting if the user changed it.
@@ -249,32 +257,42 @@ UIScene_LoadMenu::UIScene_LoadMenu(int iPad, void *initData, UILayer *parentLaye
 #endif
 #endif
 #ifdef _WINDOWS64
+		if (params->saveDetails != nullptr && params->saveDetails->UTF8SaveName[0] != '\0')
+		{
+			wchar_t wSaveName[128];
+			ZeroMemory(wSaveName, sizeof(wSaveName));
+			MultiByteToWideChar(CP_UTF8, 0, params->saveDetails->UTF8SaveName, -1, wSaveName, 127);
+			m_levelName = wstring(wSaveName);
+			m_labelGameName.init(m_levelName);
+		}
 		if (params->saveDetails != nullptr)
 		{
-			if (params->saveDetails->UTF8SaveName[0] != '\0')
-			{
-				wchar_t wSaveName[128];
-				ZeroMemory(wSaveName, sizeof(wSaveName));
-				mbstowcs(wSaveName, params->saveDetails->UTF8SaveName, 127);
-				m_levelName = wstring(wSaveName);
-				m_labelGameName.init(m_levelName);
-			}
-
-			wchar_t wFilename[MAX_SAVEFILENAME_LENGTH];
-			ZeroMemory(wFilename, sizeof(wFilename));
-			mbstowcs(wFilename, params->saveDetails->UTF8SaveFilename, MAX_SAVEFILENAME_LENGTH - 1);
-			m_thumbnailName = wFilename;
+			// Use a stable texture key for saves so the icon survives save/quit refreshes.
+			wchar_t textureName[64];
+			swprintf(textureName, 64, L"loadsave_large_%08x", m_iSaveGameInfoIndex);
+			m_thumbnailName = textureName;
 
 			if (params->saveDetails->pbThumbnailData && params->saveDetails->dwThumbnailSize > 0)
 			{
-				// save list already loaded this, register and display it
-				registerSubstitutionTexture(wFilename, params->saveDetails->pbThumbnailData, params->saveDetails->dwThumbnailSize);
-				m_bitmapIcon.setTextureName(wFilename);
 				m_pbThumbnailData = params->saveDetails->pbThumbnailData;
 				m_uiThumbnailSize = params->saveDetails->dwThumbnailSize;
 				m_bSaveThumbnailReady = true;
+				m_bRetrievingSaveThumbnail = false;
 			}
 
+			m_bHardcore = params->saveDetails->isHardcore;
+			if (m_bHardcore)
+			{
+				WCHAR TempString[256];
+				swprintf((WCHAR *)TempString, 256, L"%ls: %ls", app.GetString(IDS_SLIDER_DIFFICULTY), app.GetString(IDS_HARDCORE));
+				m_sliderDifficulty.init(TempString, eControl_Difficulty, 0, 4, 4);
+
+				// Hardcore locks game mode to Survival
+				m_iGameModeId = GameType::SURVIVAL->getId();
+				m_bGameModeCreative = false;
+				m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
+			    m_sliderGamemode.SetSliderValue(0);
+			}
 		}
 #endif
 	}
@@ -414,15 +432,7 @@ void UIScene_LoadMenu::updateTooltips()
 void UIScene_LoadMenu::updateComponents()
 {
 	m_parentLayer->showComponent(m_iPad,eUIComponent_Panorama,true);
-
-	if(RenderManager.IsWidescreen())
-	{
-		m_parentLayer->showComponent(m_iPad,eUIComponent_Logo,true);
-	}
-	else
-	{
-		m_parentLayer->showComponent(m_iPad,eUIComponent_Logo,false);
-	}
+	m_parentLayer->showComponent(m_iPad,eUIComponent_Logo,false);
 }
 
 wstring UIScene_LoadMenu::getMoviePath()
@@ -507,6 +517,17 @@ void UIScene_LoadMenu::tick()
 			m_MoreOptionsParams.bNaturalRegeneration = app.GetGameHostOption(uiHostOptions, eGameHostOption_NaturalRegeneration);
 			m_MoreOptionsParams.bDoDaylightCycle = app.GetGameHostOption(uiHostOptions, eGameHostOption_DoDaylightCycle);
 
+			unsigned int saveDifficulty = app.GetGameHostOption(uiHostOptions, eGameHostOption_Difficulty);
+			if (saveDifficulty <= 3)
+			{
+				m_CurrentDifficulty = static_cast<unsigned char>(saveDifficulty);
+				app.SetGameSettings(m_iPad, eGameSetting_Difficulty, m_CurrentDifficulty);
+
+				WCHAR difficultyLabel[256];
+				swprintf((WCHAR*)difficultyLabel, 256, L"%ls: %ls", app.GetString(IDS_SLIDER_DIFFICULTY), app.GetString(m_iDifficultyTitleSettingA[m_CurrentDifficulty]));
+				m_sliderDifficulty.init(difficultyLabel, eControl_Difficulty, 0, 3, m_CurrentDifficulty);
+			}
+
 			bool cheatsOn = m_MoreOptionsParams.bHostPrivileges;
 			if (!cheatsOn)
 			{
@@ -541,20 +562,23 @@ void UIScene_LoadMenu::tick()
 			switch(app.GetGameHostOption(uiHostOptions,eGameHostOption_GameType))
 			{
 			case 1: // Creative
-				m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_CREATIVE));
+				m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_CREATIVE));
+				m_sliderGamemode.handleSliderMove(1);
 				m_bGameModeCreative=true;
 				m_iGameModeId = GameType::CREATIVE->getId();
 				break;
 #ifdef _ADVENTURE_MODE_ENABLED
 			case 2: // Adventure
-				m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_ADVENTURE));
+				m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_ADVENTURE));
+				m_sliderGamemode.handleSliderMove(2);
 				m_bGameModeCreative=false;
 				m_iGameModeId = GameType::ADVENTURE->getId();
 				break;
 #endif
 			case 0: // Survival
 			default:
-				m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
+				m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
+				m_sliderGamemode.handleSliderMove(0);
 				m_bGameModeCreative=false;
 				m_iGameModeId = GameType::SURVIVAL->getId();
 				break;
@@ -564,6 +588,22 @@ void UIScene_LoadMenu::tick()
 			if(app.GetGameHostOption(uiHostOptions,eGameHostOption_FriendsOfFriends) && !(m_bMultiplayerAllowed && bGameSetting_Online))
 			{
 				m_MoreOptionsParams.bAllowFriendsOfFriends = TRUE;
+			}
+
+			// Use thumbnail host options if available, otherwise preserve the level.dat value
+			if (app.GetGameHostOption(uiHostOptions, eGameHostOption_Hardcore) > 0)
+				m_bHardcore = true;
+			if (m_bHardcore)
+			{
+				WCHAR TempString[256];
+				swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ), app.GetString(IDS_HARDCORE));
+				m_sliderDifficulty.init(TempString, eControl_Difficulty, 0, 4, 4);
+
+				// Hardcore locks game mode to Survival
+				m_iGameModeId = GameType::SURVIVAL->getId();
+				m_bGameModeCreative = false;
+			    m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
+			    m_sliderGamemode.handleSliderMove(0);
 			}
 		}
 
@@ -712,43 +752,44 @@ void UIScene_LoadMenu::handlePress(F64 controlId, F64 childId)
 {
 	if(m_bIgnoreInput) return;
 
-	//CD - Added for audio
-	ui.PlayUISFX(eSFX_Press);
-
 	switch(static_cast<int>(controlId))
 	{
-	case eControl_GameMode:
-		switch(m_iGameModeId)
-		{
-		case 0: // Survival
-			m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_CREATIVE));
-			m_iGameModeId = GameType::CREATIVE->getId();
-			m_bGameModeCreative = true;
-			break;
-		case 1: // Creative
-#ifdef _ADVENTURE_MODE_ENABLED
-			m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_ADVENTURE));
-			m_iGameModeId = GameType::ADVENTURE->getId();
-			m_bGameModeCreative = false;
-			break;
-		case 2: // Adventure
-#endif
-			m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
-			m_iGameModeId = GameType::SURVIVAL->getId();
-			m_bGameModeCreative = false;
-			break;
-		};
-		break;
+// 	case eControl_GameMode:
+// 		if (m_bHardcore)
+// 			break; // Hardcore mode locks game mode to Survival
+// 		switch(m_iGameModeId)
+// 		{
+// 		case 0: // Survival
+// 			m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_CREATIVE));
+// 			m_iGameModeId = GameType::CREATIVE->getId();
+// 			m_bGameModeCreative = true;
+// 			break;
+// 		case 1: // Creative
+// #ifdef _ADVENTURE_MODE_ENABLED
+// 			m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_ADVENTURE));
+// 			m_iGameModeId = GameType::ADVENTURE->getId();
+// 			m_bGameModeCreative = false;
+// 			break;
+// 		case 2: // Adventure
+// #endif
+// 			m_buttonGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
+// 			m_iGameModeId = GameType::SURVIVAL->getId();
+// 			m_bGameModeCreative = false;
+// 			break;
+// 		};
+// 		break;
 	case eControl_MoreOptions:
 		ui.NavigateToScene(m_iPad, eUIScene_LaunchMoreOptionsMenu, &m_MoreOptionsParams);
 		break;
 	case eControl_TexturePackList:
 		{
+			ui.PlayUISFX(eSFX_Press);
 			UpdateCurrentTexturePack(static_cast<int>(childId));
 		}
 		break;
 	case eControl_LoadWorld:
 		{
+			ui.PlayUISFX(eSFX_Press);
 #ifdef _DURANGO
 			if(m_MoreOptionsParams.bOnlineGame)
 			{
@@ -969,13 +1010,51 @@ void UIScene_LoadMenu::handleSliderMove(F64 sliderId, F64 currentValue)
 	switch(static_cast<int>(sliderId))
 	{
 	case eControl_Difficulty:
+		if (m_bHardcore)
+		{
+			m_sliderDifficulty.handleSliderMove(4);
+			break;
+		}
 		m_sliderDifficulty.handleSliderMove(value);
 
 		app.SetGameSettings(m_iPad,eGameSetting_Difficulty,value);
-		swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ),app.GetString(m_iDifficultyTitleSettingA[value]));		
+		swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ),app.GetString(m_iDifficultyTitleSettingA[value]));
 		m_sliderDifficulty.setLabel(TempString);
 		break;
+	case eControl_GameMode:
+	    if (m_bHardcore)
+	    	break; // Hardcore mode locks game mode to Survival
+		m_sliderGamemode.handleSliderMove(value);
+		switch (value)
+		{
+		case 0: // Survival
+			m_iGameModeId = GameType::SURVIVAL->getId();
+			m_bGameModeCreative = false;
+			break;
+		case 1: // Creative
+			m_iGameModeId = GameType::CREATIVE->getId();
+			m_bGameModeCreative = true;
+			break;
+#ifdef _ADVENTURE_MODE_ENABLED
+		case 2: // Adventure
+			m_iGameModeId = GameType::ADVENTURE->getId();
+			m_bGameModeCreative = false;
+			break;
+#endif
+		};
+		//app.SetGameSettings(m_iPad, eGameSetting_GameMode, value);
+		swprintf((WCHAR*)TempString, 256, L"%ls", app.GetString(m_iGamemodes[value]));
+		m_sliderGamemode.setLabel(TempString);
+		break;
 	}
+}
+
+bool UIScene_LoadMenu::canMoveSlider(F64 sliderId)
+{
+    if (sliderId == eControl_GameMode && m_bHardcore)
+        return false;
+    
+    return true;
 }
 
 void UIScene_LoadMenu::handleTouchBoxRebuild()
@@ -1186,7 +1265,7 @@ void UIScene_LoadMenu::LaunchGame(void)
 #if TO_BE_IMPLEMENTED
 			if(eLoadStatus==C4JStorage::ELoadGame_DeviceRemoved)
 			{
-				// disable saving 
+				// disable saving
 				StorageManager.SetSaveDisabled(true);
 				StorageManager.SetSaveDeviceSelected(m_iPad,false);
 				UINT uiIDA[1];
@@ -1599,6 +1678,24 @@ void UIScene_LoadMenu::StartGameFromSave(UIScene_LoadMenu* pClass, DWORD dwLocal
 
 	PSAVE_DETAILS pSaveDetails=StorageManager.ReturnSavesInfo();
 
+#ifdef _WINDOWS64
+	// 4J Added: Store save folder name for potential hardcore world deletion
+	app.DebugPrintf("StartGameFromSave: pSaveDetails=%p, levelGen=%p, saveInfoIndex=%d\n", pSaveDetails, pClass->m_levelGen, pClass->m_iSaveGameInfoIndex);
+	if (pSaveDetails != nullptr && pClass->m_levelGen == nullptr)
+	{
+		app.DebugPrintf("StartGameFromSave: UTF8SaveFilename='%s'\n", pSaveDetails->SaveInfoA[(int)pClass->m_iSaveGameInfoIndex].UTF8SaveFilename);
+		wchar_t wFolder[MAX_SAVEFILENAME_LENGTH] = {};
+		mbstowcs(wFolder, pSaveDetails->SaveInfoA[(int)pClass->m_iSaveGameInfoIndex].UTF8SaveFilename, MAX_SAVEFILENAME_LENGTH - 1);
+		app.SetCurrentSaveFolderName(wFolder);
+		app.DebugPrintf("StartGameFromSave: stored folder name '%ls'\n", wFolder);
+	}
+	else
+	{
+		app.DebugPrintf("StartGameFromSave: no save details or is levelGen, clearing folder name\n");
+		app.SetCurrentSaveFolderName(L"");
+	}
+#endif
+
 	NetworkGameInitData *param = new NetworkGameInitData();
 	param->seed = pClass->m_seed;
 	param->saveData = nullptr;	
@@ -1631,6 +1728,7 @@ void UIScene_LoadMenu::StartGameFromSave(UIScene_LoadMenu* pClass, DWORD dwLocal
 	app.SetGameHostOption(eGameHostOption_DoTileDrops, pClass->m_MoreOptionsParams.bDoTileDrops);
 	app.SetGameHostOption(eGameHostOption_NaturalRegeneration, pClass->m_MoreOptionsParams.bNaturalRegeneration);
 	app.SetGameHostOption(eGameHostOption_DoDaylightCycle, pClass->m_MoreOptionsParams.bDoDaylightCycle);
+	app.SetGameHostOption(eGameHostOption_Hardcore, pClass->m_bHardcore ? 1 : 0);
 
 #ifdef _LARGE_WORLDS
 	app.SetGameHostOption(eGameHostOption_WorldSize, pClass->m_MoreOptionsParams.worldSize+1 );  // 0 is GAME_HOST_OPTION_WORLDSIZE_UNKNOWN
@@ -1826,6 +1924,7 @@ void UIScene_LoadMenu::handleGainFocus(bool navBack)
 	{
 		m_checkboxOnline.setChecked(m_MoreOptionsParams.bOnlineGame == TRUE);
 	}
+	SetFocusToElement(eControl_GameMode);
 }
 
 #ifdef __ORBIS__

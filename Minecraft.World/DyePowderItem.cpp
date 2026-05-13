@@ -127,8 +127,11 @@ bool DyePowderItem::useOn(shared_ptr<ItemInstance> itemInstance, shared_ptr<Play
 	if (itemInstance->getAuxValue() == WHITE) 
 	{
 		// bone meal is a fertilizer, so instantly grow trees and stuff
-
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (growCrop(itemInstance, level, x, y, z, bTestUseOnOnly, player->entityId))
+#else
 		if (growCrop(itemInstance, level, x, y, z, bTestUseOnOnly))
+#endif
 		{
 			if (!level->isClientSide) level->levelEvent(LevelEvent::PARTICLES_PLANT_GROWTH, x, y, z, 0);
 			return true;
@@ -167,8 +170,7 @@ bool DyePowderItem::useOn(shared_ptr<ItemInstance> itemInstance, shared_ptr<Play
 	}
 	return false;
 }
-
-bool DyePowderItem::growCrop(shared_ptr<ItemInstance> itemInstance, Level *level, int x, int y, int z, bool bTestUseOnOnly)
+bool DyePowderItem::growCrop(shared_ptr<ItemInstance> itemInstance, Level *level, int x, int y, int z, bool bTestUseOnOnly, int entityId)
 {
 	int tile = level->getTile(x, y, z);
 	if (tile == Tile::sapling_Id) 
@@ -177,19 +179,30 @@ bool DyePowderItem::growCrop(shared_ptr<ItemInstance> itemInstance, Level *level
 		{	
 			if (!level->isClientSide) 
 			{
-				if (level->random->nextFloat() < 0.45) static_cast<Sapling *>(Tile::sapling)->advanceTree(level, x, y, z, level->random);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+				if (level->random->nextFloat() < 0.45) static_cast<Sapling *>(Tile::sapling)->advanceTree(level, x, y, z, level->random, false, entityId);
+#else
+				if (level->random->nextFloat() < 0.45) static_cast<Sapling*>(Tile::sapling)->advanceTree(level, x, y, z, level->random);
+#endif
 				itemInstance->count--;
 			}
 		}
 		return true;
 	}
+	
+
+
 	else if (tile == Tile::mushroom_brown_Id || tile == Tile::mushroom_red_Id)
 	{
 		if(!bTestUseOnOnly)
 		{
 			if (!level->isClientSide)
 			{
-				if (level->random->nextFloat() < 0.4) static_cast<Mushroom *>(Tile::tiles[tile])->growTree(level, x, y, z, level->random);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+				if (level->random->nextFloat() < 0.4) static_cast<Mushroom *>(Tile::tiles[tile])->growTree(level, x, y, z, level->random, false, entityId);
+#else
+				if (level->random->nextFloat() < 0.4) static_cast<Mushroom*>(Tile::tiles[tile])->growTree(level, x, y, z, level->random);
+#endif
 				itemInstance->count--;
 			}
 		}

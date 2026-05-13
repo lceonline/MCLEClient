@@ -25,6 +25,7 @@ public :
 	static Enchantment *projectileProtection;
 	static Enchantment *drownProtection;
 	static Enchantment *waterWorker;
+    static Enchantment *waterWalker;
 	static Enchantment *thorns;
 
 	// weapon
@@ -46,6 +47,10 @@ public :
 	static Enchantment *arrowKnockback;
 	static Enchantment *arrowFire;
 	static Enchantment *arrowInfinite;
+
+	// fishing rod
+	static Enchantment *lure;
+	static Enchantment *luckOfTheSea;
 
 	const int id;
 
@@ -80,8 +85,9 @@ public:
 	virtual int getDescriptionId();
 	virtual HtmlString getFullname(int level);
 	virtual bool canEnchant(shared_ptr<ItemInstance> item);
-
-private:
 	// 4J Added
 	wstring getLevelString(int level);
+
+private:
+	
 };

@@ -2,6 +2,7 @@
 #include "../Minecraft.World/net.minecraft.world.entity.animal.h"
 #include "SheepFurModel.h"
 #include "ModelPart.h"
+#include "../Minecraft.World/Sheep.cpp"
 
 SheepFurModel::SheepFurModel() : QuadrupedModel(12, 0)
 {
@@ -48,6 +49,8 @@ void SheepFurModel::prepareMobModel(shared_ptr<LivingEntity> mob, float time, fl
 	shared_ptr<Sheep> sheep = dynamic_pointer_cast<Sheep>(mob);
 	head->y = 6 + sheep->getHeadEatPositionScale(a) * 9.0f;
 	headXRot = sheep->getHeadEatAngleScale(a);
+
+    wstring name = mob->getAName();
 }
 
 void SheepFurModel::setupAnim(float time, float r, float bob, float yRot, float xRot, float scale, shared_ptr<Entity> entity, unsigned int uiBitmaskOverrideAnim)

@@ -11,6 +11,7 @@ const EnchantmentCategory *EnchantmentCategory::armor_head = new EnchantmentCate
 const EnchantmentCategory *EnchantmentCategory::weapon = new EnchantmentCategory();
 const EnchantmentCategory *EnchantmentCategory::digger = new EnchantmentCategory();
 const EnchantmentCategory *EnchantmentCategory::bow = new EnchantmentCategory();
+const EnchantmentCategory *EnchantmentCategory::fishing_rod = new EnchantmentCategory();
 
 bool EnchantmentCategory::canEnchant(Item *item) const
 {
@@ -37,6 +38,10 @@ bool EnchantmentCategory::canEnchant(Item *item) const
 	else if (dynamic_cast<BowItem *>(item) != nullptr)
 	{
 		return this == bow;
+	}
+	else if (dynamic_cast<FishingRodItem*>(item) != nullptr)
+	{
+		return this == fishing_rod;
 	}
 	return false;
 }

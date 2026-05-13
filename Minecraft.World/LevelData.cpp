@@ -13,6 +13,15 @@ LevelData::LevelData()
 LevelData::LevelData(CompoundTag *tag)
 {
 	seed = tag->getLong(L"RandomSeed");
+
+	// Allow server.properties to override the world seed for biome generation
+	// on existing worlds (e.g. to fix monotonous biomes after world expansion).
+	if (app.HasSeedOverride())
+	{
+		app.DebugPrintf("Overriding world seed: %lld -> %lld\n", seed, app.GetSeedOverride());
+		seed = app.GetSeedOverride();
+	}
+
 	m_pGenerator = LevelType::lvl_normal;
 	if (tag->contains(L"generatorName"))
 	{
@@ -669,6 +678,11 @@ void LevelData::setGeneratorOptions(const wstring &options)
 bool LevelData::isHardcore()
 {
 	return hardcore;
+}
+
+void LevelData::setHardcore(bool hardcore)
+{
+	this->hardcore = hardcore;
 }
 
 bool LevelData::getAllowCommands()

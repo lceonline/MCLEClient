@@ -2,20 +2,20 @@
 #include "UI.h"
 #include "UIScene_LoadOrJoinMenu.h"
 
-#include "..\..\..\Minecraft.World\StringHelpers.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.item.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.chunk.storage.h"
-#include "..\..\..\Minecraft.World\ConsoleSaveFile.h"
-#include "..\..\..\Minecraft.World\ConsoleSaveFileOriginal.h"
-#include "..\..\ProgressRenderer.h"
-#include "..\..\MinecraftServer.h"
-#include "..\..\TexturePackRepository.h"
-#include "..\..\TexturePack.h"
-#include "..\Network\SessionInfo.h"
+#include "../../../Minecraft.World/StringHelpers.h"
+#include "../../../Minecraft.World/net.minecraft.world.item.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.chunk.storage.h"
+#include "../../../Minecraft.World/ConsoleSaveFile.h"
+#include "../../../Minecraft.World/ConsoleSaveFileOriginal.h"
+#include "../../ProgressRenderer.h"
+#include "../../MinecraftServer.h"
+#include "../../TexturePackRepository.h"
+#include "../../TexturePack.h"
+#include "../Network/SessionInfo.h"
 #if defined(__PS3__) || defined(__ORBIS__) || defined(__PSVITA__)
-#include "Common\Network\Sony\SonyHttp.h"
-#include "Common\Network\Sony\SonyRemoteStorage.h"
+#include "Common/Network/Sony/SonyHttp.h"
+#include "Common/Network/Sony/SonyRemoteStorage.h"
 #include "DLCTexturePack.h"
 #endif
 #if defined(__ORBIS__) || defined(__PSVITA__)
@@ -26,12 +26,13 @@
 #endif
 
 #ifdef _WINDOWS64
-#include "..\..\..\Minecraft.World\NbtIo.h"
-#include "..\..\..\Minecraft.World\compression.h"
+#include "../../../Minecraft.World/NbtIo.h"
+#include "../../../Minecraft.World/compression.h"
 
-static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
+static wstring ReadLevelNameFromSaveFile(const wstring& filePath, bool *outHardcore = nullptr)
 {
     // Check for a worldname.txt sidecar written by the rename feature first
+    wstring sidecarName = L"";
     size_t slashPos = filePath.rfind(L'\\');
     if (slashPos != wstring::npos)
     {
@@ -49,8 +50,8 @@ static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
                 if (len > 0)
                 {
                     wchar_t wbuf[128] = {};
-                    mbstowcs(wbuf, buf, 127);
-                    return wstring(wbuf);
+                    MultiByteToWideChar(CP_UTF8, 0, buf, -1, wbuf, 127);
+                    sidecarName = wbuf;
                 }
             }
             else fclose(fr);
@@ -58,10 +59,10 @@ static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
     }
 
     HANDLE hFile = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
-    if (hFile == INVALID_HANDLE_VALUE) return L"";
+    if (hFile == INVALID_HANDLE_VALUE) return sidecarName;
 
     DWORD fileSize = GetFileSize(hFile, nullptr);
-    if (fileSize < 12 || fileSize == INVALID_FILE_SIZE) { CloseHandle(hFile); return L""; }
+    if (fileSize < 12 || fileSize == INVALID_FILE_SIZE) { CloseHandle(hFile); return sidecarName; }
 
     unsigned char *rawData = new unsigned char[fileSize];
     DWORD bytesRead = 0;
@@ -69,7 +70,7 @@ static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
     {
         CloseHandle(hFile);
         delete[] rawData;
-        return L"";
+        return sidecarName;
     }
     CloseHandle(hFile);
 
@@ -84,7 +85,7 @@ static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
         if (decompSize == 0 || decompSize > 128 * 1024 * 1024)
         {
             delete[] rawData;
-            return L"";
+            return sidecarName;
         }
         saveData = new unsigned char[decompSize];
         Compression::getCompression()->Decompress(saveData, &decompSize, rawData + 8, fileSize - 8);
@@ -124,7 +125,11 @@ static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
                         {
                             CompoundTag *dataTag = root->getCompound(L"Data");
                             if (dataTag != nullptr)
+                            {
                                 result = dataTag->getString(L"LevelName");
+                                if (outHardcore)
+                                    *outHardcore = dataTag->getBoolean(L"hardcore");
+                            }
                             delete root;
                         }
                     }
@@ -136,6 +141,10 @@ static wstring ReadLevelNameFromSaveFile(const wstring& filePath)
 
     if (freeSaveData) delete[] saveData;
     delete[] rawData;
+
+    // Prefer the sidecar name (user-renamed) over the level.dat name
+    if (!sidecarName.empty()) return sidecarName;
+
     // "world" is the engine default - it means no real name was ever set,
     // so return empty to let the caller fall back to the save filename (timestamp).
     if (result == L"world") result = L"";
@@ -630,6 +639,11 @@ void UIScene_LoadOrJoinMenu::handleGainFocus(bool navBack)
 
         if( m_bMultiplayerAllowed )
         {
+#ifdef _WINDOWS64
+            // Refresh the games list immediately so that any server
+            // edits/deletions made in the JoinMenu are visible now.
+            UpdateGamesList();
+#endif
 #if TO_BE_IMPLEMENTED
             HXUICLASS hClassFullscreenProgress = XuiFindClass( L"CScene_FullscreenProgress" );
             HXUICLASS hClassConnectingProgress = XuiFindClass( L"CScene_ConnectingProgress" );
@@ -762,7 +776,16 @@ void UIScene_LoadOrJoinMenu::tick()
                     wchar_t wFilename[MAX_SAVEFILENAME_LENGTH];
                     ZeroMemory(wFilename, sizeof(wFilename));
                     mbstowcs(wFilename, m_pSaveDetails->SaveInfoA[origIdx].UTF8SaveFilename, MAX_SAVEFILENAME_LENGTH - 1);
-                    wstring filePath = wstring(L"Windows64\\GameHDD\\") + wstring(wFilename) + wstring(L"\\saveData.ms");
+                    wchar_t wTitle[MAX_DISPLAYNAME_LENGTH];
+                    ZeroMemory(wTitle, sizeof(wTitle));
+                    mbstowcs(wTitle, m_pSaveDetails->SaveInfoA[origIdx].UTF8SaveTitle, MAX_DISPLAYNAME_LENGTH - 1);
+                    wstring filePath = wstring(L"Windows64\\GameHDD\\") + wstring(wFilename) + wstring(L"\\") + wstring(wTitle) + wstring(L".ms");
+                    // Fallback to legacy saveData.ms if new-style filename doesn't exist
+                    {
+                        DWORD attrs = GetFileAttributesW(filePath.c_str());
+                        if (attrs == INVALID_FILE_ATTRIBUTES)
+                            filePath = wstring(L"Windows64\\GameHDD\\") + wstring(wFilename) + wstring(L"\\saveData.ms");
+                    }
 
                     HANDLE hFile = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
                     DWORD fileSize = 0;
@@ -785,13 +808,17 @@ void UIScene_LoadOrJoinMenu::tick()
 #else
 #ifdef _WINDOWS64
                     {
-                        wstring levelName = ReadLevelNameFromSaveFile(filePath);
-
+                        bool saveHardcore = false;
+                        wstring levelName = ReadLevelNameFromSaveFile(filePath, &saveHardcore);
+                        m_saveDetails[i].isHardcore = saveHardcore;
                         if (!levelName.empty())
                         {
                             m_buttonListSaves.addItem(levelName, wstring(L""));
-                            wcstombs(m_saveDetails[i].UTF8SaveName, levelName.c_str(), 127);
-                            m_saveDetails[i].UTF8SaveName[127] = '\0';
+                            {
+                                int n = WideCharToMultiByte(CP_UTF8, 0, levelName.c_str(), -1, m_saveDetails[i].UTF8SaveName, 127, nullptr, nullptr);
+                                if (n <= 0) m_saveDetails[i].UTF8SaveName[0] = '\0';
+                                m_saveDetails[i].UTF8SaveName[127] = '\0';
+                            }
                         }
                         else
                         {
@@ -1436,9 +1463,9 @@ int UIScene_LoadOrJoinMenu::KeyboardCompleteWorldNameCallback(LPVOID lpParam,boo
                 for (int k = 0; k < 127 && ui16Text[k]; k++)
                     wNewName[k] = static_cast<wchar_t>(ui16Text[k]);
 
-                // Convert to narrow for storage and in-memory update
-                char narrowName[128] = {};
-                wcstombs(narrowName, wNewName, 127);
+                // Convert to narrow for storage and in-memory update (UTF-8 to preserve Unicode)
+                char narrowName[256] = {};
+                WideCharToMultiByte(CP_UTF8, 0, wNewName, -1, narrowName, 255, nullptr, nullptr);
 
                 // Build the sidecar path: Windows64\GameHDD\{folder}\worldname.txt
                 wchar_t wFilename[MAX_SAVEFILENAME_LENGTH] = {};
@@ -1454,7 +1481,7 @@ int UIScene_LoadOrJoinMenu::KeyboardCompleteWorldNameCallback(LPVOID lpParam,boo
 
                 // Update the in-memory display name so the list reflects it immediately
                 strncpy_s(pClass->m_saveDetails[listPos].UTF8SaveName, narrowName, 127);
-                pClass->m_saveDetails[listPos].UTF8SaveName[127] = '\0';
+                pClass->m_saveDetails[listPos].UTF8SaveName[127] = '\0'; // UTF8SaveName is still 128 bytes; narrowName fits as Arabic is <=2 bytes/char in UTF-8
 
                 // Reuse the existing callback to trigger the list repopulate
                 UIScene_LoadOrJoinMenu::RenameSaveDataReturned(pClass, true);
@@ -1625,7 +1652,6 @@ void UIScene_LoadOrJoinMenu::handlePress(F64 controlId, F64 childId)
 
 			{
 				int nIndex = static_cast<int>(childId);
-
 				m_iGameListIndex = nIndex;
 				CheckAndJoinGame(nIndex);
 			}
@@ -2491,7 +2517,7 @@ int UIScene_LoadOrJoinMenu::SaveOptionsDialogReturned(void *pParam,int iPad,C4JS
             {
                 wchar_t wSaveName[128];
                 ZeroMemory(wSaveName, 128 * sizeof(wchar_t));
-                mbstowcs_s(nullptr, wSaveName, 128, pClass->m_saveDetails[pClass->m_iSaveListIndex - pClass->m_iDefaultButtonsC].UTF8SaveName, _TRUNCATE);
+                MultiByteToWideChar(CP_UTF8, 0, pClass->m_saveDetails[pClass->m_iSaveListIndex - pClass->m_iDefaultButtonsC].UTF8SaveName, -1, wSaveName, 127);
                 UIKeyboardInitData kbData;
                 kbData.title       = app.GetString(IDS_RENAME_WORLD_TITLE);
                 kbData.defaultText = wSaveName;

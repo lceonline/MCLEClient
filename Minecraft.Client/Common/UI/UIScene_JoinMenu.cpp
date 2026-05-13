@@ -1,12 +1,18 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_JoinMenu.h"
-#include "..\..\Minecraft.h"
-#include "..\..\TexturePackRepository.h"
-#include "..\..\Options.h"
-#include "..\..\MinecraftServer.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.level.h"
-#include "..\..\..\Minecraft.World\net.minecraft.world.h"
+
+#include "../../Minecraft.h"
+#include "../../TexturePackRepository.h"
+#include "../../Options.h"
+#include "../../MinecraftServer.h"
+
+#include "../../../Minecraft.World/net.minecraft.world.level.h"
+#include "../../../Minecraft.World/net.minecraft.world.h"
+
+#ifdef _WINDOWS64
+#include "../../Windows64/Network/WinsockNetLayer.h"
+#endif
 
 #define UPDATE_PLAYERS_TIMER_ID 0
 #define UPDATE_PLAYERS_TIMER_TIME 30000
@@ -38,14 +44,6 @@ void UIScene_JoinMenu::updateTooltips()
 	{
 		iA = IDS_TOOLTIPS_SELECT;
 	}
-
-#ifdef _WINDOWS64
-	if (m_serverIndex >= 0)
-	{
-		iX = IDS_TOOLTIPS_DELETE;
-		iY = IDS_TITLE_RENAME;
-	}
-#endif
 
 	ui.SetTooltips( DEFAULT_XUI_MENU_USER, iA, IDS_TOOLTIPS_BACK, iX, iY );
 
@@ -585,16 +583,18 @@ void UIScene_JoinMenu::JoinGame(UIScene_JoinMenu* pClass)
 
 			if( exitReasonStringId == -1 )
 			{
-				ui.NavigateBack(pClass->m_iPad);
+				// No specific disconnect reason was set — the server was likely
+				// unreachable.  Show a "Connection Failed" dialog instead of
+				// silently navigating back so the user knows what happened.
+				exitReasonStringId = IDS_CONNECTION_LOST_SERVER;
 			}
-			else
+
 			{
 				UINT uiIDA[1];
 				uiIDA[0]=IDS_CONFIRM_OK;
 				ui.RequestErrorMessage( IDS_CONNECTION_FAILED, exitReasonStringId, uiIDA,1,ProfileManager.GetPrimaryPad());
-				exitReasonStringId = -1;
 
-				ui.NavigateToHomeMenu();
+				pClass->m_bIgnoreInput = false;
 			}
 		}
 	}

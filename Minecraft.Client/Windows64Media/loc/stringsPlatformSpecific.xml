@@ -75,7 +75,7 @@ When in flying mode, you can hold down{*CONTROLLER_ACTION_JUMP*} to move up and{
 	</data>	
 
 	<data name="IDS_TOOLTIPS_INVITE_PARTY">
-		<value>Invite Xbox LIVE Party</value>
+		<value>Invite Party</value>
 	</data>	
 
 	<data name="IDS_CONFIRM_START_CREATIVE">
@@ -95,11 +95,11 @@ When in flying mode, you can hold down{*CONTROLLER_ACTION_JUMP*} to move up and{
 	</data>	
 
 	<data name="IDS_CONNECTION_LOST_LIVE">
-		<value>Connection to Xbox LIVE was lost. Exiting to the main menu.</value>
+		<value>Connection to the server was lost. Exiting to the main menu.</value>
 	</data>	
 
 	<data name="IDS_CONNECTION_LOST_LIVE_NO_EXIT">
-		<value>Connection to Xbox LIVE was lost.</value>
+		<value>Connection to the server was lost.</value>
 	</data>	
 
 	<data name="IDS_AWARD_AVATAR1">
@@ -152,7 +152,7 @@ Would you like to unlock the full game?</value>
 	</data>	
 
 	<data name="IDS_UNLOCK_GUEST_TEXT">
-		<value>Guest players cannot unlock the full game. Please sign in with an Xbox LIVE user ID.</value>
+		<value>Guest players cannot unlock the full game. Please sign in with a correct user ID.</value>
 	</data>	
 
 	<data name="IDS_LEADERBOARD_GAMERTAG">
@@ -172,15 +172,15 @@ Would you like to unlock the full game?</value>
 	</data>	
 
 	<data name="IDS_FATAL_ERROR_TEXT">
-		<value>"Minecraft: Xbox One Edition" has failed to load, and cannot continue.</value>
+		<value>"Minecraft: Legacy Console Edition" has failed to load, and cannot continue.</value>
 	</data>	
 
 	<data name="IDS_NO_MULTIPLAYER_PRIVILEGE_JOIN_TEXT">
-		<value>Failed to join the game as one or more players are not allowed to play multiplayer games on Xbox LIVE.</value>
+		<value>Failed to join the game as one or more players are not allowed to play multiplayer games online.</value>
 	</data>	
 
 	<data name="IDS_NO_MULTIPLAYER_PRIVILEGE_HOST_TEXT">
-		<value>Failed to create an online game as one or more players are not allowed to play multiplayer games on Xbox LIVE. Uncheck the "Online Game" box to start an offline game.</value>
+		<value>Failed to create a game as one or more players are not allowed to play multiplayer games online. Uncheck the "Online Game" box to start an offline game.</value>
 	</data>	
 
 	<data name="IDS_NO_USER_CREATED_CONTENT_PRIVILEGE_SINGLE_LOCAL">
@@ -201,7 +201,7 @@ Would you like to unlock the full game?</value>
 
 	<data name="IDS_SAVE_ICON_MESSAGE">
 		<value>This game has a level autosave feature. When you see the icon above displayed, the game is saving your data.
-Please do not turn off your Xbox One console while this icon is on-screen.</value>
+Please do not turn off your computer while this icon is on-screen.</value>
 	</data>	
 
 	<data name="IDS_GAMEOPTION_HOST_PRIVILEGES">
@@ -225,13 +225,13 @@ Please do not turn off your Xbox One console while this icon is on-screen.</valu
 	</data>	
 
 	<data name="IDS_SOCIAL_DEFAULT_DESCRIPTION">
-		<value>Look what I made in Minecraft: Xbox One Edition!</value>
+		<value>Look what I made in Minecraft: Legacy Console Edition!</value>
 	</data>
   <data name="IDS_TITLE_UPDATE_NAME">
     <value>Title Update 14</value>
   </data>
   <data name="IDS_PLATFORM_NAME">
-    <value>Xbox One</value>
+    <value>Computer</value>
   </data>
   <data name="IDS_BACK_BUTTON">
     <value>Back</value>
@@ -240,14 +240,13 @@ Please do not turn off your Xbox One console while this icon is on-screen.</valu
     <value>This option disables achievements and leaderboard updates for this world while playing, and if loading it again after saving with this option on.</value>
   </data>
   <data name="IDS_KICK_PLAYER_DESCRIPTION">
-    <value>For players that are not on the same Xbox One console as the host player, selecting this option will kick the player from the game and any other players on their Xbox One console. This player will not be able to rejoin the game until it is restarted.</value>
+    <value>For players that are not on the same device as the host player, selecting this option will kick the player from the game and any other players sharing the device. This player will not be able to rejoin the game until it is restarted.</value>
   </data>
   <data name="IDS_USING_TRIAL_TEXUREPACK_WARNING">
     <value>You are using the trial version of a texture pack. You will have access to the full contents of the texture pack, but you will not be able to save your progress.
 If you try to save while using the trial version, you will be given the option to purchase the full version.
     </value>
   </data>
-
 
   <data name="IDS_WORLD_SIZE_TITLE_SMALL">
     <value>Small</value>

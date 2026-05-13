@@ -9,6 +9,7 @@
 #include "WaterAnimal.h"
 #include "Wolf.h"
 
+
 // 1.0.1
 #include "Golem.h"
 #include "MushroomCow.h"
@@ -20,3 +21,6 @@
 
 // 1.6.4
 #include "EntityHorse.h"
+
+//TU31
+#include "Rabbit.h"

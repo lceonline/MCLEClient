@@ -17,6 +17,7 @@ public:
 protected:
 	void bindTexture(ResourceLocation *location);		// 4J - changed from wstring to int
     void bindTexture(const wstring& urlTexture, ResourceLocation *location);	// 4J - changed from wstring to int
+	int getHeight(ResourceLocation *location);		// 4J - changed from wstring to int
 private:
 	Level *getLevel();
 public:

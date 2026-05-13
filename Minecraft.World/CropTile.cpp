@@ -4,6 +4,10 @@
 #include "net.minecraft.world.item.h"
 #include "net.minecraft.world.h"
 #include "CropTile.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 CropTile::CropTile(int id) : Bush(id)
 {
@@ -42,6 +46,10 @@ void CropTile::tick(Level *level, int x, int y, int z, Random *random)
 
 			if (random->nextInt(static_cast<int>(25 / growthSpeed) + 1) == 0)
 			{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+				if (FourKitBridge::FireBlockGrow(level->dimension->id, x, y, z, level->getTile(x, y, z), age + 1))
+					return;
+#endif
 				age++;
 				level->setData(x, y, z, age, Tile::UPDATE_CLIENTS);
 			}

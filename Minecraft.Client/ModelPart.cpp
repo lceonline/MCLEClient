@@ -321,3 +321,14 @@ void ModelPart::mimic(ModelPart *o)
 	yRot =	o->yRot;
 	zRot =	o->zRot;
 }
+
+void ModelPart::copyModelPart(ModelPart* src, ModelPart* dst) {
+    if (!src || !dst) return;
+   
+    dst->x    = src->x;
+    dst->y    = src->y;
+    dst->z    = src->z;
+    dst->xRot = src->xRot;
+    dst->yRot = src->yRot;
+    dst->zRot = src->zRot;
+}

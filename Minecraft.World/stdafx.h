@@ -217,7 +217,7 @@ void MemSect(int sect);
 
 #elif defined _WINDOWS64
 #include "../Minecraft.Client/Windows64/Windows64_App.h"
-#include "../Minecraft.Client/Windows64Media/strings.h"
+#include "Windows64Media/strings.h"
 #include "../Minecraft.Client/Windows64/Sentient/SentientTelemetryCommon.h"
 #include "../Minecraft.Client/Windows64/Sentient/MinecraftTelemetry.h"
 

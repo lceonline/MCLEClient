@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIControl_SaveList.h"
+#include "../../../Minecraft.World/ArabicShaping.h"
 
 bool UIControl_SaveList::setupControl(UIScene *scene, IggyValuePath *parent, const string &controlName)
 {
@@ -69,12 +70,14 @@ void UIControl_SaveList::addItem(const string &label, const wstring &iconName, i
 
 void UIControl_SaveList::addItem(const wstring &label, const wstring &iconName, int data)
 {
+	wstring shaped = shapeArabicText(label);
+
 	IggyDataValue result;
 	IggyDataValue value[3];
 
 	IggyStringUTF16 stringVal;
-	stringVal.string = (IggyUTF16*)label.c_str();
-	stringVal.length = static_cast<S32>(label.length());
+	stringVal.string = (IggyUTF16*)shaped.c_str();
+	stringVal.length = static_cast<S32>(shaped.length());
 	value[0].type = IGGY_DATATYPE_string_UTF16;
 	value[0].string16 = stringVal;
 

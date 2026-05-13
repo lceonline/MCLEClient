@@ -36,6 +36,154 @@
 #include "../Minecraft.World/LevelChunk.h"
 #include "LevelRenderer.h"
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "../Minecraft.World/ChatPacket.h"
+
+static std::wstring FormatDeathMessage(const shared_ptr<ChatPacket>& packet)
+{
+	if (!packet) return L"";
+
+	std::wstring message;
+	bool replacePlayer = false;
+	bool replaceEntitySource = false;
+	bool replaceItem = false;
+	// coug chough
+	// de hättn echt an gscheidern string konverter für de todesmeldungen macha soin
+	// a globaler helfer waar wahrscheinlich ganz bärig gwen
+	// waaaah
+
+	switch (packet->m_messageType)
+	{
+	case ChatPacket::e_ChatCustom:
+		return packet->m_stringArgs.size() > 0 ? packet->m_stringArgs[0] : L"";
+	case ChatPacket::e_ChatDeathInFire:
+		message = app.GetString(IDS_DEATH_INFIRE); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathOnFire:
+		message = app.GetString(IDS_DEATH_ONFIRE); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathLava:
+		message = app.GetString(IDS_DEATH_LAVA); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathInWall:
+		message = app.GetString(IDS_DEATH_INWALL); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathDrown:
+		message = app.GetString(IDS_DEATH_DROWN); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathStarve:
+		message = app.GetString(IDS_DEATH_STARVE); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathCactus:
+		message = app.GetString(IDS_DEATH_CACTUS); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFall:
+		message = app.GetString(IDS_DEATH_FALL); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathOutOfWorld:
+		message = app.GetString(IDS_DEATH_OUTOFWORLD); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathGeneric:
+		message = app.GetString(IDS_DEATH_GENERIC); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathExplosion:
+		message = app.GetString(IDS_DEATH_EXPLOSION); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathMagic:
+		message = app.GetString(IDS_DEATH_MAGIC); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathWither:
+		message = app.GetString(IDS_DEATH_WITHER); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathDragonBreath:
+		message = app.GetString(IDS_DEATH_DRAGON_BREATH); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathAnvil:
+		message = app.GetString(IDS_DEATH_FALLING_ANVIL); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFallingBlock:
+		message = app.GetString(IDS_DEATH_FALLING_TILE); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFellAccidentLadder:
+		message = app.GetString(IDS_DEATH_FELL_ACCIDENT_LADDER); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFellAccidentVines:
+		message = app.GetString(IDS_DEATH_FELL_ACCIDENT_VINES); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFellAccidentWater:
+		message = app.GetString(IDS_DEATH_FELL_ACCIDENT_WATER); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFellAccidentGeneric:
+		message = app.GetString(IDS_DEATH_FELL_ACCIDENT_GENERIC); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathFellKiller:
+		message = app.GetString(IDS_DEATH_FALL); replacePlayer = true; break;
+	case ChatPacket::e_ChatDeathMob:
+		message = app.GetString(IDS_DEATH_MOB); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathPlayer:
+		message = app.GetString(IDS_DEATH_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathArrow:
+		message = app.GetString(IDS_DEATH_ARROW); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathFireball:
+		message = app.GetString(IDS_DEATH_FIREBALL); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathThrown:
+		message = app.GetString(IDS_DEATH_THROWN); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathIndirectMagic:
+		message = app.GetString(IDS_DEATH_INDIRECT_MAGIC); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathThorns:
+		message = app.GetString(IDS_DEATH_THORNS); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathExplosionPlayer:
+		message = app.GetString(IDS_DEATH_EXPLOSION_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathInFirePlayer:
+		message = app.GetString(IDS_DEATH_INFIRE_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathOnFirePlayer:
+		message = app.GetString(IDS_DEATH_ONFIRE_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathLavaPlayer:
+		message = app.GetString(IDS_DEATH_LAVA_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathDrownPlayer:
+		message = app.GetString(IDS_DEATH_DROWN_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathCactusPlayer:
+		message = app.GetString(IDS_DEATH_CACTUS_PLAYER); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathFellAssist:
+		message = app.GetString(IDS_DEATH_FELL_ASSIST); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathFellFinish:
+		message = app.GetString(IDS_DEATH_FELL_FINISH); replacePlayer = true; replaceEntitySource = true; break;
+	case ChatPacket::e_ChatDeathPlayerItem:
+		message = app.GetString(IDS_DEATH_PLAYER_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	case ChatPacket::e_ChatDeathArrowItem:
+		message = app.GetString(IDS_DEATH_ARROW_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	case ChatPacket::e_ChatDeathFireballItem:
+		message = app.GetString(IDS_DEATH_FIREBALL_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	case ChatPacket::e_ChatDeathThrownItem:
+		message = app.GetString(IDS_DEATH_THROWN_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	case ChatPacket::e_ChatDeathIndirectMagicItem:
+		message = app.GetString(IDS_DEATH_INDIRECT_MAGIC_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	case ChatPacket::e_ChatDeathFellAssistItem:
+		message = app.GetString(IDS_DEATH_FELL_ASSIST_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	case ChatPacket::e_ChatDeathFellFinishItem:
+		message = app.GetString(IDS_DEATH_FELL_FINISH_ITEM); replacePlayer = true; replaceEntitySource = true; replaceItem = true; break;
+	default:
+		message = app.GetString(IDS_DEATH_GENERIC); replacePlayer = true; break;
+	}
+
+	if (replacePlayer)
+	{
+		std::wstring playerName = packet->m_stringArgs.size() > 0 ? packet->m_stringArgs[0] : L"";
+		message = replaceAll(message, L"{*PLAYER*}", playerName);
+	}
+
+	if (replaceEntitySource)
+	{
+		std::wstring sourceName;
+		if (!packet->m_intArgs.empty() && packet->m_intArgs[0] == eTYPE_SERVERPLAYER)
+		{
+			sourceName = packet->m_stringArgs.size() > 1 ? packet->m_stringArgs[1] : L"";
+		}
+		else
+		{
+			if (packet->m_stringArgs.size() > 1 && !packet->m_stringArgs[1].empty())
+			{
+				sourceName = packet->m_stringArgs[1];
+			}
+			else if (!packet->m_intArgs.empty())
+			{
+				sourceName = app.getEntityName((eINSTANCEOF)packet->m_intArgs[0]);
+			}
+		}
+		message = replaceAll(message, L"{*SOURCE*}", sourceName);
+	}
+
+	if (replaceItem)
+	{
+		std::wstring itemName = packet->m_stringArgs.size() > 2 ? packet->m_stringArgs[2] : L"";
+		message = replaceAll(message, L"{*ITEM*}", itemName);
+	}
+
+	return message;
+}
+#endif
+
 
 ServerPlayer::ServerPlayer(MinecraftServer *server, Level *level, const wstring& name, ServerPlayerGameMode *gameMode) : Player(level, name)
 {
@@ -329,28 +477,82 @@ void ServerPlayer::doTickA()
 }
 
 // 4J - split off the chunk sending bit of the tick here from ::doTick so we can do this exactly once per player per server tick
+//
+// Find-nearest uses spiral iteration from the player's chunk position with
+// O(1) hash lookups against chunksToSend. A bounded fallback walk covers
+// the rare case of a stale entry outside the spiral radius.
 void ServerPlayer::doChunkSendingTick(bool dontDelayChunks)
 {
 	//	printf("[%d] %s: sendChunks: %d, empty: %d\n",tickCount, connection->getNetworkPlayer()->GetUID().getOnlineID(),sendChunks,chunksToSend.empty());
 	if (!chunksToSend.empty())
 	{
-		ChunkPos nearest = chunksToSend.front();
+		ChunkPos nearest(0, 0);
 		bool nearestValid = false;
-
-		// 4J - reinstated and optimised some code that was commented out in the original, to make sure that we always
-		// send the nearest chunk to the player. The original uses the bukkit sorting thing to try and avoid doing this, but
-		// the player can quickly wander away from the centre of the spiral of chunks that that method creates, long before transmission
-		// of them is complete.
 		double dist = DBL_MAX;
-		for(ChunkPos chunk : chunksToSend)
+
+		const int px = (int)floor(x) >> 4;
+		const int pz = (int)floor(z) >> 4;
+		// Bound on spiral radius. Configured view distance is much smaller.
+		const int kMaxSpiralRadius = 32;
+
+		// Inline distance: ChunkPos::distanceToSqr is non-const so it can't
+		// be called on the const refs we get when iterating an unordered_set.
+		auto chunkDistSq = [&](int cx, int cz) -> double {
+			double xPos = cx * 16.0 + 8.0;
+			double zPos = cz * 16.0 + 8.0;
+			double xd = xPos - this->x;
+			double zd = zPos - this->z;
+			return xd * xd + zd * zd;
+		};
+
+		// Ring r=0: the player's own chunk.
 		{
-			if( level->isChunkFinalised(chunk.x, chunk.z) )
+			ChunkPos cp(px, pz);
+			auto it = chunksToSend.find(cp);
+			if (it != chunksToSend.end() && level->isChunkFinalised(cp.x, cp.z))
 			{
-				double newDist = chunk.distanceToSqr(x, z);
-				if ( (!nearestValid) || (newDist < dist) )
+				nearest = cp;
+				dist = chunkDistSq(cp.x, cp.z);
+				nearestValid = true;
+			}
+		}
+
+		// Rings r>=1: Chebyshev perimeter. First ring with a match wins;
+		// within it pick the closest by true Euclidean distance.
+		for (int r = 1; r <= kMaxSpiralRadius && !nearestValid; r++)
+		{
+			for (int dx = -r; dx <= r; dx++)
+			{
+				for (int dz = -r; dz <= r; dz++)
 				{
-					nearest = chunk;
-					dist = chunk.distanceToSqr(x, z);
+					int adx = dx < 0 ? -dx : dx;
+					int adz = dz < 0 ? -dz : dz;
+					if ((adx > adz ? adx : adz) != r) continue; // perimeter only
+					ChunkPos cp(px + dx, pz + dz);
+					if (chunksToSend.find(cp) == chunksToSend.end()) continue;
+					if (!level->isChunkFinalised(cp.x, cp.z)) continue;
+					double d = chunkDistSq(cp.x, cp.z);
+					if (!nearestValid || d < dist)
+					{
+						nearest = cp;
+						dist = d;
+						nearestValid = true;
+					}
+				}
+			}
+		}
+
+		// Fallback for chunks outside the spiral radius (rare).
+		if (!nearestValid)
+		{
+			for (const ChunkPos& cp : chunksToSend)
+			{
+				if (!level->isChunkFinalised(cp.x, cp.z)) continue;
+				double d = chunkDistSq(cp.x, cp.z);
+				if (!nearestValid || d < dist)
+				{
+					nearest = cp;
+					dist = d;
 					nearestValid = true;
 				}
 			}
@@ -419,7 +621,7 @@ void ServerPlayer::doChunkSendingTick(bool dontDelayChunks)
 			{
 				ServerLevel *level = server->getLevel(dimension);
 				int flagIndex = getFlagIndexForChunk(nearest,this->level->dimension->id);
-				chunksToSend.remove(nearest);
+				chunksToSend.erase(nearest);
 
 				bool chunkDataSent = false;
 
@@ -570,12 +772,63 @@ shared_ptr<ItemInstance> ServerPlayer::getCarried(int slot)
 
 void ServerPlayer::die(DamageSource *source)
 {
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	shared_ptr<ChatPacket> deathPacket = getCombatTracker()->getDeathMessagePacket();
+	std::wstring deathMsg = FormatDeathMessage(deathPacket);
+
+	int exp = getExperienceReward(nullptr);
+	std::wstring outDeathMsg;
+	int keepInventory = 0;
+	int outNewExp = 0, outNewLevel = 0, outKeepLevel = 0;
+	int outExp = FourKitBridge::FirePlayerDeath(entityId, deathMsg, exp, outDeathMsg, &keepInventory,
+		&outNewExp, &outNewLevel, &outKeepLevel);
+
+	fk_hasDeathState = true;
+	fk_deathKeepInventory = (keepInventory != 0);
+	fk_deathKeepLevel = (outKeepLevel != 0);
+	fk_deathNewExp = outNewExp;
+	fk_deathNewLevel = outNewLevel;
+
+	if (!outDeathMsg.empty())
+		server->getPlayers()->broadcastAll(std::make_shared<ChatPacket>(outDeathMsg));
+
+	// LCE-Revelations: Hardcore mode enforcement. Donor's FourKit-aware die()
+	// rewrite dropped this branch; we restore it AFTER FirePlayerDeath so
+	// plugins still see the death event before the player is banned and
+	// switched to Adventure mode.
+	if (level->getLevelData()->isHardcore())
+	{
+		setGameMode(GameType::ADVENTURE);
+		// Ban this player's XUID and queue disconnect.
+		// The force-save is triggered inside banPlayerForHardcoreDeath after
+		// the disconnect is queued, so the client doesn't get stuck on a save
+		// screen.
+		server->getPlayers()->banPlayerForHardcoreDeath(this);
+	}
+
+	if (keepInventory == 0 && !level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
+	{
+		inventory->dropAll();
+	}
+#else
 	server->getPlayers()->broadcastAll(getCombatTracker()->getDeathMessagePacket());
+
+	// 4J Added: Hardcore mode — switch to Adventure mode on death (can look but not break/place blocks)
+	if (level->getLevelData()->isHardcore())
+	{
+		setGameMode(GameType::ADVENTURE);
+
+		// Ban this player's XUID and queue disconnect.
+		// The force-save is triggered inside banPlayerForHardcoreDeath after the
+		// disconnect is queued, so the client doesn't get stuck on a save screen.
+		server->getPlayers()->banPlayerForHardcoreDeath(this);
+	}
 
 	if (!level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
 	{
 		inventory->dropAll();
 	}
+#endif
 
 	vector<Objective *> *objectives = level->getScoreboard()->findObjectiveFor(ObjectiveCriteria::DEATH_COUNT);
 	if(objectives)
@@ -598,6 +851,7 @@ void ServerPlayer::die(DamageSource *source)
 bool ServerPlayer::hurt(DamageSource *dmgSource, float dmg)
 {
 	if (isInvulnerable()) return false;
+	if (gameMode == nullptr||gameMode->isCreative()) return false;
 
 	// 4J: Not relevant to console servers
 	// Allow falldamage on dedicated pvpservers -- so people cannot cheat their way out of 'fall traps'
@@ -768,6 +1022,10 @@ void ServerPlayer::changeDimension(int i)
 	}
 	else
 	{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		bool portalDestModified = false;
+		double portalOutX = 0, portalOutY = 0, portalOutZ = 0;
+#endif
 		if (dimension == 0 && i == 1)
 		{
 			awardStat(GenericStats::theEnd(), GenericStats::param_theEnd());
@@ -775,7 +1033,24 @@ void ServerPlayer::changeDimension(int i)
 			Pos *pos = server->getLevel(i)->getDimensionSpecificSpawn();
 			if (pos != nullptr)
 			{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+				{
+					double outX, outY, outZ;
+					bool cancelled = FourKitBridge::FirePlayerPortal(entityId,
+						x, y, z, dimension,
+						pos->x, pos->y, pos->z, i,
+						4,
+						&outX, &outY, &outZ);
+					if (cancelled)
+					{
+						delete pos;
+						return;
+					}
+					connection->teleport(outX, outY, outZ, 0, 0);
+				}
+#else
 				connection->teleport(pos->x, pos->y, pos->z, 0, 0);
+#endif
 				delete pos;
 			}
 
@@ -783,6 +1058,38 @@ void ServerPlayer::changeDimension(int i)
 		}
 		else
 		{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			{
+				double scale = server->getLevel(i)->getLevelData()->getHellScale();
+				double toX = x, toY = y, toZ = z;
+				if (i == -1)
+				{
+					toX = x / scale;
+					toZ = z / scale;
+				}
+				else if (dimension == -1 && i == 0)
+				{
+					toX = x * scale;
+					toZ = z * scale;
+				}
+
+				double outX, outY, outZ;
+				bool cancelled = FourKitBridge::FirePlayerPortal(entityId,
+					x, y, z, dimension,
+					toX, toY, toZ, i,
+					3,
+					&outX, &outY, &outZ);
+				if (cancelled)
+					return;
+				if (outX != toX || outY != toY || outZ != toZ)
+				{
+					portalDestModified = true;
+					portalOutX = outX;
+					portalOutY = outY;
+					portalOutZ = outZ;
+				}
+			}
+#endif
 			// 4J: Removed on the advice of the mighty King of Achievments (JV)
 			// awardStat(GenericStats::portal(), GenericStats::param_portal());
 		}
@@ -794,6 +1101,12 @@ void ServerPlayer::changeDimension(int i)
 		}
 
 		server->getPlayers()->toggleDimension( dynamic_pointer_cast<ServerPlayer>(shared_from_this()), i);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (portalDestModified)
+		{
+			connection->teleport(portalOutX, portalOutY, portalOutZ, yRot, xRot);
+		}
+#endif
 		lastSentExp = -1;
 		lastSentHealth = -1;
 		lastSentFood = -1;
@@ -823,6 +1136,10 @@ void ServerPlayer::take(shared_ptr<Entity> e, int orgCount)
 
 Player::BedSleepingResult ServerPlayer::startSleepInBed(int x, int y, int z, bool bTestUse)
 {
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	if (!bTestUse && FourKitBridge::FireBedEnter(entityId, dimension, x, y, z))
+		return OTHER_PROBLEM;
+#endif
 	BedSleepingResult result = Player::startSleepInBed(x, y, z, bTestUse);
 	if (result == OK)
 	{
@@ -836,12 +1153,22 @@ Player::BedSleepingResult ServerPlayer::startSleepInBed(int x, int y, int z, boo
 
 void ServerPlayer::stopSleepInBed(bool forcefulWakeUp, bool updateLevelList, bool saveRespawnPoint)
 {
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	int bedX = bedPosition ? bedPosition->x : 0;
+	int bedY = bedPosition ? bedPosition->y : 0;
+	int bedZ = bedPosition ? bedPosition->z : 0;
+	bool wasSleeping = isSleeping();
+#endif
 	if (isSleeping())
 	{
 		getLevel()->getTracker()->broadcastAndSend(shared_from_this(), std::make_shared<AnimatePacket>(shared_from_this(), AnimatePacket::WAKE_UP));
 	}
 	Player::stopSleepInBed(forcefulWakeUp, updateLevelList, saveRespawnPoint);
 	if (connection != nullptr) connection->teleport(x, y, z, yRot, xRot);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	if (wasSleeping)
+		FourKitBridge::FireBedLeave(entityId, dimension, bedX, bedY, bedZ);
+#endif
 }
 
 void ServerPlayer::ride(shared_ptr<Entity> e)
@@ -884,10 +1211,18 @@ bool ServerPlayer::startCrafting(int x, int y, int z)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::WORKBENCH, L"", 9, false));
 		containerMenu = new CraftingMenu(inventory, level, x, y, z);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::WORKBENCH, L"", 9))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::WORKBENCH, L"", 9, false));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -902,20 +1237,36 @@ bool ServerPlayer::openFireworks(int x, int y, int z)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FIREWORKS, L"", 9, false));
 		containerMenu = new FireworksMenu(inventory, level, x, y, z);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::FIREWORKS, L"", 9))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FIREWORKS, L"", 9, false));
+		refreshContainer(containerMenu);
 	}
 	else if(dynamic_cast<CraftingMenu *>(containerMenu) != nullptr)
 	{
 		closeContainer();
 
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FIREWORKS, L"", 9, false));
 		containerMenu = new FireworksMenu(inventory, level, x, y, z);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::FIREWORKS, L"", 9))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FIREWORKS, L"", 9, false));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -930,10 +1281,18 @@ bool ServerPlayer::startEnchanting(int x, int y, int z, const wstring &name)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::ENCHANTMENT, name.empty() ? L"" : name, 9, !name.empty()));
 		containerMenu = new EnchantmentMenu(inventory, level, x, y, z);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::ENCHANTMENT, name.empty() ? L"" : name, 9))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::ENCHANTMENT, name.empty() ? L"" : name, 9, !name.empty()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -948,10 +1307,18 @@ bool ServerPlayer::startRepairing(int x, int y, int z)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::REPAIR_TABLE, L"", 9, false));
 		containerMenu = new AnvilMenu(inventory, level, x, y, z, dynamic_pointer_cast<Player>(shared_from_this()));
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::REPAIR_TABLE, L"", 9))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::REPAIR_TABLE, L"", 9, false));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -971,11 +1338,18 @@ bool ServerPlayer::openContainer(shared_ptr<Container> container)
 		int containerType = container->getContainerType();
 		assert(containerType >= 0);
 
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, containerType, container->getCustomName(), container->getContainerSize(), container->hasCustomName()));
-
 		containerMenu = new ContainerMenu(inventory, container);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, containerType, container->getCustomName(), container->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, containerType, container->getCustomName(), container->getContainerSize(), container->hasCustomName()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -990,10 +1364,18 @@ bool ServerPlayer::openHopper(shared_ptr<HopperTileEntity> container)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::HOPPER, container->getCustomName(), container->getContainerSize(), container->hasCustomName()));
 		containerMenu = new HopperMenu(inventory, container);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::HOPPER, container->getCustomName(), container->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::HOPPER, container->getCustomName(), container->getContainerSize(), container->hasCustomName()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -1008,10 +1390,18 @@ bool ServerPlayer::openHopper(shared_ptr<MinecartHopper> container)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::HOPPER, container->getCustomName(), container->getContainerSize(), container->hasCustomName()));
 		containerMenu = new HopperMenu(inventory, container);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::HOPPER, container->getCustomName(), container->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::HOPPER, container->getCustomName(), container->getContainerSize(), container->hasCustomName()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -1026,10 +1416,18 @@ bool ServerPlayer::openFurnace(shared_ptr<FurnaceTileEntity> furnace)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FURNACE, furnace->getCustomName(), furnace->getContainerSize(), furnace->hasCustomName()));
 		containerMenu = new FurnaceMenu(inventory, furnace);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::FURNACE, furnace->getCustomName(), furnace->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::FURNACE, furnace->getCustomName(), furnace->getContainerSize(), furnace->hasCustomName()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -1044,10 +1442,18 @@ bool ServerPlayer::openTrap(shared_ptr<DispenserTileEntity> trap)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, trap->GetType() == eTYPE_DROPPERTILEENTITY ? ContainerOpenPacket::DROPPER : ContainerOpenPacket::TRAP, trap->getCustomName(), trap->getContainerSize(), trap->hasCustomName()));
 		containerMenu = new TrapMenu(inventory, trap);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, trap->GetType() == eTYPE_DROPPERTILEENTITY ? ContainerOpenPacket::DROPPER : ContainerOpenPacket::TRAP, trap->getCustomName(), trap->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, trap->GetType() == eTYPE_DROPPERTILEENTITY ? ContainerOpenPacket::DROPPER : ContainerOpenPacket::TRAP, trap->getCustomName(), trap->getContainerSize(), trap->hasCustomName()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -1062,10 +1468,18 @@ bool ServerPlayer::openBrewingStand(shared_ptr<BrewingStandTileEntity> brewingSt
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::BREWING_STAND, brewingStand->getCustomName(), brewingStand->getContainerSize(), brewingStand->hasCustomName()));
 		containerMenu = new BrewingStandMenu(inventory, brewingStand);
 		containerMenu->containerId = containerCounter;
 		containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::BREWING_STAND, brewingStand->getCustomName(), brewingStand->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::BREWING_STAND, brewingStand->getCustomName(), brewingStand->getContainerSize(), brewingStand->hasCustomName()));
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -1080,10 +1494,20 @@ bool ServerPlayer::openBeacon(shared_ptr<BeaconTileEntity> beacon)
 	if(containerMenu == inventoryMenu)
 	{
 		nextContainerCounter();
-		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::BEACON, beacon->getCustomName(), beacon->getContainerSize(), beacon->hasCustomName()));
 		containerMenu = new BeaconMenu(inventory, beacon);
 		containerMenu->containerId = containerCounter;
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::BEACON, beacon->getCustomName(), beacon->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
+		// Send the open packet BEFORE addSlotListener so the client has the
+		// menu ready when the beacon data (levels, powers) arrives.
+		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::BEACON, beacon->getCustomName(), beacon->getContainerSize(), beacon->hasCustomName()));
 		containerMenu->addSlotListener(this);
+		refreshContainer(containerMenu);
 	}
 	else
 	{
@@ -1103,7 +1527,15 @@ bool ServerPlayer::openTrading(shared_ptr<Merchant> traderTarget, const wstring 
 		containerMenu->addSlotListener(this);
 		shared_ptr<Container> container = static_cast<MerchantMenu *>(containerMenu)->getTradeContainer();
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::TRADER_NPC, name.empty() ? L"" : name, container->getContainerSize()))
+		{
+			doCloseContainer();
+			return true;
+		}
+#endif
 		connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::TRADER_NPC, name.empty() ? L"" : name, container->getContainerSize(), !name.empty()));
+		refreshContainer(containerMenu);
 
 		MerchantRecipeList *offers = traderTarget->getOffers(dynamic_pointer_cast<Player>(shared_from_this()));
 		if (offers != nullptr)
@@ -1133,10 +1565,18 @@ bool ServerPlayer::openHorseInventory(shared_ptr<EntityHorse> horse, shared_ptr<
 		closeContainer();
 	}
 	nextContainerCounter();
-	connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::HORSE, horse->getCustomName(), container->getContainerSize(), container->hasCustomName(), horse->entityId));
 	containerMenu = new HorseInventoryMenu(inventory, container, horse);
 	containerMenu->containerId = containerCounter;
 	containerMenu->addSlotListener(this);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	if (FourKitBridge::FireInventoryOpen(entityId, ContainerOpenPacket::HORSE, horse->getCustomName(), container->getContainerSize()))
+	{
+		doCloseContainer();
+		return true;
+	}
+#endif
+	connection->send(std::make_shared<ContainerOpenPacket>(containerCounter, ContainerOpenPacket::HORSE, horse->getCustomName(), container->getContainerSize(), container->hasCustomName(), horse->entityId));
+	refreshContainer(containerMenu);
 
 	return true;
 }
@@ -1689,3 +2129,11 @@ void ServerPlayer::debug_setPosition(double x, double y, double z, double nYRot,
 	connection->teleport(x, y, z, nYRot, nXRot);
 }
 #endif
+bool ServerPlayer::isSpectator()
+{
+    if (gameMode == nullptr)
+    {
+        return false;
+    }
+    return gameMode->getGameType() == GameType::SPECTATOR;
+}

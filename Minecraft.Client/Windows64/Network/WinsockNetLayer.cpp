@@ -92,7 +92,7 @@ char g_Win64RelayServerIP[256] = "relay.mclegacyedition.xyz";
 wchar_t g_Win64RelayServerIP_Wide[256] = L"relay.mclegacyedition.xyz";
 wchar_t g_Win64AuthIP[256] = L"auth.mclegacyedition.xyz";
 int g_Win64RelayServerPort = 2052;
-char g_GameVersion[9] = "TU19";
+char g_GameVersion[9] = "TU31";
 
 bool WinsockNetLayer::Initialize()
 {

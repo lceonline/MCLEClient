@@ -110,6 +110,11 @@ void GuiComponent::drawStringLiteral(Font *font, const wstring& str, int x, int 
 	font->drawShadowLiteral(str, x, y, color);
 }
 
+void GuiComponent::drawStringPreshaped(Font *font, const wstring& str, int x, int y, int color)
+{
+	font->drawShadowLiteralPreshaped(str, x, y, color);
+}
+
 void GuiComponent::blit(int x, int y, int sx, int sy, int w, int h)
 {
     float us = 1 / 256.0f;

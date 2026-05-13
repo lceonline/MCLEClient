@@ -4,11 +4,13 @@
 
 class JungleBiome : public Biome
 {
+private:
+	bool isEdge;
+
 public:
-	JungleBiome(int id);
+	JungleBiome(int id, bool isEdge);
 
-
-	Feature *getTreeFeature(Random *random);
-	Feature *getGrassFeature(Random *random);
-	void decorate(Level *level, Random *random, int xo, int zo);
+	virtual Feature *getTreeFeature(Random *random) override;
+	virtual Feature *getGrassFeature(Random *random) override;
+	virtual void decorate(Level *level, Random *random, int xo, int zo) override;
 };

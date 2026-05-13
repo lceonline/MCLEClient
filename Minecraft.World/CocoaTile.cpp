@@ -5,6 +5,10 @@
 #include "net.minecraft.world.h"
 #include "net.minecraft.h"
 #include "CocoaTile.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 const wstring CocoaTile::TEXTURE_AGES[] = {	L"cocoa_0", L"cocoa_1", L"cocoa_2"};
 
@@ -40,6 +44,10 @@ void CocoaTile::tick(Level *level, int x, int y, int z, Random *random)
 		int age = getAge(data);
 		if (age < 2)
 		{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			if (FourKitBridge::FireBlockGrow(level->dimension->id, x, y, z, level->getTile(x, y, z), ((age + 1) << 2) | getDirection(data)))
+				return;
+#endif
 			age++;
 			level->setData(x, y, z, (age << 2) | (getDirection(data)), Tile::UPDATE_CLIENTS);
 		}

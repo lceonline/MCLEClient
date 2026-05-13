@@ -263,6 +263,11 @@ bool TileRenderer::tesselateInWorld( Tile* tt, int x, int y, int z, int forceDat
 									shared_ptr< TileEntity > forceEntity )	// 4J added forceData, forceEntity param
 {
 	Tesselator* t = Tesselator::getInstance();
+	// skip in-game rendering of barrier block
+	if (tt != nullptr && tt->id == Tile::barrier_Id)
+	{
+		return false;
+	}
 	int	shape = tt->getRenderShape();
 	tt->updateShape( level, x, y, z, forceData, forceEntity );
 	// AP - now that the culling is done earlier we don't need to call setShape until later on (only for SHAPE_BLOCK)
@@ -1858,31 +1863,31 @@ bool TileRenderer::tesselateLeverInWorld( Tile* tt, int x, int y, int z )
 		if ( flipped )
 		{
 			corners[i]->z -= 1 / 16.0f;
-			corners[i]->xRot( 40 * PI / 180 );
+			corners[i]->xRotInPlace( 40 * PI / 180 );
 		}
 		else
 		{
 			corners[i]->z += 1 / 16.0f;
-			corners[i]->xRot( -40 * PI / 180 );
+			corners[i]->xRotInPlace( -40 * PI / 180 );
 		}
 		if (dir == 0 || dir == 7)
 		{
-			corners[i]->zRot(180 * PI / 180);
+			corners[i]->zRotInPlace(180 * PI / 180);
 		}
 		if ( dir == 6 || dir == 0 )
 		{
-			corners[i]->yRot( 90 * PI / 180 );
+			corners[i]->yRotInPlace( 90 * PI / 180 );
 		}
 
 		if ( dir > 0 && dir < 5 )
 		{
 			corners[i]->y -= 6 / 16.0f;
-			corners[i]->xRot( 90 * PI / 180 );
+			corners[i]->xRotInPlace( 90 * PI / 180 );
 
-			if ( dir == 4 ) corners[i]->yRot( 0 * PI / 180 );
-			if ( dir == 3 ) corners[i]->yRot( 180 * PI / 180 );
-			if ( dir == 2 ) corners[i]->yRot( 90 * PI / 180 );
-			if ( dir == 1 ) corners[i]->yRot( -90 * PI / 180 );
+			if ( dir == 4 ) corners[i]->yRotInPlace( 0 * PI / 180 );
+			if ( dir == 3 ) corners[i]->yRotInPlace( 180 * PI / 180 );
+			if ( dir == 2 ) corners[i]->yRotInPlace( 90 * PI / 180 );
+			if ( dir == 1 ) corners[i]->yRotInPlace( -90 * PI / 180 );
 
 			corners[i]->x += x + 0.5;
 			corners[i]->y += y + 8 / 16.0f;
@@ -2047,26 +2052,26 @@ bool TileRenderer::tesselateTripwireSourceInWorld(Tile *tt, int x, int y, int z)
 
 		if (powered)
 		{
-			corners[i]->xRot(30 * PI / 180);
+			corners[i]->xRotInPlace(30 * PI / 180);
 			corners[i]->y -= 7 / 16.0f;
 		}
 		else if (attached)
 		{
-			corners[i]->xRot(5 * PI / 180);
+			corners[i]->xRotInPlace(5 * PI / 180);
 			corners[i]->y -= 7 / 16.0f;
 		}
 		else
 		{
-			corners[i]->xRot(-40 * PI / 180);
+			corners[i]->xRotInPlace(-40 * PI / 180);
 			corners[i]->y -= 6 / 16.0f;
 		}
 
-		corners[i]->xRot(90 * PI / 180);
+		corners[i]->xRotInPlace(90 * PI / 180);
 
-		if (dir == Direction::NORTH) corners[i]->yRot(0 * PI / 180);
-		if (dir == Direction::SOUTH) corners[i]->yRot(180 * PI / 180);
-		if (dir == Direction::WEST) corners[i]->yRot(90 * PI / 180);
-		if (dir == Direction::EAST) corners[i]->yRot(-90 * PI / 180);
+		if (dir == Direction::NORTH) corners[i]->yRotInPlace(0 * PI / 180);
+		if (dir == Direction::SOUTH) corners[i]->yRotInPlace(180 * PI / 180);
+		if (dir == Direction::WEST) corners[i]->yRotInPlace(90 * PI / 180);
+		if (dir == Direction::EAST) corners[i]->yRotInPlace(-90 * PI / 180);
 
 		corners[i]->x += x + 0.5;
 		corners[i]->y += y + 5 / 16.0f;
@@ -2158,23 +2163,23 @@ bool TileRenderer::tesselateTripwireSourceInWorld(Tile *tt, int x, int y, int z)
 		{
 			corners[i]->y -= 1.5 / 16.0f;
 			corners[i]->z -= 2.6 / 16.0f;
-			corners[i]->xRot(0 * PI / 180);
+			corners[i]->xRotInPlace(0 * PI / 180);
 		}
 		else if (attached)
 		{
 			corners[i]->y += 0.25 / 16.0f;
 			corners[i]->z -= 2.75 / 16.0f;
-			corners[i]->xRot(10 * PI / 180);
+			corners[i]->xRotInPlace(10 * PI / 180);
 		}
 		else
 		{
-			corners[i]->xRot(50 * PI / 180);
+			corners[i]->xRotInPlace(50 * PI / 180);
 		}
 
-		if (dir == Direction::NORTH) corners[i]->yRot(0 * PI / 180);
-		if (dir == Direction::SOUTH) corners[i]->yRot(180 * PI / 180);
-		if (dir == Direction::WEST) corners[i]->yRot(90 * PI / 180);
-		if (dir == Direction::EAST) corners[i]->yRot(-90 * PI / 180);
+		if (dir == Direction::NORTH) corners[i]->yRotInPlace(0 * PI / 180);
+		if (dir == Direction::SOUTH) corners[i]->yRotInPlace(180 * PI / 180);
+		if (dir == Direction::WEST) corners[i]->yRotInPlace(90 * PI / 180);
+		if (dir == Direction::EAST) corners[i]->yRotInPlace(-90 * PI / 180);
 
 		corners[i]->x += x + 0.5;
 		corners[i]->y += y + 5 / 16.0f;
@@ -8505,6 +8510,44 @@ void TileRenderer::renderTile( Tile* tile, int data, float brightness, float fAl
 		tesselateHopperInWorld(tile, 0, 0, 0, 0, true);
 		glTranslatef(0.5f, 0.5f, 0.5f);
 	}
+	else if (shape == Tile::SHAPE_THIN_PANE)
+	{
+		setShape(7.0f / 16.0f, 0, 0, 9.0f / 16.0f, 1.0f, 1.0f);
+
+		glTranslatef(-0.5f, -0.5f, -0.5f);
+		t->begin();
+		t->normal(0, -1, 0);
+		renderFaceDown(tile, 0, 0, 0, getTexture(tile, 0, data));
+		t->end();
+
+		t->begin();
+		t->normal(0, 1, 0);
+		renderFaceUp(tile, 0, 0, 0, getTexture(tile, 1, data));
+		t->end();
+
+		t->begin();
+		t->normal(0, 0, -1);
+		renderNorth(tile, 0, 0, 0, getTexture(tile, 2, data));
+		t->end();
+
+		t->begin();
+		t->normal(0, 0, 1);
+		renderSouth(tile, 0, 0, 0, getTexture(tile, 3, data));
+		t->end();
+
+		t->begin();
+		t->normal(-1, 0, 0);
+		renderWest(tile, 0, 0, 0, getTexture(tile, 4, data));
+		t->end();
+
+		t->begin();
+		t->normal(1, 0, 0);
+		renderEast(tile, 0, 0, 0, getTexture(tile, 5, data));
+		t->end();
+
+		glTranslatef(0.5f, 0.5f, 0.5f);
+		setShape(0, 0, 0, 1, 1, 1);
+		}
 
 	t->setMipmapEnable( true );	// 4J added
 }
@@ -8525,6 +8568,8 @@ bool TileRenderer::canRender( int renderShape )
 	if ( renderShape == Tile::SHAPE_WALL) return true;
 	if ( renderShape == Tile::SHAPE_BEACON) return true;
 	if ( renderShape == Tile::SHAPE_ANVIL) return true;
+	if (renderShape == Tile::SHAPE_THIN_PANE) return true;
+	if (renderShape == Tile::SHAPE_WATER) return true;
 	return false;
 }
 

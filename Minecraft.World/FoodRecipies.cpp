@@ -38,6 +38,32 @@ void FoodRecipies::addRecipes(Recipes *r)
 		L"ttig", 
 		Tile::mushroom_brown, Tile::mushroom_red, Item::bowl,
 		L'F');
+
+	r->addShapedRecipy(new ItemInstance(Item::rabbitStew), 
+		L"ssscicictcicig",
+		L" 1 ",//s
+		L"2X3",//s
+		L" 4 ",//s
+		L'1', Item::rabbit_cooked,    // ci
+		L'2', Item::carrots,          // ci
+		L'3', Tile::mushroom_brown,   // ct  
+		L'X', Item::potato,           // ci
+		L'4', Item::bowl,             // ci
+		L'F');
+
+	r->addShapedRecipy(new ItemInstance(Item::rabbitStew), 
+		L"ssscicictcicig",
+		L" 1 ",//s
+		L"2X3",//s
+		L" 4 ",//s
+		L'1', Item::rabbit_cooked,    // ci
+		L'2', Item::carrots,          // ci
+		L'3', Tile::mushroom_red,     // ct  
+		L'X', Item::potato,           // ci
+		L'4', Item::bowl,             // ci
+		L'F');
+
+	
       
 	r->addShapedRecipy(new ItemInstance(Item::cookie, 8), //
 				L"sczcig",

@@ -32,6 +32,7 @@ private:
 public:
 	void setGameRules(GameRulesInstance *rules);
 	GameRulesInstance *getGameRules() { return m_gameRules; }
+	GameType* getGameType();
 
 public:
 	ServerPlayerGameMode(Level *level);

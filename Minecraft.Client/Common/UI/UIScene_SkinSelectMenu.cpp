@@ -24,6 +24,16 @@ const WCHAR *UIScene_SkinSelectMenu::wchDefaultNamesA[]=
 	L"Prisoner Steve",
 	L"Cyclist Steve",
 	L"Boxer Steve",
+	L"Developer Steve",
+	L"Alex",
+	L"Tuxedo Alex",
+	L"Boxer Alex",
+	L"Prisoner Alex",
+	L"Tennis Alex",
+	L"Cyclist Alex",
+	L"Athlete Alex",
+	L"Swedish Alex",
+	L"Developer Alex",
 };
 
 UIScene_SkinSelectMenu::UIScene_SkinSelectMenu(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
@@ -992,6 +1002,36 @@ TEXTURE_NAME UIScene_SkinSelectMenu::getTextureId(int skinIndex)
 		break;
 	case eDefaultSkins_Skin7:
 		texture = TN_MOB_CHAR7;
+		break;
+	case eDefaultSkins_Skin8:
+		texture = TN_MOB_CHAR8;
+		break;
+	case eDefaultSkins_Skin9:
+		texture = TN_MOB_CHAR9;
+		break;
+	case eDefaultSkins_Skin10:
+		texture = TN_MOB_CHAR10;
+		break;
+	case eDefaultSkins_Skin11:
+		texture = TN_MOB_CHAR11;
+		break;
+	case eDefaultSkins_Skin12:
+		texture = TN_MOB_CHAR12;
+		break;
+	case eDefaultSkins_Skin13:
+		texture = TN_MOB_CHAR13;
+		break;
+	case eDefaultSkins_Skin14:
+		texture = TN_MOB_CHAR14;
+		break;
+	case eDefaultSkins_Skin15:
+		texture = TN_MOB_CHAR15;
+		break;
+	case eDefaultSkins_Skin16:
+		texture = TN_MOB_CHAR16;
+		break;
+	case eDefaultSkins_Skin17:
+		texture = TN_MOB_CHAR17;
 		break;
 	};
 

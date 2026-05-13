@@ -14,6 +14,7 @@ public:
 	static GameType *SURVIVAL;
 	static GameType *CREATIVE;
 	static GameType *ADVENTURE;
+	static GameType *SPECTATOR;
 
 	static void staticCtor();
 
@@ -30,6 +31,7 @@ public:
 	bool isAdventureRestricted();
 	bool isCreative();
 	bool isSurvival();
+	bool isSpectator();
 	static GameType *byId(int id);
 	static GameType *byName(const wstring &name);
 };

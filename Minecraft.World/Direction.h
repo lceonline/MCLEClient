@@ -34,4 +34,42 @@ public:
 
 	static int getDirection(double xd, double zd);
 	static int getDirection(int x0, int z0, int x1, int z1);
+
+	    static int getStepX(int direction) {
+        switch (direction) {
+            case WEST:  return -1;
+            case EAST:  return 1;
+            default:    return 0;
+        }
+    }
+    
+    static int getStepZ(int direction) {
+        switch (direction) {
+            case NORTH: return -1;
+            case SOUTH: return 1;
+            default:    return 0;
+        }
+    }
+	    static int getStepY(int direction) {
+        
+        return 0;  
+    }
+
+		class Plane
+        {
+        public:
+
+         static int getRandomFace(Random* random)
+            {
+       
+                static const int horizontal[4] = { 
+                 Direction::SOUTH, 
+                 Direction::WEST, 
+                 Direction::NORTH, 
+                 Direction::EAST 
+                };
+                return horizontal[random->nextInt(4)];
+            }
+        };
+
 };

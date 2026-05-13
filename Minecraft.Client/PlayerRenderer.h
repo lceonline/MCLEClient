@@ -14,8 +14,20 @@ public:
 
 private:
 	HumanoidModel *humanoidModel;
+	HumanoidModel *humanoidModelSlim;
+	HumanoidModel *newHumanoidModel;
+	HumanoidModel *newHumanoidModelSlim;
+
     HumanoidModel *armorParts1;
     HumanoidModel *armorParts2;
+    HumanoidModel *armorParts3;
+    HumanoidModel *armorParts4;
+	bool defaultSlimHands;
+
+	static ResourceLocation SKELETON_LOCATION;
+	static ResourceLocation WITHER_SKELETON_LOCATION;
+	static ResourceLocation ZOMBIE_LOCATION;
+	static ResourceLocation CREEPER_LOCATION;
 
 public:
 	PlayerRenderer();
@@ -34,7 +46,7 @@ public:
 
 protected:
     virtual void additionalRendering(shared_ptr<LivingEntity> _mob, float a);
-	virtual void renderNameTags(shared_ptr<LivingEntity> player, double x, double y, double z, const wstring& msg, float scale, double dist) override;
+	void renderNameTags(shared_ptr<LivingEntity> player, double x, double y, double z, const wstring& msg, float scale, double dist);
 
     virtual void scale(shared_ptr<LivingEntity> _player, float a);
 public:

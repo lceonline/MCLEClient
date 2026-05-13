@@ -18,6 +18,7 @@ class Level;
 class CompoundTag;
 class DamageSource;
 class Explosion;
+class BlockPos;
 
 // 4J Stu Added this mainly to allow is to record telemetry for player deaths
 enum EEntityDamageType
@@ -30,6 +31,10 @@ enum EEntityDamageType
 	eEntityDamageType_Suffocate,
 	eEntityDamageType_OutOfWorld,
 	eEntityDamageType_Cactus,
+};
+struct _SkinAdjustments
+{
+    int data[18]; 
 };
 
 class Entity : public enable_shared_from_this<Entity>
@@ -48,6 +53,7 @@ public:
 
 private:
 	static int entityCounter;
+	bool m_outsideWorldBorder = false;
 
 public:
 	int entityId;
@@ -73,6 +79,7 @@ public:
 
 protected:
 	bool isStuckInWeb;
+	_SkinAdjustments m_skinAdjustments;
 
 public:
 	bool slide;
@@ -199,7 +206,7 @@ protected:
 public:
 	virtual void remove();
 
-protected:
+public:
 	virtual void setSize(float w, float h);
 	void setPos(EntityPos *pos);
 	void setRot(float yRot, float xRot);
@@ -256,6 +263,7 @@ public:
 	virtual bool updateInWaterState();
 	bool isUnderLiquid(Material *material);
 	virtual float getHeadHeight();
+	float getEyeHeight();
 	bool isInLava();
 	void moveRelative(float xa, float za, float speed);
 	virtual int getLightColor(float a);		// 4J - change brought forward from 1.8.2
@@ -434,4 +442,77 @@ public:
 	virtual void setDespawnProtected() {}
 	virtual bool couldWander() { return false; }
 	virtual bool canCreateParticles() { return true; }
+	bool ignoreExplosion();
+	void kill();
+	
+
+
+virtual bool hasCustomName();
+virtual wstring getCustomName();
+virtual void setCustomName(const wstring& name);
+virtual bool isCustomNameVisible();
+virtual void setCustomNameVisible(bool visible);
+
+
+bool isOutsideWorldBorder();
+void setOutsideWorldBorder(bool outside);
+
+
+virtual AABB* getBoundingBox() { return bb; }
+virtual void setBoundingBox(AABB* box) { bb = box; }
+
+
+int getDirection();
+
+
+Vec3* getEyePosition(float partialTicks);
+
+
+bool isInvulnerableTo(DamageSource* source);
+void setInvulnerable(bool value);
+
+
+wstring getName();
+
+
+void doSprintParticleEffect();
+
+
+virtual int getSwimSplashSound() { return 0xDE; }
+virtual int getSwimSound()       { return 0xDD; }
+
+
+virtual void onSyncedDataUpdated() {}
+
+
+
+int  getPortalEntranceOffset();
+int  getPortalEntranceForwards();
+void getPortalEntranceBlock(int& x, int& y, int& z);
+
+
+virtual void setYBodyRot() {}
+virtual bool broadcastToPlayer() { return true; }
+virtual bool shouldShowName();
+
+
+virtual bool interactAt(shared_ptr<Player> player, const Vec3& hitVec) { return false; }
+virtual void handleEntityTag() {}
+virtual int  getEntityTag()    { return 0; }
+virtual int  setSlot()         { return 0; }
+
+
+Vec3*        getCommandSenderWorldPosition();
+Level*       getCommandSenderWorld();
+shared_ptr<Entity> getCommandSenderEntity();
+
+
+double distanceSqrToBlockPosCenter(int bx, int by, int bz);
+double distanceSqrToBlockPosCenter(BlockPos* pos);
+
+
+	void getSkinAdjustments(struct _SkinAdjustments* adj);
+    void setSkinAdjustments(struct _SkinAdjustments* adj);
+
+
 };

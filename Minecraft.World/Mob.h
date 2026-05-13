@@ -45,7 +45,7 @@ public:
 protected:
 	int xpReward;
 
-private:
+protected:
 	LookControl *lookControl;
 	MoveControl *moveControl;
 	JumpControl *jumpControl;
@@ -59,7 +59,7 @@ protected:
 private:
 	shared_ptr<LivingEntity> target;
 	Sensing *sensing;
-
+protected:
 	ItemInstanceArray equipment;
 
 protected:
@@ -155,7 +155,7 @@ public:
 	virtual float getHeadSizeScale();
 	virtual int getMaxSpawnClusterSize();
 	virtual int getMaxFallDistance();
-	virtual shared_ptr<ItemInstance> getCarriedItem();
+	virtual shared_ptr<ItemInstance> getCarriedItem() override;
 	virtual shared_ptr<ItemInstance> getCarried(int slot);
 	virtual shared_ptr<ItemInstance> getArmor(int pos);
 	virtual void setEquippedSlot(int slot, shared_ptr<ItemInstance> item);

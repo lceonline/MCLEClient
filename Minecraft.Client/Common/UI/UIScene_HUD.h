@@ -25,6 +25,7 @@ protected:
 	IggyName m_funcRepositionHud, m_funcSetDisplayName, m_funcSetTooltipsEnabled;
 	IggyName m_funcSetRidingHorse, m_funcSetHorseHealth, m_funcSetHorseJumpBarProgress;
 	IggyName m_funcSetHealthAbsorb;
+	IggyName m_funcSetHardcore;
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT(m_labelChatText[0],"Label1")
 		UI_MAP_ELEMENT(m_labelChatText[1],"Label2")
@@ -89,6 +90,7 @@ protected:
 		UI_MAP_NAME(m_funcSetHorseJumpBarProgress, L"SetHorseJumpBarProgress")
 		
 		UI_MAP_NAME(m_funcSetHealthAbsorb, L"SetHealthAbsorb")
+		UI_MAP_NAME(m_funcSetHardcore, L"SetHardcore")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
 public:
@@ -158,6 +160,8 @@ private:
 	void SetHorseJumpBarProgress(float progress);
 
 	void SetHealthAbsorb(int healthAbsorb);
+
+	void SetHardcoreMode(bool bHardcore);
 
 public:
 	void SetSelectedLabel(const wstring &label);

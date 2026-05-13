@@ -6,6 +6,7 @@
 #include "../Minecraft.World/SharedConstants.h"
 #include "../Minecraft.World/StringHelpers.h"
 #include "../Minecraft.World/ChatPacket.h"
+#include "../Minecraft.World/ArabicShaping.h"
 
 const wstring ChatScreen::allowedChars = SharedConstants::acceptableLetters;
 vector<wstring> ChatScreen::s_chatHistory;
@@ -15,7 +16,12 @@ int ChatScreen::s_chatIndex = 0;
 
 bool ChatScreen::isAllowedChatChar(wchar_t c)
 {
-	return c >= 0x20 && (c == L'\u00A7' || allowedChars.empty() || allowedChars.find(c) != wstring::npos);
+	if (c < 0x20) return false;
+	// Block Unicode bidirectional override characters that can be used to
+	// spoof chat messages or impersonate players.
+	if (c >= 0x202A && c <= 0x202E) return false; // LRE, RLE, PDF, LRO, RLO
+	if (c >= 0x2066 && c <= 0x2069) return false; // LRI, RLI, FSI, PDI
+	return true;
 }
 
 ChatScreen::ChatScreen()
@@ -110,6 +116,9 @@ void ChatScreen::keyPressed(wchar_t ch, int eventKey)
     if (eventKey == Keyboard::KEY_RETURN)
 	{
         wstring trim = trimString(message);
+        { char buf[64]; sprintf_s(buf, "[CHAT] Sending (%d chars): ", (int)trim.length()); OutputDebugStringA(buf); }
+        OutputDebugStringW(trim.c_str());
+        OutputDebugStringA("\n");
         if (trim.length() > 0)
 		{
             if (!minecraft->handleClientSideCommand(trim))
@@ -162,14 +171,21 @@ void ChatScreen::render(int xm, int ym, float a)
     int x = 4;
     drawString(font, prefix, x, height - 12, 0xe0e0e0);
     x += font->width(prefix);
-    wstring beforeCursor = message.substr(0, cursorIndex);
-    wstring afterCursor = message.substr(cursorIndex);
-    drawStringLiteral(font, beforeCursor, x, height - 12, 0xe0e0e0);
-    x += font->widthLiteral(beforeCursor);
+
+    // Shape the full message as one unit so letter connections and word order
+    // are correct. Track where the logical cursor maps in the visual string.
+    int visualCursorPos = 0;
+    wstring shaped = shapeArabicText(message, cursorIndex, &visualCursorPos);
+
+    // Render the full shaped message without re-shaping it
+    drawStringPreshaped(font, shaped, x, height - 12, 0xe0e0e0);
+
+    // Place the cursor at the correct visual position
+    wstring beforeCursorVisual = shaped.substr(0, visualCursorPos);
+    int cursorX = x + font->widthPreshaped(beforeCursorVisual);
     if (frame / 6 % 2 == 0)
-        drawString(font, L"_", x, height - 12, 0xe0e0e0);
-    x += font->width(L"_");
-    drawStringLiteral(font, afterCursor, x, height - 12, 0xe0e0e0);
+        drawString(font, L"_", cursorX, height - 12, 0xe0e0e0);
+
     Screen::render(xm, ym, a);
 }
 

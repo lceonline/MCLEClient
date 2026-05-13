@@ -2,25 +2,46 @@
 #include "UI.h"
 #include "UIScene_DeathMenu.h"
 #include "IUIScene_PauseMenu.h"
+
 #include "../../Minecraft.h"
 #include "../../MultiPlayerLocalPlayer.h"
+#include "../../MultiPlayerLevel.h"
+#include "../../MinecraftServer.h"
+
+#include "../../../Minecraft.World/net.minecraft.world.level.storage.h"
 
 UIScene_DeathMenu::UIScene_DeathMenu(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
 {
 	// Setup all the Iggy references we need for this scene
 	initialiseMovie();
 
-	m_buttonRespawn.init(app.GetString(IDS_RESPAWN),eControl_Respawn);
 	m_buttonExitGame.init(app.GetString(IDS_EXIT_GAME),eControl_ExitGame);
 
 	m_labelTitle.setLabel(app.GetString(IDS_YOU_DIED));
 
+	// 4J Added: In hardcore mode, disable respawn and show hardcore death message
+	Minecraft *pMC = Minecraft::GetInstance();
+	bool isHardcore = false;
+	if (pMC != nullptr && pMC->level != nullptr)
+	{
+		isHardcore = pMC->level->getLevelData()->isHardcore();
+	}
+
+	if (isHardcore)
+	{
+		m_buttonRespawn.init(app.GetString(IDS_HARDCORE_DEATH_MESSAGE), eControl_Respawn);
+		m_buttonRespawn.setVisible(false);
+	}
+	else
+	{
+		m_buttonRespawn.init(app.GetString(IDS_RESPAWN), eControl_Respawn);
+	}
+
 	m_bIgnoreInput = false;
 
-	Minecraft *pMinecraft = Minecraft::GetInstance();
-	if(pMinecraft != nullptr && pMinecraft->localgameModes[iPad] != nullptr )
+	if(pMC != nullptr && pMC->localgameModes[iPad] != nullptr )
 	{
-		TutorialMode *gameMode = static_cast<TutorialMode *>(pMinecraft->localgameModes[iPad]);
+		TutorialMode *gameMode = static_cast<TutorialMode *>(pMC->localgameModes[iPad]);
 
 		// This just allows it to be shown
 		gameMode->getTutorial()->showTutorialPopup(false);
@@ -84,8 +105,16 @@ void UIScene_DeathMenu::handlePress(F64 controlId, F64 childId)
 	switch(static_cast<int>(controlId))
 	{
 	case eControl_Respawn:
-		m_bIgnoreInput = true;
-		app.SetAction(m_iPad,eAppAction_Respawn);
+		{
+			// 4J Added: Safeguard - don't respawn in hardcore mode
+			Minecraft *pMC = Minecraft::GetInstance();
+			if (pMC != nullptr && pMC->level != nullptr && pMC->level->getLevelData()->isHardcore())
+			{
+				break;
+			}
+			m_bIgnoreInput = true;
+			app.SetAction(m_iPad,eAppAction_Respawn);
+		}
 #ifdef _DURANGO
 		//InputManager.SetEnabledGtcButtons(_360_GTC_MENU|_360_GTC_PAUSE|_360_GTC_VIEW);
 #endif
@@ -109,7 +138,16 @@ void UIScene_DeathMenu::handlePress(F64 controlId, F64 childId)
 						playTime = static_cast<int>(pMinecraft->localplayers[m_iPad]->getSessionTimer());
 					}
 					TelemetryManager->RecordLevelExit(m_iPad, eSen_LevelExitStatus_Failed);
-					
+
+					// 4J Added: Hardcore mode — skip save dialog, exit without saving, delete world
+					if (pMinecraft->level != nullptr && pMinecraft->level->getLevelData()->isHardcore() && g_NetworkManager.IsHost())
+					{
+						MinecraftServer::getInstance()->setSaveOnExit(false);
+						MinecraftServer::getInstance()->setDeleteWorldOnExit(true);
+						app.SetAction(m_iPad, eAppAction_ExitWorld);
+						break;
+					}
+
 #if defined (_XBOX_ONE) || defined(__ORBIS__)
 					if(g_NetworkManager.IsHost() && StorageManager.GetSaveDisabled())
 					{

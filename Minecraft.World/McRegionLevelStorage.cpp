@@ -51,6 +51,15 @@ ChunkStorage *McRegionLevelStorage::createChunkStorage(Dimension *dimension)
 				delete netherFiles;
 			}
 #endif
+			vector<FileEntry *> *fortressFiles = m_saveFile->getFilesWithPrefix(L"data/Fortress");
+			if(fortressFiles!=NULL)
+			{
+				for (auto& fortressFile : *fortressFiles)
+				{
+					m_saveFile->deleteFile(fortressFile);
+				}
+				delete fortressFiles;
+			}
 			resetNetherPlayerPositions();
 		}
 

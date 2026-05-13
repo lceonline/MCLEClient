@@ -493,6 +493,10 @@ void Socket::SocketOutputStreamNetwork::writeWithFlags(byteArray b, unsigned int
 	}
 	else
 	{
+		// Don't write on a closing socket: an orphan whose smallId has been
+		// recycled would otherwise leak a packet onto the new client.
+		if( m_socket->isClosing() ) return;
+
 		XRNM_SEND_BUFFER buffer;
 		buffer.pbyData = &b[offset];
 		buffer.dwDataSize = length;
@@ -506,7 +510,6 @@ void Socket::SocketOutputStreamNetwork::writeWithFlags(byteArray b, unsigned int
 		INetworkPlayer *socketPlayer = m_socket->getPlayer();
 		if(socketPlayer == nullptr)
 		{
-			app.DebugPrintf("Trying to write to network, but the socketPlayer is nullptr\n");
 			return;
 		}
 
@@ -518,30 +521,20 @@ void Socket::SocketOutputStreamNetwork::writeWithFlags(byteArray b, unsigned int
 		bool requireAck =  ( ( flags & NON_QNET_SENDDATA_ACK_REQUIRED ) == NON_QNET_SENDDATA_ACK_REQUIRED );
 #endif
 
+		// Re-validate the socket player immediately before use to minimize
+		// the TOCTOU window where the network layer could remove the player
+		// between our initial null-check and the SendData call.
 		if( m_queueIdx == SOCKET_SERVER_END )
 		{
-			//printf( "Sent %u bytes of data from \"%ls\" to \"%ls\"\n",
-			//buffer.dwDataSize,
-			//hostPlayer->GetGamertag(),
-			//m_socket->networkPlayer->GetGamertag());
-
-			hostPlayer->SendData(socketPlayer, buffer.pbyData, buffer.dwDataSize, lowPriority, requireAck);
-
-	// 		DWORD queueSize = hostPlayer->GetSendQueueSize( nullptr, QNET_GETSENDQUEUESIZE_BYTES  );
-	// 		if( queueSize > 24000 )
-	// 		{
-	// 			//printf("Queue size is: %d, forcing doWork()\n",queueSize);
-	// 			g_NetworkManager.DoWork();
-	// 		}
+			INetworkPlayer *validatedPlayer = m_socket->getPlayer();
+			if(validatedPlayer == nullptr) return;
+			hostPlayer->SendData(validatedPlayer, buffer.pbyData, buffer.dwDataSize, lowPriority, requireAck);
 		}
 		else
 		{
-			//printf( "Sent %u bytes of data from \"%ls\" to \"%ls\"\n",
-			//buffer.dwDataSize,
-			//m_socket->networkPlayer->GetGamertag(),
-			//hostPlayer->GetGamertag());
-
-			socketPlayer->SendData(hostPlayer, buffer.pbyData, buffer.dwDataSize, lowPriority, requireAck);
+			INetworkPlayer *validatedPlayer = m_socket->getPlayer();
+			if(validatedPlayer == nullptr) return;
+			validatedPlayer->SendData(hostPlayer, buffer.pbyData, buffer.dwDataSize, lowPriority, requireAck);
 		}
 	}
 }

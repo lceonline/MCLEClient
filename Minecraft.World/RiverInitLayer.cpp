@@ -1,7 +1,8 @@
 #include "stdafx.h"
+#include "RiverInitLayer.h"
 #include "net.minecraft.world.level.newbiome.layer.h"
 
-RiverInitLayer::RiverInitLayer(int64_t seed, shared_ptr<Layer>parent) : Layer(seed)
+RiverInitLayer::RiverInitLayer(int64_t seed, std::shared_ptr<Layer> parent, int64_t seedMixup) : Layer(seedMixup)
 {
 	this->parent = parent;
 }

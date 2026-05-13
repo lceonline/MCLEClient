@@ -9,13 +9,14 @@ public:
 	static LevelType *lvl_normal;// = new LevelType(0, "default", 1).setHasReplacement();
 	static LevelType *lvl_flat;// = new LevelType(1, "flat");
 	static LevelType *lvl_largeBiomes;// = new LevelType(2, "largeBiomes");
+	static LevelType *lvl_customized;
 	static LevelType *lvl_normal_1_1;// = new LevelType(8, "default_1_1", 0).setSelectableByUser(false);
 
 	static void staticCtor();
-
+	wstring m_generatorName;
 private:
 	int id;
-	wstring m_generatorName;
+	
 	int m_version;
 	bool m_selectable;
 	bool m_replacement;

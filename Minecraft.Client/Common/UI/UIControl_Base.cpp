@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIControl.h"
+
 #include "../../../Minecraft.World/StringHelpers.h"
 #include "../../../Minecraft.World/JavaMath.h"
+#include "../../../Minecraft.World/ArabicShaping.h"
 
 UIControl_Base::UIControl_Base()
 {
@@ -17,10 +19,25 @@ bool UIControl_Base::setupControl(UIScene *scene, IggyValuePath *parent, const s
 
 	m_setLabelFunc = registerFastName(L"SetLabel");
 	m_initFunc = registerFastName(L"Init");
+	m_funcGetH = registerFastName(L"height");
 	m_funcGetLabel = registerFastName(L"GetLabel");
 	m_funcCheckLabelWidths = registerFastName(L"CheckLabelWidths");
 
 	return success;
+}
+
+int UIControl_Base::height() {
+	//IggyDataValue result;
+	//IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcGetH, 0, nullptr);
+	F64 t;
+	IggyValueGetF64RS(getIggyValuePath(), m_funcGetH, nullptr, &t);
+
+	if (t)
+	{
+		//m_label = wstring((wchar_t*)result.string16.string, result.string16.length);
+		return static_cast<S32>(t);
+	}
+	return -1;
 }
 
 void UIControl_Base::tick()
@@ -32,13 +49,16 @@ void UIControl_Base::tick()
 		//app.DebugPrintf("Calling SetLabel - '%ls'\n", m_label.c_str());
 		m_bLabelChanged = false;
 
+		// Shape the text before sending to Iggy; m_label stays unshaped for future updates
+		wstring shaped = shapeArabicText(m_label.getString());
+
 		IggyDataValue result;
 		IggyDataValue value[1];
 		value[0].type = IGGY_DATATYPE_string_UTF16;
 		IggyStringUTF16 stringVal;
 
-		stringVal.string = (IggyUTF16*) m_label.c_str();
-		stringVal.length = m_label.length();
+		stringVal.string = (IggyUTF16*) shaped.c_str();
+		stringVal.length = (int)shaped.length();
 		value[0].string16 = stringVal;
 
 		IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_setLabelFunc , 1 , value );
@@ -56,13 +76,16 @@ void UIControl_Base::setLabel(UIString label, bool instant, bool force)
 	{
 		m_bLabelChanged = false;
 
+		// Shape the text before sending to Iggy; m_label stays unshaped for future updates
+		wstring shaped = shapeArabicText(m_label.getString());
+
 		IggyDataValue result;
 		IggyDataValue value[1];
 		value[0].type = IGGY_DATATYPE_string_UTF16;
 		IggyStringUTF16 stringVal;
 
-		stringVal.string = (IggyUTF16*)m_label.c_str();
-		stringVal.length = m_label.length();
+		stringVal.string = (IggyUTF16*) shaped.c_str();
+		stringVal.length = (int)shaped.length();
 		value[0].string16 = stringVal;
 
 		IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_setLabelFunc , 1 , value );

@@ -14,6 +14,7 @@ public:
 	static const EnchantmentCategory *weapon;
 	static const EnchantmentCategory *digger;
 	static const EnchantmentCategory *bow;
+	static const EnchantmentCategory *fishing_rod;
 
 	bool canEnchant(Item *item) const;
 };

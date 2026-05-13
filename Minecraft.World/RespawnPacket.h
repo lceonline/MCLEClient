@@ -19,9 +19,10 @@ public:
 	int m_newEntityId;
 	int m_xzSize; // 4J Added
 	int m_hellScale; // 4J Added
+	bool m_isHardcore; // 4J Added - for hardcore mode
 
 	RespawnPacket();
-	RespawnPacket(char dimension, int64_t mapSeed, int mapHeight, GameType *playerGameType, char difficulty, LevelType *pLevelType, bool newSeaLevel, int newEntityId, int xzSize, int hellScale);
+	RespawnPacket(char dimension, int64_t mapSeed, int mapHeight, GameType *playerGameType, char difficulty, LevelType *pLevelType, bool newSeaLevel, int newEntityId, int xzSize, int hellScale, bool isHardcore = false);
 
 	virtual void handle(PacketListener *listener);
 	virtual void read(DataInputStream *dis);

@@ -16,4 +16,5 @@ public:
 	static const int STEP_Z[6];
 
 	static const wstring NAMES[];
+	static int getOpposite(int facing);
 };

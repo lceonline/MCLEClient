@@ -33,6 +33,8 @@ static BackgroundSaveResult s_bgResult;
 #endif
 
 
+
+
 #ifdef _XBOX
 #define RESERVE_ALLOCATION  MEM_RESERVE | MEM_LARGE_PAGES
 #define COMMIT_ALLOCATION  MEM_COMMIT | MEM_LARGE_PAGES
@@ -220,11 +222,17 @@ ConsoleSaveFileOriginal::ConsoleSaveFileOriginal(const wstring &fileName, LPVOID
 
 		header.ReadHeader( pvSaveMem, plat );
 
+		if (bLevelGenBaseSave)
+		{
+			header.AddFile(L"region_format_16");
+		}
 	}
 	else
 	{
 		// Clear the first 8 bytes that reference the header
 		header.WriteHeader( pvSaveMem );
+
+		header.AddFile(L"region_format_16");
 	}
 }
 
@@ -935,6 +943,51 @@ void ConsoleSaveFileOriginal::Flush(bool autosave, bool updateThumbnail )
 int ConsoleSaveFileOriginal::SaveSaveDataCallback(LPVOID lpParam,bool bRes)
 {
 	ConsoleSaveFile *pClass=static_cast<ConsoleSaveFile *>(lpParam);
+
+#ifdef _WINDOWS64
+	// 4J Added: After save completes, capture the save folder name for hardcore world deletion
+	if (bRes && app.GetCurrentSaveFolderName().empty())
+	{
+		// Try 1: Ask the library for the folder name
+		char szSaveFolder[MAX_SAVEFILENAME_LENGTH] = {};
+		if (StorageManager.GetSaveUniqueFilename(szSaveFolder) && szSaveFolder[0] != '\0')
+		{
+			wchar_t wFolder[MAX_SAVEFILENAME_LENGTH] = {};
+			mbstowcs(wFolder, szSaveFolder, MAX_SAVEFILENAME_LENGTH - 1);
+			app.SetCurrentSaveFolderName(wFolder);
+			app.DebugPrintf("SaveSaveDataCallback: captured save folder '%s'\n", szSaveFolder);
+		}
+		// Try 2: Scan GameHDD for the newest folder -- right after save, it's guaranteed to be ours
+		if (app.GetCurrentSaveFolderName().empty())
+		{
+			WIN32_FIND_DATAW fd;
+			HANDLE hFind = FindFirstFileW(L"Windows64\\GameHDD\\*", &fd);
+			if (hFind != INVALID_HANDLE_VALUE)
+			{
+				FILETIME newestTime = {};
+				wchar_t newestFolder[MAX_PATH] = {};
+				do
+				{
+					if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+						wcscmp(fd.cFileName, L".") != 0 && wcscmp(fd.cFileName, L"..") != 0)
+					{
+						if (CompareFileTime(&fd.ftLastWriteTime, &newestTime) > 0)
+						{
+							newestTime = fd.ftLastWriteTime;
+							wcscpy_s(newestFolder, MAX_PATH, fd.cFileName);
+						}
+					}
+				} while (FindNextFileW(hFind, &fd));
+				FindClose(hFind);
+				if (newestFolder[0] != L'\0')
+				{
+					app.SetCurrentSaveFolderName(newestFolder);
+					app.DebugPrintf("SaveSaveDataCallback: captured save folder via scan '%ls'\n", newestFolder);
+				}
+			}
+		}
+	}
+#endif
 
 #ifdef MINECRAFT_SERVER_BUILD
 	s_bgSaveActive.store(false, std::memory_order_release);

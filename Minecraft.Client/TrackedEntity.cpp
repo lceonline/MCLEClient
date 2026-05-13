@@ -23,6 +23,10 @@
 
 #include <memory>
 
+#ifdef _WINDOWS64
+extern bool g_Win64DedicatedServer;
+#endif
+
 TrackedEntity::TrackedEntity(shared_ptr<Entity> e, int range, int updateInterval, bool trackDelta)
 {
 	// 4J added initialisers
@@ -351,6 +355,19 @@ void TrackedEntity::sendDirtyEntityData()
 
 void TrackedEntity::broadcast(shared_ptr<Packet> packet)
 {
+#ifdef _WINDOWS64
+	// On dedicated servers, IsSameSystem() always returns false for remote players
+	// (no split-screen), so the dedup loop never filters anything. Skip straight
+	// to sending to all players in seenBy to avoid O(seenBy^2) overhead.
+	if (g_Win64DedicatedServer)
+	{
+		for (auto& player : seenBy)
+		{
+			player->connection->send(packet);
+		}
+		return;
+	}
+#endif
 	if( Packet::canSendToAnyClient( packet ) )
 	{
 		// 4J-PB - due to the knockback on a player being hit, we need to send to all players, but limit the network traffic here to players that have not already had it sent to their system
@@ -462,7 +479,13 @@ TrackedEntity::eVisibility TrackedEntity::isVisible(EntityTracker *tracker, shar
 	// 4J - added. Try and find other players who are in the same dimension as this one and on the same machine, and extend our visibility
 	// so things are consider visible to this player if they are near the other one. This is because we only send entity tracking info to
 	// players who canReceiveAllPackets().
-	if(!bVisible)
+	// NOTE: On dedicated servers, all real players are remote so IsSameSystem()
+	// always returns false. Skip this O(players) loop entirely.
+#ifdef _WINDOWS64
+	if (!bVisible && !g_Win64DedicatedServer)
+#else
+	if (!bVisible)
+#endif
 	{
 		MinecraftServer *server = MinecraftServer::getInstance();
 		INetworkPlayer *thisPlayer = sp->connection->getNetworkPlayer();
@@ -674,6 +697,11 @@ shared_ptr<Packet> TrackedEntity::getAddEntityPacket()
 		return std::make_shared<AddEntityPacket>(e, AddEntityPacket::BOAT, yRotp, xRotp, xp, yp, zp);
 	}
 	else if (e->instanceof(eTYPE_ENDERDRAGON))
+	{
+		yHeadRotp = Mth::floor(e->getYHeadRot() * 256 / 360);
+		return std::make_shared<AddMobPacket>(dynamic_pointer_cast<LivingEntity>(e), yRotp, xRotp, xp, yp, zp, yHeadRotp);
+	}
+	else if (e->instanceof(eTYPE_ARMORSTAND))
 	{
 		yHeadRotp = Mth::floor(e->getYHeadRot() * 256 / 360);
 		return std::make_shared<AddMobPacket>(dynamic_pointer_cast<LivingEntity>(e), yRotp, xRotp, xp, yp, zp, yHeadRotp);

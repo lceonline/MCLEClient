@@ -2,7 +2,7 @@
 #include "System.h"
 #include "net.minecraft.world.level.newbiome.layer.h"
 
-FuzzyZoomLayer::FuzzyZoomLayer(int64_t seedMixup, shared_ptr<Layer>parent) : Layer(seedMixup)
+FuzzyZoomLayer::FuzzyZoomLayer(int64_t seed, shared_ptr<Layer> parent, int64_t seedMixup) : Layer(seedMixup)
 {
 	this->parent = parent;
 }
@@ -66,7 +66,7 @@ shared_ptr<Layer>FuzzyZoomLayer::zoom(int64_t seed, shared_ptr<Layer>sup, int co
 	shared_ptr<Layer> result = sup;
 	for (int i = 0; i < count; i++)
 	{
-		result = std::make_shared<FuzzyZoomLayer>(seed + i, result);
+		result = std::make_shared<FuzzyZoomLayer>(seed, result, 0x7D0 + i);
 	}
 	return result;
 }

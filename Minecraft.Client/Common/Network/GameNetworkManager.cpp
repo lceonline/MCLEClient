@@ -1543,7 +1543,7 @@ void CGameNetworkManager::CreateSocket(INetworkPlayer* pNetworkPlayer, bool loca
 			// Update the local IQNetPlayer (at pad index) with the host-assigned smallId.
 			// The NetworkPlayerXbox created by NotifyPlayerJoined already points to
 			// m_player[padIdx], so we just set the smallId for network routing.
-			IQNet::m_player[padIdx].m_smallId = assignedSmallId; 
+			IQNet::m_player[padIdx].m_smallId = assignedSmallId;
 			IQNet::m_player[padIdx].m_resolvedXuid = Win64Xuid::DeriveXuidForPad(Win64Xuid::ResolvePersistentXuidFromName(IQNet::m_player[padIdx].m_gamertag), padIdx);
 
 			// Network socket (not hostLocal) — data goes through TCP via GetLocalSocket

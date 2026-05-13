@@ -7,6 +7,7 @@
 #include "../../LocalPlayer.h"
 #include "../../ItemRenderer.h"
 #include "../../../Minecraft.World/net.minecraft.world.item.h"
+#include "UIScene_BookAndQuillMenu.h"
 
 UIScene::UIScene(int iPad, UILayer *parentLayer)
 {
@@ -310,19 +311,27 @@ void UIScene::loadMovie()
 
 	if(!app.hasArchiveFile(moviePath))
 	{
-		app.DebugPrintf("WARNING: Could not find iggy movie %ls, falling back on 720\n", moviePath.c_str());
+		app.DebugPrintf("WARNING: Could not find iggy movie %ls, trying other resolutions\n", moviePath.c_str());
 
+		// Try 720 first, then 1080 as final fallback
 		moviePath = getMoviePath();
 		moviePath.append(L"720.swf");
 		m_loadedResolution = eSceneResolution_720;
 
 		if(!app.hasArchiveFile(moviePath))
 		{
-			app.DebugPrintf("ERROR: Could not find any iggy movie for %ls!\n", moviePath.c_str());
+			moviePath = getMoviePath();
+			moviePath.append(L"1080.swf");
+			m_loadedResolution = eSceneResolution_1080;
+
+			if(!app.hasArchiveFile(moviePath))
+			{
+				app.DebugPrintf("ERROR: Could not find any iggy movie for %ls!\n", moviePath.c_str());
 #ifndef _CONTENT_PACKAGE
-			DEBUG_BREAK();
+				DEBUG_BREAK();
 #endif
-			app.FatalLoadError();
+				app.FatalLoadError();
+			}
 		}
 	}
 
@@ -343,6 +352,14 @@ void UIScene::loadMovie()
 	// Read movie dimensions from the SWF header (available immediately after
 	// CreateFromMemory, no init tick needed).
 	IggyProperties *properties = IggyPlayerProperties ( swf );
+	if(!properties)
+	{
+		app.DebugPrintf("ERROR: IggyPlayerProperties returned null for scene '%ls'\n", moviePath.c_str());
+#ifndef _CONTENT_PACKAGE
+		__debugbreak();
+#endif
+		app.FatalLoadError();
+	}
 	m_movieHeight = properties->movie_height_in_pixels;
 	m_movieWidth = properties->movie_width_in_pixels;
 	m_renderWidth = m_movieWidth;
@@ -482,6 +499,17 @@ void UIScene::tick()
 			if (result != UIControl_TextInput::eDirectEdit_Continue)
 				onDirectEditFinished(inputs[i], result);
 		}
+		//Attempt at matching input code for textinputs for labels
+		vector<UIControl_Label*> labels;
+		getDirectEditLabels(labels);
+		for (size_t i = 0; i < labels.size(); i++)
+		{
+			//app.DebugPrintf(("label; " + std::to_string(i) + "\n").c_str());
+			UIControl_Label::EDirectEditResult result1 = labels[i]->tickDirectEdit();
+			//app.DebugPrintf(("result; " + std::to_string(result1) + "\n").c_str());
+			if (result1 != UIControl_Label::eDirectEdit_Continue)
+				onDirectEditLabelFinished(labels[i], result1);
+		}
 	}
 #endif
 }
@@ -554,7 +582,7 @@ bool UIScene::handleMouseClick(F32 x, F32 y)
 
 		UIControl::eUIControlType type = ctrl->getControlType();
 		if (type != UIControl::eButton && type != UIControl::eTextInput &&
-			type != UIControl::eCheckBox)
+			type != UIControl::eCheckBox && type != UIControl::eBook && type != UIControl::ePageFlip)
 			continue;
 
 		if (pMainPanel && ctrl->getParentPanel() != pMainPanel)
@@ -757,7 +785,7 @@ void UIScene::setVisible(bool visible)
 
 void UIScene::customDraw(IggyCustomDrawCallbackRegion *region)
 {
-	app.DebugPrintf("Handling custom draw for scene with no override!\n");
+	//app.DebugPrintf("Handling custom draw for scene with no override!\n");
 }
 
 void UIScene::customDrawSlotControl(IggyCustomDrawCallbackRegion *region, int iPad, shared_ptr<ItemInstance> item, float fAlpha, bool isFoil, bool bDecorations)

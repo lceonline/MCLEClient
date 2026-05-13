@@ -52,7 +52,7 @@ void Tag::print(ostream out)
 	out << "";
 }
 
-void Tag::print(char *prefix, wostream out)
+void Tag::print(char *prefix, wostream& out)
 {
 	wstring name = getName();
 

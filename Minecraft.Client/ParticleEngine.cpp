@@ -12,6 +12,7 @@
 #include "../Minecraft.World/net.minecraft.world.level.h"
 #include "../Minecraft.World/StringHelpers.h"
 #include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+#include "../Minecraft.World/InputOutputStream.h"
 
 ResourceLocation ParticleEngine::PARTICLES_LOCATION = ResourceLocation(TN_PARTICLES);
 
@@ -49,7 +50,6 @@ void ParticleEngine::add(shared_ptr<Particle> p)
 			break;
 	}
     int list = p->getAlpha() != 1.0f ? TRANSLUCENT_LIST : OPAQUE_LIST;		// 4J - Brought forward from Java 1.8
-
 	if(	particles[l][t][list].size() >= maxParticles)
 	{
 		particles[l][t][list].pop_front();

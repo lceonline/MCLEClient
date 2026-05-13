@@ -401,20 +401,32 @@ void Packet::writeUtf(const wstring& value, DataOutputStream *dos) // throws IOE
 
 wstring Packet::readUtf(DataInputStream *dis, int maxLength) // throws IOException TODO 4J JEV, should this declare a throws?
 {
+	// Global safety cap to prevent memory exhaustion from malicious string lengths
+	static const int kMaxGlobalStringLength = 8192;
+	if (maxLength > kMaxGlobalStringLength)
+	{
+		maxLength = kMaxGlobalStringLength;
+	}
 
 	short stringLength = dis->readShort();
-	if (stringLength > maxLength || stringLength <= 0)
+	if (stringLength <= 0)
 	{
-        return L"";
-		//        throw new IOException( stream.str() );
+		if (stringLength < 0)
+		{
+			app.DebugPrintf("SECURITY: readUtf received negative string length %d\n", stringLength);
+		}
+		return L"";
 	}
-	if (stringLength < 0)
+	if (stringLength > maxLength)
 	{
-		assert(false);
-		//        throw new IOException(L"Received string length is less than zero! Weird string!");
+		app.DebugPrintf("SECURITY: readUtf received string length %d exceeding max %d\n", stringLength, maxLength);
+		// Consume the declared bytes to keep the stream synchronized
+		dis->skip(static_cast<int64_t>(stringLength) * 2);
+		return L"";
 	}
 
 	wstring builder = L"";
+	builder.reserve(stringLength);
 	for (int i = 0; i < stringLength; i++)
 	{
 		wchar_t rc = dis->readChar();

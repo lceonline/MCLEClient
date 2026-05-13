@@ -12,6 +12,9 @@
 #include "com.mojang.nbt.h"
 #include "ItemEntity.h"
 #include "SoundTypes.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 
 
@@ -232,8 +235,27 @@ void ItemEntity::playerTouch(shared_ptr<Player> player)
 	}
 
 	int orgCount = item->count;
-	if (throwTime == 0 && player->inventory->add(item))
+	if (throwTime == 0)
 	{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		{
+			int outItemId = item->id, outItemCount = orgCount, outItemAux = item->getAuxValue();
+			if (FourKitBridge::FirePlayerPickupItem(
+				player->entityId, entityId, player->dimension,
+				x, y, z,
+				item->id, orgCount, item->getAuxValue(), 0,
+				&outItemId, &outItemCount, &outItemAux))
+				return;
+			if (outItemId != item->id || outItemCount != orgCount || outItemAux != item->getAuxValue())
+			{
+				item = std::make_shared<ItemInstance>(outItemId, outItemCount, outItemAux);
+				setItem(item);
+				orgCount = outItemCount;
+			}
+		}
+#endif
+		if (player->inventory->add(item))
+		{
 		//if (item.id == Tile.treeTrunk.id) player.awardStat(Achievements.mineWood);
 		//if (item.id == Item.leather.id) player.awardStat(Achievements.killCow);
 		//if (item.id == Item.diamond.id) player.awardStat(Achievements.diamonds);
@@ -242,7 +264,7 @@ void ItemEntity::playerTouch(shared_ptr<Player> player)
 		{
 			player->awardStat(GenericStats::diamonds(), GenericStats::param_diamonds());
 
-#ifdef _EXTENDED_ACHIEVEMENTS
+
 			if ( getItem()->getItem()->id )
 			{
 				shared_ptr<Player> pThrower = level->getPlayerByName(getThrower());
@@ -251,7 +273,7 @@ void ItemEntity::playerTouch(shared_ptr<Player> player)
 					pThrower->awardStat(GenericStats::diamondsToYou(), GenericStats::param_diamondsToYou());
 				}
 			}
-#endif
+
 		}
 		if (item->id == Item::blazeRod_Id)
 			player->awardStat(GenericStats::blazeRod(), GenericStats::param_blazeRod());
@@ -260,6 +282,7 @@ void ItemEntity::playerTouch(shared_ptr<Player> player)
 		player->take(shared_from_this(), orgCount);
 		//            System.out.println(item.count + ", " + orgCount);
 		if (item->count <= 0) remove();
+		}
 	}
 }
 

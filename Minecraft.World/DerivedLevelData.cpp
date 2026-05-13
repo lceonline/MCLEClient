@@ -180,6 +180,10 @@ bool DerivedLevelData::isHardcore()
 	return wrapped->isHardcore();
 }
 
+void DerivedLevelData::setHardcore(bool hardcore)
+{
+}
+
 LevelType *DerivedLevelData::getGenerator()
 {
 	return wrapped->getGenerator();

@@ -30,6 +30,12 @@ bool FishingRodItem::isMirroredArt()
 	return true;
 }
 
+// This makes it so that fishing rods can be enchanted at an enchanting table.
+int FishingRodItem::getEnchantmentValue()
+{
+	return 1; // Enchantibility of a fishing rod. // Source: https://minecraft.wiki/w/Fishing_Rod
+}
+
 shared_ptr<ItemInstance> FishingRodItem::use(shared_ptr<ItemInstance> instance, Level *level, shared_ptr<Player> player) 
 {
 	if (player->fishing != nullptr) 

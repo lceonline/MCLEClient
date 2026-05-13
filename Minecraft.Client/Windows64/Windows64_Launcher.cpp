@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include "Windows64_Launcher.h"
+﻿#include "Windows64_Launcher.h"
 #include "Xbox/resource.h"
 #include "../Minecraft.World/Dimension.h"
 #include "../Minecraft.h"
@@ -78,7 +76,7 @@ DWORD WINAPI DiscordRPCThreadFunc(LPVOID lpParam) {
 				newSmallImageKey = "";
 				newSmallImageText = "";
 				break;
-		    }
+			}
 		}
 
 		if (newSmallImageKey != lastSmallImageKey)
@@ -166,7 +164,8 @@ void AttemptFullLoginFlow() {
 		int responseState = Windows64Launcher::API_GetAccountInfo(authenticationToken);
 		if (responseState == 0) {
 			onSuccessfulLogin();
-		} else {
+		}
+		else {
 			onLoginFailed();
 			MessageBoxW(launcher_HWND, L"Unable To Connect To Saved Account", L"Login Failed", MB_OK);
 		}
@@ -417,7 +416,7 @@ LRESULT OnCommandReceived(HWND hWnd, int type) {
 		break;
 	case 6: //Discord
 	{
-		ShellExecute(0, 0, "https://discord.gg/xjc9JW4Bfp", 0, 0 , SW_SHOW );
+		ShellExecute(0, 0, "https://discord.gg/xjc9JW4Bfp", 0, 0, SW_SHOW);
 	}
 	break;
 	}

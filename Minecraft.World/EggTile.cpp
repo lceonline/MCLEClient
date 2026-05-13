@@ -1,8 +1,12 @@
-#include "stdafx.h"
+ #include "stdafx.h"
 #include "EggTile.h"
 #include "net.minecraft.world.level.h"
 #include "net.minecraft.world.level.tile.h"
 #include "net.minecraft.world.entity.item.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 EggTile::EggTile(int id) : Tile(id, Material::egg, isSolidRender())
 {
@@ -70,11 +74,15 @@ void EggTile::teleport(Level *level, int x, int y, int z)
 		int zt = z + level->random->nextInt(16) - level->random->nextInt(16);
 		if (level->getTile(xt, yt, zt) == 0)
 		{
-			// Fix for TU9: Content: Art: Dragon egg teleport particle effect isn't present.
-			// Don't set tiles on client, and don't create particles on the server (matches later change in Java)
-			if(!level->isClientSide)
-			{
-				level->setTileAndData(xt, yt, zt, id, level->getData(x, y, z), Tile::UPDATE_CLIENTS);
+					// Fix for TU9: Content: Art: Dragon egg teleport particle effect isn't present.
+						// Don't set tiles on client, and don't create particles on the server (matches later change in Java)
+						if(!level->isClientSide)
+						{
+			#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+							if (FourKitBridge::FireBlockFromTo(level->dimension->id, x, y, z, xt, yt, zt, 6 /*SELF*/))
+								continue;
+			#endif
+							level->setTileAndData(xt, yt, zt, id, level->getData(x, y, z), Tile::UPDATE_CLIENTS);
 				level->removeTile(x, y, z);
 
 				// 4J Stu - The PC version is wrong as the particles calculated on the client side will point towards a different

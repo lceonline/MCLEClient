@@ -51,6 +51,9 @@ void Compression::ReleaseThreadStorage()
 Compression *Compression::getCompression()
 {
 	const ThreadStorage *tls = static_cast<ThreadStorage *>(TlsGetValue(tlsIdx));
+	if (!tls) {
+		return nullptr;
+	}
 	return tls->compression;
 }
 

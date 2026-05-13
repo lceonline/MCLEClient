@@ -222,7 +222,7 @@ int PortalTile::getResourceCount(Random *random)
 
 int PortalTile::getRenderLayer()
 {
-	return 1;
+	return 2;
 }
 
 void PortalTile::entityInside(Level *level, int x, int y, int z, shared_ptr<Entity> entity)

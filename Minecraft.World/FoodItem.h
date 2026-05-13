@@ -37,8 +37,8 @@ public:
 
 	virtual shared_ptr<ItemInstance> use(shared_ptr<ItemInstance> instance, Level *level, shared_ptr<Player> player);
 
-	int getNutrition();
-	float getSaturationModifier();
+	virtual int getNutrition();
+	virtual float getSaturationModifier();
 	bool isMeat();
 
 	FoodItem *setEatEffect(int id, int durationInSecods, int amplifier, float effectProbability);

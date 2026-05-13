@@ -53,6 +53,7 @@ public:
 	bool isGenerateMapFeatures();
 	void setGameType(GameType *gameType);
 	bool isHardcore();
+	void setHardcore(bool hardcore);
 	LevelType *getGenerator();
 	void setGenerator(LevelType *generator);
 	bool getAllowCommands();

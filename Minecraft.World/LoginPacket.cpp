@@ -34,6 +34,7 @@ LoginPacket::LoginPacket()
 	m_uiGamePrivileges = 0;
 	m_xzSize = LEVEL_MAX_WIDTH;
 	m_hellScale = HELL_LEVEL_MAX_SCALE;
+	m_isHardcore = false;
 }
 
 // Client -> Server
@@ -63,10 +64,11 @@ LoginPacket::LoginPacket(const wstring& userName, int clientVersion, PlayerUID o
 	m_uiGamePrivileges = 0;
 	m_xzSize = LEVEL_MAX_WIDTH;
 	m_hellScale = HELL_LEVEL_MAX_SCALE;
+	m_isHardcore = false;
 }
 
 // Server -> Client
-LoginPacket::LoginPacket(const wstring& userName, int clientVersion, LevelType *pLevelType, int64_t seed, int gameType, char dimension, BYTE mapHeight, BYTE maxPlayers, char difficulty, INT multiplayerInstanceId, BYTE playerIndex, bool newSeaLevel, unsigned int uiGamePrivileges, int xzSize, int hellScale)
+LoginPacket::LoginPacket(const wstring& userName, int clientVersion, LevelType *pLevelType, int64_t seed, int gameType, char dimension, BYTE mapHeight, BYTE maxPlayers, char difficulty, INT multiplayerInstanceId, BYTE playerIndex, bool newSeaLevel, unsigned int uiGamePrivileges, int xzSize, int hellScale, bool isHardcore)
 {
 	this->userName = userName;
 	this->clientVersion = clientVersion;
@@ -92,6 +94,7 @@ LoginPacket::LoginPacket(const wstring& userName, int clientVersion, LevelType *
 	m_uiGamePrivileges = uiGamePrivileges;
 	m_xzSize = xzSize;
 	m_hellScale = hellScale;
+	m_isHardcore = isHardcore;
 }
 
 void LoginPacket::read(DataInputStream *dis) //throws IOException
@@ -106,6 +109,8 @@ void LoginPacket::read(DataInputStream *dis) //throws IOException
 	}
 	seed = dis->readLong();
 	gameType = dis->readInt();
+	m_isHardcore = (gameType & 0x8) != 0;
+	gameType = gameType & ~0x8;
 	dimension = dis->readByte();
 	mapHeight = dis->readByte();
 	maxPlayers = dis->readByte();
@@ -144,7 +149,7 @@ void LoginPacket::write(DataOutputStream *dos) //throws IOException
 		writeUtf(m_pLevelType->getGeneratorName(), dos);
 	}
 	dos->writeLong(seed);
-	dos->writeInt(gameType);
+	dos->writeInt(m_isHardcore ? (gameType | 0x8) : gameType);
 	dos->writeByte(dimension);
 	dos->writeByte(mapHeight);
 	dos->writeByte(maxPlayers);

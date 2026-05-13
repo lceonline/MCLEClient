@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "../XUI/XUI_Death.h"
 #include <assert.h>
+
 #include "../../../Minecraft.World/AABB.h"
 #include "../../../Minecraft.World/Vec3.h"
 #include "../../../Minecraft.World/net.minecraft.stats.h"
@@ -17,10 +18,13 @@
 #include "../../../Minecraft.Client/LevelRenderer.h"
 #include "../../../Minecraft.World/Pos.h"
 #include "../../../Minecraft.World/Dimension.h"
+#include "../../../Minecraft.World/net.minecraft.world.level.storage.h"
+#include "../../../Minecraft.World/compression.h"
+
 #include "../../Minecraft.h"
+#include "../../MinecraftServer.h"
 #include "../../Options.h"
 #include "../../LocalPlayer.h"
-#include "../../../Minecraft.World/compression.h"
 //----------------------------------------------------------------------------------
 // Performs initialization tasks - retrieves controls.
 //----------------------------------------------------------------------------------
@@ -37,8 +41,25 @@ HRESULT CScene_Death::OnInit( XUIMessageInit* pInitData, BOOL& bHandled )
 	}
 	
 	XuiControlSetText(m_Title,app.GetString(IDS_YOU_DIED));
-	XuiControlSetText(m_Buttons[BUTTON_DEATH_RESPAWN],app.GetString(IDS_RESPAWN));
 	XuiControlSetText(m_Buttons[BUTTON_DEATH_EXITGAME],app.GetString(IDS_EXIT_GAME));
+
+	// 4J Added: In hardcore mode, disable respawn and show hardcore death message
+	Minecraft *pMinecraft = Minecraft::GetInstance();
+	bool isHardcore = false;
+	if (pMinecraft != nullptr && pMinecraft->level != nullptr)
+	{
+		isHardcore = pMinecraft->level->getLevelData()->isHardcore();
+	}
+
+	if (isHardcore)
+	{
+		XuiControlSetText(m_Buttons[BUTTON_DEATH_RESPAWN], app.GetString(IDS_HARDCORE_DEATH_MESSAGE));
+		XuiElementSetShow(m_Buttons[BUTTON_DEATH_RESPAWN], FALSE);
+	}
+	else
+	{
+		XuiControlSetText(m_Buttons[BUTTON_DEATH_RESPAWN], app.GetString(IDS_RESPAWN));
+	}
 
 	// Display the tooltips
 	ui.SetTooltips( m_iPad, IDS_TOOLTIPS_SELECT);
@@ -110,7 +131,16 @@ HRESULT CScene_Death::OnNotifyPressEx(HXUIOBJ hObjPressed, XUINotifyPress* pNoti
 						playTime = static_cast<int>(pMinecraft->localplayers[pNotifyPressData->UserIndex]->getSessionTimer());
 					}
 					TelemetryManager->RecordLevelExit(pNotifyPressData->UserIndex, eSen_LevelExitStatus_Failed);
-					
+
+					// 4J Added: Hardcore mode — skip save dialog, exit without saving, delete world
+					if (pMinecraft->level != nullptr && pMinecraft->level->getLevelData()->isHardcore() && g_NetworkManager.IsHost())
+					{
+						MinecraftServer::getInstance()->setSaveOnExit(false);
+						MinecraftServer::getInstance()->setDeleteWorldOnExit(true);
+						app.SetAction(pNotifyPressData->UserIndex, eAppAction_ExitWorld);
+						break;
+					}
+
 					if(StorageManager.GetSaveDisabled())
 					{
 						uiIDA[0]=IDS_CONFIRM_CANCEL;
@@ -172,6 +202,12 @@ HRESULT CScene_Death::OnNotifyPressEx(HXUIOBJ hObjPressed, XUINotifyPress* pNoti
 		break;
 	case BUTTON_DEATH_RESPAWN:
 		{
+			// 4J Added: Safeguard - don't respawn in hardcore mode
+			Minecraft *pMC = Minecraft::GetInstance();
+			if (pMC != nullptr && pMC->level != nullptr && pMC->level->getLevelData()->isHardcore())
+			{
+				break;
+			}
 			m_bIgnoreInput = true;
 			app.SetAction(pNotifyPressData->UserIndex,eAppAction_Respawn);
 		}

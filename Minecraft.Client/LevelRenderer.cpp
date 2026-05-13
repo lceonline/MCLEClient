@@ -11,6 +11,7 @@
 #include "MobSkinTextureProcessor.h"
 #include "MobSkinMemTextureProcessor.h"
 #include "GameRenderer.h"
+#include "BarrierParticle.h"
 #include "BubbleParticle.h"
 #include "SmokeParticle.h"
 #include "NoteParticle.h"
@@ -21,11 +22,13 @@
 #include "LavaParticle.h"
 #include "FootstepParticle.h"
 #include "SplashParticle.h"
+#include "WaterWakeParticle.h"
 #include "SmokeParticle.h"
 #include "RedDustParticle.h"
 #include "BreakingItemParticle.h"
 #include "SnowShovelParticle.h"
 #include "BreakingItemParticle.h"
+#include "MobAppearanceParticle.h"
 #include "HeartParticle.h"
 #include "HugeExplosionParticle.h"
 #include "HugeExplosionSeedParticle.h"
@@ -41,6 +44,7 @@
 #include "Lighting.h"
 #include "Options.h"
 #include "MultiPlayerChunkCache.h"
+#include "../Minecraft.World/BlockPos.h"
 #include "../Minecraft.World/ParticleTypes.h"
 #include "../Minecraft.World/IntCache.h"
 #include "../Minecraft.World/IntBuffer.h"
@@ -62,6 +66,7 @@
 #include "FrustumCuller.h"
 #include "../Minecraft.World/BasicTypeContainers.h"
 #include "Common/UI/UIScene_SettingsGraphicsMenu.h"	
+#include <unordered_set>
 
 //#define DISABLE_SPU_CODE
 
@@ -136,8 +141,9 @@ LevelRenderer::LevelRenderer(Minecraft *mc, Textures *textures)
 	culledEntities = 0;
 	chunkFixOffs = 0;
 	frame = 0;
+#ifndef MINECRAFT_SERVER_BUILD
 	repeatList = MemoryTracker::genLists(1);
-
+#endif
 	destroyProgress = 0.0f;
 
 	totalChunks= offscreenChunks= occludedChunks= renderedChunks= emptyChunks = 0;
@@ -157,10 +163,17 @@ LevelRenderer::LevelRenderer(Minecraft *mc, Textures *textures)
 	dirtyChunkPresent = false;
 	lastDirtyChunkFound = 0;
 
+	visibleLists_layer0 = nullptr;
+	visibleLists_layer1 = nullptr;
+	visibleLists_layer2 = nullptr;
+	visibleCount_layer0 = 0;
+	visibleCount_layer1 = 0;
+	visibleCount_layer2 = 0;
+
 	this->mc = mc;
 	this->textures = textures;
-
-	chunkLists = MemoryTracker::genLists(getGlobalChunkCount()*2);		// *2 here is because there is one renderlist per chunk here for each of the opaque & transparent layers
+#ifndef MINECRAFT_SERVER_BUILD
+	chunkLists = MemoryTracker::genLists(getGlobalChunkCount() * CHUNK_RENDER_LAYERS);		// One render list per chunk render layer.
 	globalChunkFlags = new unsigned char[getGlobalChunkCount()];
 	memset(globalChunkFlags, 0, getGlobalChunkCount());
 
@@ -249,6 +262,7 @@ LevelRenderer::LevelRenderer(Minecraft *mc, Textures *textures)
 		t->end();
 		glEndList();
 	}
+#endif
 
 	Chunk::levelRenderer = this;
 
@@ -455,6 +469,14 @@ void LevelRenderer::allChanged(int playerIndex)
 		//		delete sortedChunks[playerIndex];	// 4J - removed - not sorting our chunks anymore
 	}
 
+	// Free old visible chunk lists
+	delete[] visibleLists_layer0;
+	delete[] visibleLists_layer1;
+	delete[] visibleLists_layer2;
+	visibleLists_layer0 = nullptr;
+	visibleLists_layer1 = nullptr;
+	visibleLists_layer2 = nullptr;
+
 	chunks[playerIndex] = ClipChunkArray(xChunks * yChunks * zChunks);
 	//	sortedChunks[playerIndex] = new vector<Chunk *>(xChunks * yChunks * zChunks);		// 4J - removed - not sorting our chunks anymore
 	int id = 0;
@@ -487,6 +509,15 @@ void LevelRenderer::allChanged(int playerIndex)
 	}
 	nonStackDirtyChunksAdded();
 
+	// Allocate visible chunk lists (worst case: all chunks visible)
+	int totalChunkCount = xChunks * yChunks * zChunks;
+	visibleLists_layer0 = new int[totalChunkCount];
+	visibleLists_layer1 = new int[totalChunkCount];
+	visibleLists_layer2 = new int[totalChunkCount];
+	visibleCount_layer0 = 0;
+	visibleCount_layer1 = 0;
+	visibleCount_layer2 = 0;
+
 	if (level != nullptr)
 	{
 		shared_ptr<Entity> player = mc->cameraTargetPlayer;
@@ -507,6 +538,7 @@ void LevelRenderer::allChanged(int playerIndex)
 
 void LevelRenderer::renderEntities(Vec3 *cam, Culler *culler, float a)
 {
+#ifndef MINECRAFT_SERVER_BUILD
 	if (mc == nullptr || mc->player == nullptr)
 	{
 		return;
@@ -633,6 +665,7 @@ void LevelRenderer::renderEntities(Vec3 *cam, Culler *culler, float a)
 	LeaveCriticalSection(&m_csRenderableTileEntities);
 
 	mc->gameRenderer->turnOffLightLayer(a);		// 4J - brought forward from 1.8.2
+#endif
 }
 
 wstring LevelRenderer::gatherStats1()
@@ -705,42 +738,42 @@ int LevelRenderer::render(shared_ptr<LivingEntity> player, int layer, double alp
 {
 	int playerIndex = mc->player->GetXboxPad();
 
-	// 4J - added - if the number of players has changed, we need to rebuild things for the new draw distance this will require
-	if( lastPlayerCount[playerIndex] != activePlayers() )
-	{
-		allChanged();
-	}
-	else if (mc->options->viewDistance != lastViewDistance)
-	{
-		allChanged();
-	}
-
+	// Only check allChanged/resortChunks on layer 0 — they only need to run once per frame
 	if (layer == 0)
 	{
+		// 4J - added - if the number of players has changed, we need to rebuild things for the new draw distance this will require
+		if( lastPlayerCount[playerIndex] != activePlayers() )
+		{
+			allChanged();
+		}
+		else if (mc->options->viewDistance != lastViewDistance)
+		{
+			allChanged();
+		}
+
 		totalChunks = 0;
 		offscreenChunks = 0;
 		occludedChunks = 0;
 		renderedChunks = 0;
 		emptyChunks = 0;
+
+		double xd = player->x - xOld[playerIndex];
+		double yd = player->y - yOld[playerIndex];
+		double zd = player->z - zOld[playerIndex];
+
+		if (xd * xd + yd * yd + zd * zd > 4 * 4)
+		{
+			xOld[playerIndex] = player->x;
+			yOld[playerIndex] = player->y;
+			zOld[playerIndex] = player->z;
+
+			resortChunks(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z));
+		}
 	}
 
 	double xOff = player->xOld + (player->x - player->xOld) * alpha;
 	double yOff = player->yOld + (player->y - player->yOld) * alpha;
 	double zOff = player->zOld + (player->z - player->zOld) * alpha;
-
-	double xd = player->x - xOld[playerIndex];
-	double yd = player->y - yOld[playerIndex];
-	double zd = player->z - zOld[playerIndex];
-
-	if (xd * xd + yd * yd + zd * zd > 4 * 4)
-	{
-		xOld[playerIndex] = player->x;
-		yOld[playerIndex] = player->y;
-		zOld[playerIndex] = player->z;
-
-		resortChunks(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z));
-		//		sort(sortedChunks[playerIndex]->begin(),sortedChunks[playerIndex]->end(), DistanceChunkSorter(player));	// 4J - removed - not sorting our chunks anymore
-	}
 	Lighting::turnOff();
 
 	int count = renderChunks(0, static_cast<int>(chunks[playerIndex].length), layer, alpha);
@@ -749,8 +782,51 @@ int LevelRenderer::render(shared_ptr<LivingEntity> player, int layer, double alp
 
 }
 
+// Lightweight render path for the second layer 1 pass — skips allChanged/resortChunks checks
+// and just does GL setup + visible list iteration + cleanup.
+// Assumes Lighting::turnOff() was already called by the prior render() invocation.
+void LevelRenderer::renderChunksDirect(int layer, double alpha)
+{
+	shared_ptr<LivingEntity> player = mc->cameraTargetPlayer;
+	if (player == nullptr) return;
+
+	mc->gameRenderer->turnOnLightLayer(alpha);
+	double xOff = player->xOld + (player->x - player->xOld) * alpha;
+	double yOff = player->yOld + (player->y - player->yOld) * alpha;
+	double zOff = player->zOld + (player->z - player->zOld) * alpha;
+
+	glPushMatrix();
+	glTranslatef(static_cast<float>(-xOff), static_cast<float>(-yOff), static_cast<float>(-zOff));
+
+	int *lists = visibleLists_layer2;
+	int numVisible = visibleCount_layer2;
+	if (layer == 0)
+	{
+		lists = visibleLists_layer0;
+		numVisible = visibleCount_layer0;
+	}
+	else if (layer == 1)
+	{
+		lists = visibleLists_layer1;
+		numVisible = visibleCount_layer1;
+	}
+	bool first = true;
+	if (lists != nullptr)
+	{
+		for (int i = 0; i < numVisible; i++)
+		{
+			if (RenderManager.CBuffCall(lists[i], first))
+				first = false;
+		}
+	}
+
+	glPopMatrix();
+	mc->gameRenderer->turnOffLightLayer(alpha);
+}
+
 #ifdef __PSVITA__
 #include <stdlib.h>
+
 
 // this is need to sort the chunks by depth
 typedef struct
@@ -819,23 +895,45 @@ int LevelRenderer::renderChunks(int from, int to, int layer, double alpha)
 
 	bool first = true;
 	int count = 0;
-	ClipChunk *pClipChunk = chunks[playerIndex].data;
-	unsigned char emptyFlag = LevelRenderer::CHUNK_FLAG_EMPTY0 << layer;
-	for( int i = 0; i < chunks[playerIndex].length; i++, pClipChunk++ )
+
+	// Use compact visible lists built during cull() instead of iterating all chunks
+	int *lists = visibleLists_layer2;
+	int numVisible = visibleCount_layer2;
+	if (layer == 0)
 	{
-		if( !pClipChunk->visible ) continue;													// This will be set if the chunk isn't visible, or isn't compiled, or has both empty flags set
-		if( pClipChunk->globalIdx == -1 ) continue;												// Not sure if we should ever encounter this... TODO check
-		if( ( globalChunkFlags[pClipChunk->globalIdx] & emptyFlag ) == emptyFlag ) continue;	// Check that this particular layer isn't empty
-
-		// List can be calculated directly from the chunk's global idex
-		int list = pClipChunk->globalIdx * 2 + layer;
-		list += chunkLists;
-
-		if(RenderManager.CBuffCall(list, first))
+		lists = visibleLists_layer0;
+		numVisible = visibleCount_layer0;
+	}
+	else if (layer == 1)
+	{
+		lists = visibleLists_layer1;
+		numVisible = visibleCount_layer1;
+	}
+	if (lists != nullptr)
+	{
+		for (int i = 0; i < numVisible; i++)
 		{
-			first = false;
+			if (RenderManager.CBuffCall(lists[i], first))
+				first = false;
+			count++;
 		}
-		count++;
+	}
+	else
+	{
+		// Fallback: iterate all chunks (before visible lists are allocated)
+		ClipChunk *pClipChunk = chunks[playerIndex].data;
+		unsigned char emptyFlag = LevelRenderer::CHUNK_FLAG_EMPTY0 << layer;
+		for( int i = 0; i < chunks[playerIndex].length; i++, pClipChunk++ )
+		{
+			if( !pClipChunk->visible ) continue;
+			if( pClipChunk->globalIdx == -1 ) continue;
+			if (layer < 2 && ( globalChunkFlags[pClipChunk->globalIdx] & emptyFlag ) == emptyFlag) continue;
+			int list = pClipChunk->globalIdx * CHUNK_RENDER_LAYERS + layer;
+			list += chunkLists;
+			if(RenderManager.CBuffCall(list, first))
+				first = false;
+			count++;
+		}
 	}
 
 #ifdef __PSVITA__
@@ -849,11 +947,11 @@ int LevelRenderer::renderChunks(int from, int to, int layer, double alpha)
 	{
 		if( !pClipChunk->visible ) continue;													// This will be set if the chunk isn't visible, or isn't compiled, or has both empty flags set
 		if( pClipChunk->globalIdx == -1 ) continue;												// Not sure if we should ever encounter this... TODO check
-		if( ( globalChunkFlags[pClipChunk->globalIdx] & emptyFlag ) == emptyFlag ) continue;	// Check that this particular layer isn't empty
+		if (layer < 2 && ( globalChunkFlags[pClipChunk->globalIdx] & emptyFlag ) == emptyFlag) continue;	// Check that this particular layer isn't empty
 		if( !(globalChunkFlags[pClipChunk->globalIdx] & LevelRenderer::CHUNK_FLAG_CUT_OUT) ) continue;	// Does this chunk contain any cut out geometry
 
 		// List can be calculated directly from the chunk's global idex
-		int list = pClipChunk->globalIdx * 2 + layer;
+		int list = pClipChunk->globalIdx * CHUNK_RENDER_LAYERS + layer;
 		list += chunkLists;
 
 		if(RenderManager.CBuffCallCutOut(list, first))
@@ -964,6 +1062,15 @@ void LevelRenderer::tick()
 				++it;
 			}
 		}
+	}
+
+	if (mc && mc->player)
+	{
+		doBarrierParticles(
+			mc->player->x,
+			mc->player->y,
+			mc->player->z
+		);
 	}
 }
 
@@ -1968,6 +2075,9 @@ bool LevelRenderer::updateDirtyChunks()
 					for( int y = 0; y < CHUNK_Y_COUNT; y++ )
 					{
 						ClipChunk *pClipChunk = &chunks[p][(z * yChunks + y) * xChunks + x];
+						// Early-out for non-dirty chunks - avoids distance calculation for the vast majority at steady state
+						if( !(globalChunkFlags[ pClipChunk->globalIdx ] & CHUNK_FLAG_DIRTY) )
+							continue;
 						// Get distance to this chunk - deliberately not calling the chunk's method of doing this to avoid overheads (passing entitie, type conversion etc.) that this involves
 						int xd = pClipChunk->xm - px;
 						int yd = pClipChunk->ym - py;
@@ -2163,7 +2273,9 @@ bool LevelRenderer::updateDirtyChunks()
 	else
 	{
 		// Nothing to do - clear flags that there are things to process, unless it's been a while since we found any dirty chunks in which case force a check next time through
-		if( ( System::currentTimeMillis() - lastDirtyChunkFound ) > FORCE_DIRTY_CHUNK_CHECK_PERIOD_MS )
+		// Scale recheck period with render distance to reduce wasted full-scans at high distances
+		int recheckPeriod = (xChunks >= 60) ? 1000 : (xChunks >= 40) ? 500 : FORCE_DIRTY_CHUNK_CHECK_PERIOD_MS;
+		if( ( System::currentTimeMillis() - lastDirtyChunkFound ) > recheckPeriod )
 		{
 			dirtyChunkPresent = true;
 		}
@@ -2564,32 +2676,76 @@ void LevelRenderer::cull(Culler *culler, float a)
 		fdraw[i * 4 + 3] = static_cast<float>(fd->m_Frustum[i][3] + (fx * -fc->xOff) + (fy * -fc->yOff) + (fz * -fc->zOff));
 	}
 
-	ClipChunk *pClipChunk = chunks[playerIndex].data;
 	int vis = 0;
 	int total = 0;
 	int numWrong = 0;
-	for (unsigned int i = 0; i < chunks[playerIndex].length; i++)
+
+	// Reset visible chunk lists for this frame
+	visibleCount_layer0 = 0;
+	visibleCount_layer1 = 0;
+	visibleCount_layer2 = 0;
+
+	// Column-level frustum culling: test one AABB per XZ column before testing individual Y chunks.
+	// At dist 64 this reduces ~278K clip() calls to ~17K column tests + per-chunk tests only for visible columns.
+	for (int x = 0; x < xChunks; x++)
 	{
-		unsigned char flags = pClipChunk->globalIdx == -1 ? 0 : globalChunkFlags[ pClipChunk->globalIdx ];
+		for (int z = 0; z < zChunks; z++)
+		{
+			// Build column AABB from bottom and top chunks in this column
+			ClipChunk *bottomChunk = &chunks[playerIndex][(z * yChunks + 0) * xChunks + x];
+			ClipChunk *topChunk = &chunks[playerIndex][(z * yChunks + (yChunks - 1)) * xChunks + x];
+			float columnAABB[6] = {
+				bottomChunk->aabb[0], bottomChunk->aabb[1], bottomChunk->aabb[2],  // minX, minY, minZ
+				bottomChunk->aabb[3], topChunk->aabb[4],    bottomChunk->aabb[5]   // maxX, maxY(top), maxZ
+			};
 
-		// Always perform frustum cull test
-		bool clipres = clip(pClipChunk->aabb, fdraw);
+			// Test entire column against frustum
+			if (!clip(columnAABB, fdraw))
+			{
+				// Entire column outside frustum — mark all Y chunks invisible
+				for (int y = 0; y < yChunks; y++)
+				{
+					ClipChunk *pClipChunk = &chunks[playerIndex][(z * yChunks + y) * xChunks + x];
+					pClipChunk->visible = false;
+				}
+				continue;
+			}
 
-		if ( (flags & CHUNK_FLAG_COMPILED ) && ( ( flags & CHUNK_FLAG_EMPTYBOTH ) != CHUNK_FLAG_EMPTYBOTH ) )
-		{
-			pClipChunk->visible = clipres;
-			if( pClipChunk->visible ) vis++;
-			total++;
+			// Column is (partially) in frustum — test individual chunks
+			for (int y = 0; y < yChunks; y++)
+			{
+				ClipChunk *pClipChunk = &chunks[playerIndex][(z * yChunks + y) * xChunks + x];
+				unsigned char flags = pClipChunk->globalIdx == -1 ? 0 : globalChunkFlags[ pClipChunk->globalIdx ];
+
+				bool clipres = clip(pClipChunk->aabb, fdraw);
+
+				if ( (flags & CHUNK_FLAG_COMPILED ) && ( ( flags & CHUNK_FLAG_EMPTYBOTH ) != CHUNK_FLAG_EMPTYBOTH ) )
+				{
+					pClipChunk->visible = clipres;
+					if( pClipChunk->visible ) vis++;
+					total++;
+				}
+				else if (clipres)
+				{
+					pClipChunk->visible = true;
+				}
+				else
+				{
+					pClipChunk->visible = false;
+				}
+
+				// Build compact visible chunk lists for renderChunks()
+				if (pClipChunk->visible && pClipChunk->globalIdx != -1 && visibleLists_layer0 != nullptr)
+				{
+					int list = pClipChunk->globalIdx * CHUNK_RENDER_LAYERS + chunkLists;
+					if (!((flags & CHUNK_FLAG_EMPTY0) == CHUNK_FLAG_EMPTY0))
+						visibleLists_layer0[visibleCount_layer0++] = list;
+					if (!((flags & CHUNK_FLAG_EMPTY1) == CHUNK_FLAG_EMPTY1))
+						visibleLists_layer1[visibleCount_layer1++] = list + 1;
+					visibleLists_layer2[visibleCount_layer2++] = list + 2;
+				}
+			}
 		}
-		else if (clipres)
-		{
-			pClipChunk->visible = true;
-		}
-		else
-		{
-			pClipChunk->visible = false;
-		}
-		pClipChunk++;
 	}
 }
 
@@ -2709,7 +2865,7 @@ shared_ptr<Particle> LevelRenderer::addParticleInternal(ePARTICLE_TYPE eParticle
 	// 4J - the java code doesn't distance cull these two particle types, we need to implement this behaviour differently as our distance check is
 	// mixed up with other things
 	bool distCull = true;
-	if ( (eParticleType == eParticleType_hugeexplosion) || (eParticleType == eParticleType_largeexplode) || (eParticleType == eParticleType_dragonbreath) )
+	if ( (eParticleType == eParticleType_hugeexplosion) || (eParticleType == eParticleType_largeexplode) || (eParticleType == eParticleType_dragonbreath) || (eParticleType == eParticleType_wake)||(eParticleType == eParticleType_mobAppearance))
 	{
 		distCull = false;
 	}
@@ -2882,6 +3038,9 @@ shared_ptr<Particle> LevelRenderer::addParticleInternal(ePARTICLE_TYPE eParticle
 	case eParticleType_splash:
 		particle = std::make_shared<SplashParticle>(lev, x, y, z, xa, ya, za);
 		break;
+	case eParticleType_wake:
+		particle = std::make_shared<WaterWakeParticle>(lev, x, y, z, xa, ya, za);
+		break;
 	case eParticleType_largesmoke:
 		particle = std::make_shared<SmokeParticle>(lev, x, y, z, xa, ya, za, 2.5f);
 		break;
@@ -2919,6 +3078,13 @@ shared_ptr<Particle> LevelRenderer::addParticleInternal(ePARTICLE_TYPE eParticle
 	case eParticleType_dragonbreath:
 		particle = std::make_shared<DragonBreathParticle>(lev, x, y, z, xa, ya, za);
 		break;
+	case eParticleType_barrier:
+		particle = std::make_shared<BarrierParticle>(lev, x, y, z, xa, ya, za);
+		break;
+		case eParticleType_mobAppearance:
+        particle = std::make_shared<MobAppearanceParticle>(lev, x, y, z);
+        break;
+
 	default:
 		if( ( eParticleType >= eParticleType_iconcrack_base ) &&  ( eParticleType <= eParticleType_iconcrack_last )  )
 		{
@@ -2938,6 +3104,76 @@ shared_ptr<Particle> LevelRenderer::addParticleInternal(ePARTICLE_TYPE eParticle
 	}
 
 	return particle;
+}
+
+void LevelRenderer::doBarrierParticles(int posX, int posY, int posZ)
+{
+	// get currently selected item
+	shared_ptr<ItemInstance> held = mc->player->getSelectedItem();
+
+	bool isCreative = false;
+	if (mc->gameMode != nullptr) {
+		isCreative = (mc->gameMode->getLocalPlayerMode() == GameType::CREATIVE);
+	} else {
+		int lp = mc->getLocalPlayerIdx();
+		if (lp >= 0 && lp < XUSER_MAX_COUNT && mc->localgameModes[lp] != nullptr)
+			isCreative = (mc->localgameModes[lp]->getLocalPlayerMode() == GameType::CREATIVE);
+	}
+
+	bool holdingBarrier = isCreative && held != nullptr && held->id == Tile::barrier_Id;
+
+	if (!holdingBarrier)
+		return;
+
+	Random random;
+	BlockPos pos;
+
+	// track spawned particle position(s)
+	std::unordered_set<int> spawnedPositions;
+
+	for (int i = 0; i < 667; i++)
+	{
+		spawnBarrierParticles(posX, posY, posZ, 16, random, holdingBarrier, pos, spawnedPositions);
+		spawnBarrierParticles(posX, posY, posZ, 32, random, holdingBarrier, pos, spawnedPositions);
+	}
+}
+
+void LevelRenderer::spawnBarrierParticles(
+	int x, int y, int z,
+	int radius,
+	Random& random,
+	bool holdingBarrier,
+	BlockPos& pos,
+	std::unordered_set<int> &spawnedPositions)
+{
+    if (!holdingBarrier)
+        return;
+
+	int bx = x + random.nextInt(radius * 2) - radius;
+	int by = y + random.nextInt(radius * 2) - radius;
+	int bz = z + random.nextInt(radius * 2) - radius;
+
+	pos.set(bx, by, bz);
+
+	int tileId = mc->level->getTile(pos.getX(), pos.getY(), pos.getZ());
+
+	// spawn particles
+	if (tileId == Tile::barrier_Id)
+	{
+		int key = pos.hashCode();
+		if (spawnedPositions.find(key) == spawnedPositions.end()) {
+			spawnedPositions.insert(key);
+			mc->particleEngine->add(
+				std::make_shared<BarrierParticle>(
+					mc->level,
+					bx + 0.5,
+					by + 0.5,
+					bz + 0.5,
+					0, 0, 0
+				)
+			);
+		}
+	}
 }
 
 void LevelRenderer::entityAdded(shared_ptr<Entity> entity)
@@ -3728,7 +3964,9 @@ int LevelRenderer::rebuildChunkThreadProc(LPVOID lpParam)
 	AABB::CreateNewThreadStorage();
 	IntCache::CreateNewThreadStorage();
 	Tesselator::CreateNewThreadStorage(1024*1024);
+#ifndef MINECRAFT_SERVER_BUILD
 	RenderManager.InitialiseContext();
+#endif
 	Chunk::CreateNewThreadStorage();
 	Tile::CreateNewThreadStorage();
 

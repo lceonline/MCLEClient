@@ -100,7 +100,7 @@ void LeafTile::onRemove(Level *level, int x, int y, int z, int id, int data)
 				for (int zo = -r; zo <= r; zo++)
 				{
 					int t = level->getTile(x + xo, y + yo, z + zo);
-					if (t == Tile::leaves_Id)
+					if (t == Tile::leaves_Id|| t == Tile::leaves2_Id)
 					{
 						int currentData = level->getData(x + xo, y + yo, z + zo);
 						level->setData(x + xo, y + yo, z + zo, currentData | UPDATE_LEAF_BIT, Tile::UPDATE_NONE);
@@ -137,11 +137,11 @@ void LeafTile::tick(Level *level, int x, int y, int z, Random *random)
 					for (int yo = -r; yo <= r; yo++)
 					{
 						int t = level->getTile(x + xo, y + yo, z + zo);
-						if (t == Tile::treeTrunk_Id)
+						if (t == Tile::treeTrunk_Id || t == Tile::tree2Trunk_Id)
 						{
 							checkBuffer[(xo + WO) * WW + (yo + WO) * W + (zo + WO)] = 0;
 						}
-						else if (t == Tile::leaves_Id)
+						else if (t == Tile::leaves_Id || t == Tile::leaves2_Id)
 						{
 							checkBuffer[(xo + WO) * WW + (yo + WO) * W + (zo + WO)] = -2;
 						}

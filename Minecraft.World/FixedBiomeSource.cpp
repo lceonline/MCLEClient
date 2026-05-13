@@ -45,7 +45,11 @@ floatArray FixedBiomeSource::getTemperatureBlock(int x, int z, int w, int h) con
 // 4J - note that caller is responsible for deleting returned array. temperatures array is for output only.
 void FixedBiomeSource::getTemperatureBlock(doubleArray& temperatures, int x, int z, int w, int h) const
 {
-	temperatures = doubleArray(w * h);
+	if (temperatures.data == nullptr || temperatures.length < w * h)
+	{
+		if(temperatures.data != nullptr) delete [] temperatures.data;
+		temperatures = doubleArray(w * h);
+	}
 
 	Arrays::fill(temperatures, 0, w * h, (double)temperature);
 }
@@ -86,7 +90,11 @@ void FixedBiomeSource::getDownfallBlock(doubleArray downfalls, int x, int z, int
 void FixedBiomeSource::getBiomeBlock(BiomeArray& biomes, int x, int z, int w, int h, bool useCache) const
 {
 	MemSect(36);
-	biomes = BiomeArray(w * h);
+	if (biomes.data == nullptr || biomes.length < w * h)
+	{
+		if(biomes.data != nullptr) delete [] biomes.data;
+		biomes = BiomeArray(w * h);
+	}
 	MemSect(0);
 
 	Arrays::fill(biomes, 0, w * h, biome);
@@ -96,7 +104,11 @@ void FixedBiomeSource::getBiomeBlock(BiomeArray& biomes, int x, int z, int w, in
 void FixedBiomeSource::getBiomeIndexBlock(byteArray& biomeIndices, int x, int z, int w, int h, bool useCache) const
 {
 	MemSect(36);
-	biomeIndices = byteArray(w * h);
+	if (biomeIndices.data == nullptr || biomeIndices.length < w * h)
+	{
+		if(biomeIndices.data != nullptr) delete [] biomeIndices.data;
+		biomeIndices = byteArray(w * h);
+	}
 	MemSect(0);
 	int biomeIndex = biome->id;
 	Arrays::fill(biomeIndices, 0, w * h, biomeIndex);
@@ -107,7 +119,11 @@ void FixedBiomeSource::getBiomeIndexBlock(byteArray& biomeIndices, int x, int z,
 void FixedBiomeSource::getRawBiomeBlock(BiomeArray& biomes,int x, int z, int w, int h) const
 {
 	MemSect(36);
-	biomes = BiomeArray(w * h);
+	if (biomes.data == nullptr || biomes.length < w * h)
+	{
+		if(biomes.data != nullptr) delete [] biomes.data;
+		biomes = BiomeArray(w * h);
+	}
 	MemSect(0);
 
 	Arrays::fill(biomes, 0, w * h, biome);

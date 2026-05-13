@@ -12,7 +12,7 @@ constexpr float SFX_3D_ROLLOFF = 0.5f;
 constexpr float SFX_VOLUME_MULTIPLIER = 1.5f;
 constexpr float SFX_MAX_GAIN = 1.5f;
 
-enum eMUSICFILES
+enum eMusicFiles
 {
 	eStream_Overworld_Calm1 = 0,
 	eStream_Overworld_Calm2,
@@ -23,7 +23,6 @@ enum eMUSICFILES
 	eStream_Overworld_hal4,
 	eStream_Overworld_nuance1,
 	eStream_Overworld_nuance2,
-#ifndef _XBOX
 	// Add the new music tracks
 	eStream_Overworld_Creative1,
 	eStream_Overworld_Creative2,
@@ -35,7 +34,6 @@ enum eMUSICFILES
 	eStream_Overworld_Menu2,
 	eStream_Overworld_Menu3,
 	eStream_Overworld_Menu4,
-#endif
 	eStream_Overworld_piano1,
 	eStream_Overworld_piano2,
 	eStream_Overworld_piano3, // <-- make piano3 the last overworld one
@@ -47,6 +45,11 @@ enum eMUSICFILES
 	// The End
 	eStream_end_dragon,
 	eStream_end_end,
+    // Battle
+    eStream_BattleMode1,
+    eStream_BattleMode2,
+    eStream_BattleMode3,
+    eStream_BattleMode4,
 	eStream_CD_1,
 	eStream_CD_2,
 	eStream_CD_3,
@@ -62,15 +65,20 @@ enum eMUSICFILES
 	eStream_Max,
 };
 
-enum eMUSICTYPE
+enum eMusicType
 {
-	eMusicType_None,
-	eMusicType_Game,
-	eMusicType_CD,
+    eMusicType_Nether = 0,
+    // ???
+    eMusicType_Menu = 2,
+    // ???
+    eMusicType_End = 4,
+    eMusicType_Creative = 5,
+    eMusicType_Battle = 6,
+    eMusicType_Overworld = 7,
 };
 
 
-enum MUSIC_STREAMSTATE
+enum eMusicStreamState
 {
 	eMusicStreamState_Idle=0,
 	eMusicStreamState_Stop,
@@ -119,6 +127,8 @@ public:
 	void GetSoundName(char *szSoundName,int iSound);
 #endif
     void play(int iSound, float x, float y, float z, float volume, float pitch) override;
+	void startElytraSound(float x, float y, float z, float volume, float pitch);
+	void stopElytraSound();
     void playStreaming(const wstring& name, float x, float y , float z, float volume, float pitch, bool bMusicDelay=true) override;
     void playUI(int iSound, float volume, float pitch) override;
     void playMusicTick() override;
@@ -132,10 +142,11 @@ public:
     void addStreaming(const wstring& name, File *file) override;
     char *ConvertSoundPathToName(const wstring& name, bool bConvertSpaces=false) override;
 	bool isStreamingWavebankReady();		// 4J Added
-	int getMusicID(int iDomain);
+	int getMusicID(eMusicType iDomain);
 	int getMusicID(const wstring& name);
-	void SetStreamingSounds(int iOverworldMin, int iOverWorldMax, int iNetherMin, int iNetherMax, int iEndMin, int iEndMax, int iCD1);
+    void SetStreamingSounds(int iOverworldMin, int iOverWorldMax, int iNetherMin, int iNetherMax, int iEndMin, int iEndMax, int iCreativeMin, int iCreativeMax, int iMenuMin, int iMenuMax, int iBattleMin, int iBattleMax, int iCD1);
 	void updateMiniAudio();
+    inline void getGameModeMusicID(Minecraft* pMinecraft, unsigned int i);
 	void playMusicUpdate();
 
 private:
@@ -149,6 +160,9 @@ private:
 #endif
 	
 	int GetRandomishTrack(int iStart,int iEnd);
+
+	MiniAudioSound* m_elytraLoopingSound = nullptr;
+
 
 	ma_engine m_engine;
 	ma_engine_config m_engineConfig;
@@ -168,7 +182,6 @@ private:
 	int m_musicID;
 	int m_iMusicDelay;
 	int m_StreamState;
-	int m_MusicType;
 	AUDIO_INFO m_StreamingAudioInfo;
 	wstring m_CDMusic;
 	BOOL m_bSystemMusicPlaying;
@@ -184,6 +197,9 @@ private:
 	int m_iStream_Overworld_Min,m_iStream_Overworld_Max;
 	int m_iStream_Nether_Min,m_iStream_Nether_Max;
 	int m_iStream_End_Min,m_iStream_End_Max;
+    int m_iStream_Creative_Min,m_iStream_Creative_Max;
+    int m_iStream_Menu_Min,m_iStream_Menu_Max;
+    int m_iStream_Battle_Min,m_iStream_Battle_Max;
 	int m_iStream_CD_1;
 	bool *m_bHeardTrackA;
 

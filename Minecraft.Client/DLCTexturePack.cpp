@@ -35,10 +35,31 @@ DLCTexturePack::DLCTexturePack(DWORD id, DLCPack *pack, TexturePack *fallback) :
 	m_pSoundBank=nullptr;
 #endif
 
-	if(m_dlcInfoPack->doesPackContainFile(DLCManager::e_DLCType_LocalisationData, L"languages.loc"))
+	// Fireblade - attempt to use .loc first as i dont think we really mess with dlcs that much
+	if (m_stringTable == nullptr)
 	{
-		DLCLocalisationFile *localisationFile = static_cast<DLCLocalisationFile *>(m_dlcInfoPack->getFile(DLCManager::e_DLCType_LocalisationData, L"languages.loc"));
+	    if(m_dlcInfoPack->doesPackContainFile(DLCManager::e_DLCType_LocalisationData, L"languages.loc"))
+	    {
+		DLCLocalisationFile *localisationFile = static_cast<DLCLocalisationFile *>(
+		    m_dlcInfoPack->getFile(DLCManager::e_DLCType_LocalisationData, L"languages.loc")
+		);
 		m_stringTable = localisationFile->getStringTable();
+	    }
+	}
+
+	// fallback in case languages.loc is not found
+	if (m_stringTable == nullptr)
+	{
+	    if (m_dlcInfoPack->getDLCItemsCount(DLCManager::e_DLCType_LocalisationData) > 0)
+	    {
+		DLCLocalisationFile* localisationFile = static_cast<DLCLocalisationFile*>(
+		    m_dlcInfoPack->getFile(DLCManager::e_DLCType_LocalisationData, 0)
+		);
+		if (localisationFile != nullptr)
+		{
+		    m_stringTable = localisationFile->getStringTable();
+		}
+	    }
 	}
 
 	// 4J Stu - These calls need to be in the most derived version of the class
@@ -473,18 +494,63 @@ int DLCTexturePack::packMounted(LPVOID pParam,int iPad,DWORD dwErr,DWORD dwLicen
 					DLCAudioFile *dlcFile = static_cast<DLCAudioFile *>(pack->getFile(DLCManager::e_DLCType_Audio, 0));
 					texturePack->setHasAudio(true);
 					// init the streaming sound ids for this texture pack
-					int iOverworldStart, iNetherStart, iEndStart;
-					int iOverworldC, iNetherC, iEndC;
+				    int iOverworldC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Overworld);
+				    int iNetherC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Nether);
+				    int iEndStart=iOverworldC+iNetherC;
+				    int iEndC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_End);
+				    int iAfterEnd=iOverworldC+iNetherC+iEndC;
+				    int iCreativeC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Creative);
 
-					iOverworldStart=0;
-					iOverworldC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Overworld);
-					iNetherStart=iOverworldC;
-					iNetherC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Nether);
-					iEndStart=iOverworldC+iNetherC;
-					iEndC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_End);
+				    int iCreativeStart, iCreativeRange;
+				    if(iCreativeC)
+				    {
+				        iCreativeStart=iAfterEnd;
+				        iCreativeRange=iCreativeC;
+				        iAfterEnd+=iCreativeC;
+				    }
+				    else
+				    {
+				        iCreativeStart=0;
+				        iCreativeRange=iOverworldC;
+				    }
 
-					Minecraft::GetInstance()->soundEngine->SetStreamingSounds(iOverworldStart,iOverworldStart+iOverworldC-1,
-						iNetherStart,iNetherStart+iNetherC-1,iEndStart,iEndStart+iEndC-1,iEndStart+iEndC); // push the CD start to after
+				    int iMenuC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Menu);
+				    int iMenuStart, iMenuRange;
+				    if(iMenuC)
+				    {
+				        iMenuStart=iAfterEnd;
+				        iMenuRange=iMenuC;
+				        iAfterEnd+=iMenuC;
+				    }
+				    else
+				    {
+				        iMenuStart=0;
+				        iMenuRange=iOverworldC;
+				    }
+
+				    int iBattleC=dlcFile->GetCountofType(DLCAudioFile::e_AudioType_Battle);
+				    if(iBattleC)
+				    {
+				        Minecraft::GetInstance()->soundEngine->SetStreamingSounds(
+                            0,iOverworldC-1,
+                            iOverworldC,iOverworldC+iNetherC-1,
+                            iEndStart,iEndStart+iEndC-1,
+                            iCreativeStart,iCreativeStart+iCreativeRange-1,
+                            iMenuStart,iMenuStart+iMenuRange-1,
+                            iAfterEnd,iAfterEnd+iBattleC-1,
+                            iAfterEnd+iBattleC);
+				    }
+				    else
+				    {
+				        Minecraft::GetInstance()->soundEngine->SetStreamingSounds(
+                            0,iOverworldC-1,
+                            iOverworldC,iOverworldC+iNetherC-1,
+                            iEndStart,iEndStart+iEndC-1,
+                            iCreativeStart,iCreativeStart+iCreativeRange-1,
+                            iMenuStart,iMenuStart+iMenuRange-1,
+                            0,iOverworldC-1,
+                            iAfterEnd);
+				    }
 				}
 #endif
 }

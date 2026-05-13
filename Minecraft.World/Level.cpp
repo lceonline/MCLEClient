@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "System.h"
 #include "BasicTypeContainers.h"
 #include "File.h"
@@ -3687,13 +3687,11 @@ vector<shared_ptr<Entity> > *Level::getEntities(shared_ptr<Entity> except, AABB 
 	int zc0 = Mth::floor((bb->z0 - 2) / 16);
 	int zc1 = Mth::floor((bb->z1 + 2) / 16);
 
-#ifdef __PSVITA__
 #ifdef _ENTITIES_RW_SECTION
 	// AP - RW critical sections are expensive so enter it here so we only have to call it once instead of X times
 	EnterCriticalRWSection(&LevelChunk::m_csEntities, false);
 #else
 	EnterCriticalSection(&LevelChunk::m_csEntities);
-#endif
 #endif
 
 	for (int xc = xc0; xc <= xc1; xc++)
@@ -3706,12 +3704,10 @@ vector<shared_ptr<Entity> > *Level::getEntities(shared_ptr<Entity> except, AABB 
 		}
 		MemSect(0);
 
-#ifdef __PSVITA__
 #ifdef _ENTITIES_RW_SECTION
 		LeaveCriticalRWSection(&LevelChunk::m_csEntities, false);
 #else
 		LeaveCriticalSection(&LevelChunk::m_csEntities);
-#endif
 #endif
 
 		return &es;
@@ -3730,13 +3726,11 @@ vector<shared_ptr<Entity> > *Level::getEntitiesOfClass(const type_info& baseClas
 	int zc1 = Mth::floor((bb->z1 + 2) / 16);
 	vector<shared_ptr<Entity> > *es = new vector<shared_ptr<Entity> >();
 
-#ifdef __PSVITA__
 #ifdef _ENTITIES_RW_SECTION
 	// AP - RW critical sections are expensive so enter it here so we only have to call it once instead of X times
 	EnterCriticalRWSection(&LevelChunk::m_csEntities, false);
 #else
 	EnterCriticalSection(&LevelChunk::m_csEntities);
-#endif
 #endif
 
 	for (int xc = xc0; xc <= xc1; xc++)
@@ -3750,12 +3744,10 @@ vector<shared_ptr<Entity> > *Level::getEntitiesOfClass(const type_info& baseClas
 		}
 	}
 
-#ifdef __PSVITA__
 #ifdef _ENTITIES_RW_SECTION
 	LeaveCriticalRWSection(&LevelChunk::m_csEntities, false);
 #else
 	LeaveCriticalSection(&LevelChunk::m_csEntities);
-#endif
 #endif
 
 	return es;
@@ -4707,19 +4699,19 @@ bool Level::canCreateMore(eINSTANCEOF type, ESPAWN_TYPE spawnType)
 			break;
 		case eTYPE_CHICKEN:
 			count = countInstanceOf( eTYPE_CHICKEN, true);
-			max = MobCategory::MAX_XBOX_CHICKENS_WITH_SPAWN_EGG;
+			max = MobCategory::maxChickensWithSpawnEgg();
 			break;
 		case eTYPE_WOLF:
 			count = countInstanceOf( eTYPE_WOLF, true);
-			max = MobCategory::MAX_XBOX_WOLVES_WITH_SPAWN_EGG;
+			max = MobCategory::maxWolvesWithSpawnEgg();
 			break;
 		case eTYPE_MUSHROOMCOW:
 			count = countInstanceOf( eTYPE_MUSHROOMCOW, true);
-			max = MobCategory::MAX_XBOX_MUSHROOMCOWS_WITH_SPAWN_EGG;
+			max = MobCategory::maxMushroomCowsWithSpawnEgg();
 			break;
 		case eTYPE_SQUID:
 			count = countInstanceOf( eTYPE_SQUID, true);
-			max = MobCategory::MAX_XBOX_SQUIDS_WITH_SPAWN_EGG;
+			max = MobCategory::maxSquidsWithSpawnEgg();
 			break;
 		case eTYPE_SNOWMAN:
 			count = countInstanceOf( eTYPE_SNOWMAN, true);
@@ -4737,18 +4729,18 @@ bool Level::canCreateMore(eINSTANCEOF type, ESPAWN_TYPE spawnType)
 			if((type & eTYPE_ANIMALS_SPAWN_LIMIT_CHECK) == eTYPE_ANIMALS_SPAWN_LIMIT_CHECK)
 			{
 				count = countInstanceOf( eTYPE_ANIMALS_SPAWN_LIMIT_CHECK, false);
-				max = MobCategory::MAX_XBOX_ANIMALS_WITH_SPAWN_EGG;
+				max = MobCategory::maxAnimalsWithSpawnEgg();
 			}
 			// 4J: Use eTYPE_ENEMY instead of monster (slimes and ghasts aren't monsters)
 			else if(Entity::instanceof(type, eTYPE_ENEMY))
 			{
 				count = countInstanceOf(eTYPE_ENEMY, false);
-				max = MobCategory::MAX_XBOX_MONSTERS_WITH_SPAWN_EGG;
+				max = MobCategory::maxMonstersWithSpawnEgg();
 			}
 			else if( (type & eTYPE_AMBIENT) == eTYPE_AMBIENT)
 			{
 				count = countInstanceOf( eTYPE_AMBIENT, false);
-				max = MobCategory::MAX_AMBIENT_WITH_SPAWN_EGG;
+				max = MobCategory::maxAmbientWithSpawnEgg();
 			}
 			// 4J: Added minecart and boats
 			else if (Entity::instanceof(type, eTYPE_MINECART))
@@ -4773,21 +4765,21 @@ bool Level::canCreateMore(eINSTANCEOF type, ESPAWN_TYPE spawnType)
 			break;
 		case eTYPE_CHICKEN:
 			count = countInstanceOf( eTYPE_CHICKEN, true);
-			max = MobCategory::MAX_XBOX_CHICKENS_WITH_BREEDING;
+			max = MobCategory::maxChickensWithBreeding();
 			break;
 		case eTYPE_WOLF:
 			count = countInstanceOf( eTYPE_WOLF, true);
-			max = MobCategory::MAX_XBOX_WOLVES_WITH_BREEDING;
+			max = MobCategory::maxWolvesWithBreeding();
 			break;
 		case eTYPE_MUSHROOMCOW:
 			count = countInstanceOf( eTYPE_MUSHROOMCOW, true);
-			max = MobCategory::MAX_XBOX_MUSHROOMCOWS_WITH_BREEDING;
+			max = MobCategory::maxMushroomCowsWithBreeding();
 			break;
 		default:
 			if((type & eTYPE_ANIMALS_SPAWN_LIMIT_CHECK) == eTYPE_ANIMALS_SPAWN_LIMIT_CHECK)
 			{
 				count = countInstanceOf( eTYPE_ANIMALS_SPAWN_LIMIT_CHECK, false);
-				max = MobCategory::MAX_XBOX_ANIMALS_WITH_BREEDING;
+				max = MobCategory::maxAnimalsWithBreeding();
 			}
 			else if( (type & eTYPE_MONSTER) == eTYPE_MONSTER)
 			{
@@ -4798,4 +4790,24 @@ bool Level::canCreateMore(eINSTANCEOF type, ESPAWN_TYPE spawnType)
 	}
 	// 4J: Interpret 0 as no limit
 	return max == 0 || count < max;
+}
+
+
+BlockPos Level::getHeightmapPos(int x, int z)
+{
+    
+    if (x < -MAX_LEVEL_SIZE || z < -MAX_LEVEL_SIZE ||
+        x >= MAX_LEVEL_SIZE  || z >= MAX_LEVEL_SIZE)
+    {
+        return BlockPos(x, 64, z);
+    }
+
+    if (hasChunk(x >> 4, z >> 4))
+    {
+        LevelChunk* lc = getChunk(x >> 4, z >> 4);
+        int y = lc->getHeightmap(x & 0xF, z & 0xF);
+        return BlockPos(x, y, z);
+    }
+
+    return BlockPos(x, 0, z);
 }

@@ -21,6 +21,7 @@ class Font;
 // 4J - this was originally a generic of type EntityRenderer<T extends Entity>
 class EntityRenderer
 {
+	friend class CustomHeadLayer;
 	friend class PlayerRenderer; // 4J Added to allow PlayerRenderer to call renderShadow
 protected:
 	EntityRenderDispatcher *entityRenderDispatcher;
@@ -30,6 +31,9 @@ private:
 
 protected:
 	Model *model;			// TODO 4J: Check why exactly this is here, it seems to get shadowed by classes inheriting from this by their own
+	Model *modelSlim;
+	Model *newModel;
+	Model *newModelSlim;
 
 protected:
     TileRenderer *tileRenderer;	// 4J - changed to protected so derived classes can use instead of shadowing their own
@@ -68,5 +72,10 @@ public:
 public:
 	// 4J Added
 	virtual Model *getModel() { return model; }
+	virtual Model *getModelSlim() { return modelSlim; }
+	virtual Model *getNewModel() { return newModel; }
+	virtual Model *getNewModelSlim() { return newModelSlim; }
 	virtual void SetItemFrame(bool bSet) {}
+	virtual bool shouldRender(shared_ptr<Entity> entity, float camX, float camY, float camZ) { return true; }
+
 };

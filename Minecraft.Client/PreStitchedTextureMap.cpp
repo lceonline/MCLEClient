@@ -509,7 +509,7 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(10,	3,	L"name_tag")
 		ADD_ICON(10,	4,	L"lead")
 		ADD_ICON(10,	5,	L"netherbrick")
-		//ADD_ICON(10,	6,	L"unused")
+		ADD_ICON(10,	6,	L"clownfish")
 		ADD_ICON(10,	7,	L"minecart_furnace")
 		ADD_ICON(10,	8,	L"charcoal")
 		ADD_ICON(10,	9,	L"monsterPlacer_overlay")
@@ -521,12 +521,9 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(10,	15,	L"dyePowder_orange")
 
 		ADD_ICON(11,	0,	L"leggingsCloth_overlay")
-		//ADD_ICON(11,	1,	L"unused")
-		//ADD_ICON(11,	2,	L"unused")
-		//ADD_ICON(11,	3,	L"unused")
-		//ADD_ICON(11,	4,	L"unused")
-		//ADD_ICON(11,	5,	L"unused")
-		//ADD_ICON(11,	6,	L"unused")
+		ADD_ICON(11,	4,  L"muttonRaw")
+		ADD_ICON(11,	5,  L"rabbitRaw")
+		ADD_ICON(11,	6,	L"pufferfish")
 		ADD_ICON(11,	7,	L"minecart_hopper")
 		ADD_ICON(11,	8,	L"hopper")
 		ADD_ICON(11,	9,	L"nether_star")
@@ -541,11 +538,11 @@ void PreStitchedTextureMap::loadUVs()
 		//ADD_ICON(12,	1,	L"unused")
 		//ADD_ICON(12,	2,	L"unused")
 		//ADD_ICON(12,	3,	L"unused")
-		//ADD_ICON(12,	4,	L"unused")
-		//ADD_ICON(12,	5,	L"unused")
-		//ADD_ICON(12,	6,	L"unused")
+		ADD_ICON(12,	4,	L"muttonCooked")
+		ADD_ICON(12,	5,	L"rabbitCooked")
+		ADD_ICON(12,	6,	L"salmonRaw")
 		ADD_ICON(12,	7,	L"minecart_tnt")
-		//ADD_ICON(12,	8,	L"unused")
+		ADD_ICON(12,	8,	L"armorStand")
 		ADD_ICON(12,	9,	L"fireworks")
 		ADD_ICON(12,	10,	L"fireworks_charge")
 		ADD_ICON(12,	11,	L"fireworks_charge_overlay")
@@ -554,13 +551,27 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(12,	14,	L"frame")
 		ADD_ICON(12,	15,	L"enchantedBook")
 
+		ADD_ICON(13, 0, L"doorAcacia")
+		ADD_ICON(13, 1, L"doorBirch")
+		ADD_ICON(13, 2, L"doorDark")
+		ADD_ICON(13, 3, L"doorJungle")
+		ADD_ICON(13, 4, L"doorSpruce")
+		ADD_ICON(13, 5, L"rabbitStew") 
+		ADD_ICON(13, 6, L"salmonCooked")
+		
+
 		ADD_ICON(14,	0,	L"skull_skeleton")
 		ADD_ICON(14,	1,	L"skull_wither")
 		ADD_ICON(14,	2,	L"skull_zombie")
 		ADD_ICON(14,	3,	L"skull_char")
 		ADD_ICON(14,	4,	L"skull_creeper")
-		//ADD_ICON(14,	5,	L"unused")
-		//ADD_ICON(14,	6,	L"unused")
+		ADD_ICON(14,	5,	L"rabbitsFoot")
+		ADD_ICON(14,	6,	L"rabbitHide")
+		ADD_ICON(13,    14, L"prismarineCrystal");
+		ADD_ICON(13,	 13, L"prismarineShard");
+		ADD_ICON(13, 12, L"elytra");
+		ADD_ICON(13, 11, L"broken_elytra");
+
 		ADD_ICON_WITH_NAME(14,	7,	L"compassP0", L"compass") // 4J Added
 		ADD_ICON_WITH_NAME(14,	8,	L"compassP1", L"compass") // 4J Added
 		ADD_ICON_WITH_NAME(14,	9,	L"compassP2", L"compass") // 4J Added
@@ -800,7 +811,7 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(8,		9,	L"melon_top");
 		ADD_ICON(8,		10,	L"cauldron_top");
 		ADD_ICON(8,		11,	L"cauldron_inner");
-		//ADD_ICON(8,		12,	L"unused");
+		ADD_ICON(8,		12,	L"sponge_wet");
 		ADD_ICON(8,		13,	L"mushroom_block_skin_stem");
 		ADD_ICON(8,		14,	L"mushroom_block_inside");
 		ADD_ICON(8,		15,	L"vine");
@@ -868,7 +879,7 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(12,	9,	L"carrots_stage_1");
 		ADD_ICON(12,	10,	L"carrots_stage_2");
 		ADD_ICON(12,	11,	L"carrots_stage_3");
-		//ADD_ICON(12,	12,	L"unused");
+		ADD_ICON(12,	12,	L"slime");
 		ADD_ICON(12,	13,	L"water");
 		ADD_ICON_SIZE(12,14,L"water_flow",2,2);
 
@@ -921,12 +932,14 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(16,	0,	L"coal_block");
 		ADD_ICON(16,	1,	L"hardened_clay");
 		ADD_ICON(16,	2,	L"noteblock");
-		//ADD_ICON(16,	3,	L"unused");
-		//ADD_ICON(16,	4,	L"unused");
-		//ADD_ICON(16,	5,	L"unused");
-		//ADD_ICON(16,	6,	L"unused");
-		//ADD_ICON(16,	7,	L"unused");
-		//ADD_ICON(16,	8,	L"unused");
+
+		ADD_ICON(16, 3, L"stone_andesite");
+		ADD_ICON(16, 4, L"stone_andesite_smooth");
+		ADD_ICON(16, 5, L"stone_diorite");
+		ADD_ICON(16, 6, L"stone_diorite_smooth");
+		ADD_ICON(16, 7, L"stone_granite");
+		ADD_ICON(16, 8, L"stone_granite_smooth");
+
 		ADD_ICON(16,	9,	L"potatoes_stage_0");
 		ADD_ICON(16,	10,	L"potatoes_stage_1");
 		ADD_ICON(16,	11,	L"potatoes_stage_2");
@@ -985,5 +998,78 @@ void PreStitchedTextureMap::loadUVs()
 		ADD_ICON(19,	13,	L"glass_pane_top_silver");
 		ADD_ICON(19,	14,	L"glass_pane_top_white");
 		ADD_ICON(19,	15,	L"glass_pane_top_yellow");
+
+		
+		ADD_ICON(20, 5, L"flower_tulip_orange");
+
+		ADD_ICON(20, 8, L"log_acacia");
+		ADD_ICON(20, 9, L"log_acacia_top");
+		ADD_ICON(20, 10, L"planks_acacia");
+		ADD_ICON(20, 11, L"leaves_acacia");
+		ADD_ICON(20, 12, L"leaves_acacia_opaque");
+		ADD_ICON(20, 14, L"red_sand");
+		ADD_ICON(20, 15, L"red_sandstone_top");
+
+		ADD_ICON(21, 5, L"flower_tulip_pink");
+		
+
+		ADD_ICON(21, 8, L"log_dark");
+		ADD_ICON(21, 9, L"log_dark_top");
+		ADD_ICON(21, 10, L"planks_dark");
+		ADD_ICON(21, 11, L"leaves_dark_oak");
+		ADD_ICON(21, 12, L"leaves_dark_oak_opaque");
+
+		ADD_ICON(21, 14, L"red_sandstone_bottom");
+		ADD_ICON(21, 15, L"red_sandstone_normal");
+
+		ADD_ICON(22, 0, L"flower_allium");
+		ADD_ICON(22, 1, L"flower_blue_orchid");
+		ADD_ICON(22, 2, L"flower_houstonia");
+		ADD_ICON(22, 3, L"flower_oxeye_daisy");
+		ADD_ICON(22, 4, L"flower_tulip_red");
+		ADD_ICON(22, 5, L"flower_tulip_white");
+		ADD_ICON(22, 6, L"sapling_acacia");
+		ADD_ICON(22, 7, L"sapling_dark_oak");
+
+		ADD_ICON(22, 8, L"coarse_dirt");
+		ADD_ICON(22, 9, L"dirt_podzol_side");
+		ADD_ICON(22, 10, L"dirt_podzol_top");
+
+		ADD_ICON(22, 14, L"red_sandstone_carved");
+		ADD_ICON(22, 15, L"red_sandstone_smooth");
+		
+
+		ADD_ICON(23, 0, L"door_acacia_upper");
+		ADD_ICON(23, 1, L"door_birch_upper");
+		ADD_ICON(23, 2, L"door_dark_upper");
+		ADD_ICON(23, 3, L"door_jungle_upper");
+		ADD_ICON(23, 4, L"door_spruce_upper");
+		ADD_ICON(23, 13, L"sea_lantern");
+		ADD_ICON(22, 13, L"prismarine");
+		ADD_ICON(21, 13, L"prismarine_dark");
+		ADD_ICON(20, 13, L"prismarine_bricks");
+
+		ADD_ICON(23, 11, L"barrier");
+		ADD_ICON(23, 12, L"packed_ice");
+		ADD_ICON(23, 14, L"inverted_daylight_detector");
+		ADD_ICON(23, 15, L"iron_trapdoor");
+
+		ADD_ICON(24, 0, L"door_acacia_lower");
+		ADD_ICON(24, 1, L"door_birch_lower");
+		ADD_ICON(24, 2, L"door_dark_lower");
+		ADD_ICON(24, 3, L"door_jungle_lower");
+		ADD_ICON(24, 4, L"door_spruce_lower");
+
+		ADD_ICON(21, 1, L"tallgrass2_tall_grass_lower");
+		ADD_ICON(20, 1, L"tallgrass2_tall_grass_upper");
+		ADD_ICON(21, 0, L"tallgrass2_large_fern_lower");
+		ADD_ICON(20, 0, L"tallgrass2_large_fern_upper");
+		ADD_ICON(21, 2, L"tallgrass2_peony_lower");
+		ADD_ICON(20, 2, L"tallgrass2_peony_upper");
+		ADD_ICON(21, 3, L"tallgrass2_rose_bush_lower");
+		ADD_ICON(20, 3, L"tallgrass2_rose_bush_upper");
+		ADD_ICON(21, 4, L"tallgrass2_lilac_lower");
+		ADD_ICON(20, 4, L"tallgrass2_lilac_upper");
+
 	}
 }

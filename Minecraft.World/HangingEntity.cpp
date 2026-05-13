@@ -9,7 +9,7 @@
 
 
 
-void HangingEntity::_init(Level* level)
+void HangingEntity::_init(Level *level)
 {
 	checkInterval = 0;
 	dir = 0;
@@ -18,13 +18,13 @@ void HangingEntity::_init(Level* level)
 	this->setSize(0.5f, 0.5f);
 }
 
-HangingEntity::HangingEntity(Level* level) : Entity(level)
+HangingEntity::HangingEntity(Level *level) : Entity( level )
 {
 	_init(level);
 
 }
 
-HangingEntity::HangingEntity(Level* level, int xTile, int yTile, int zTile, int dir) : Entity(level)
+HangingEntity::HangingEntity(Level *level, int xTile, int yTile, int zTile, int dir) : Entity( level )
 {
 	_init(level);
 	this->xTile = xTile;
@@ -58,15 +58,11 @@ void HangingEntity::setDir(int dir)
 	float x = xTile + 0.5f;
 	float y = yTile + 0.5f;
 	float z = zTile + 0.5f;
-
-	float originalX = x;
+    float originalX = x;
 	float originalZ = z;
-
 	float fOffs = 0.5f + 1.0f / 16.0f;
-
-	if (this->GetType() == eTYPE_PAINTING)
-	{
-		fOffs = 0.5f + 1.0f / 32.0f; //dividing by 16.0f introduce a small gap between the block and the painting. See https://github.com/smartcmd/MinecraftConsoles/issues/661
+    if (this->GetType() == eTYPE_PAINTING) {
+		fOffs = 0.5f + 1.0f / 32.0f;
 	}
 
 	if (dir == Direction::NORTH) z -= fOffs;
@@ -83,26 +79,19 @@ void HangingEntity::setDir(int dir)
 	setPos(x, y, z);
 
 	float ss = -(0.5f / 16.0f);
-
-	//dividing the fOffs by 32 breaks the BB and allow paintings to be placed on a block when they shouldn't
-	//so we need to modify the x and z to set their value as if the fOffs was divided by 16 and not 32
-	if (this->GetType() == eTYPE_PAINTING)
-	{
+    if (this->GetType() == eTYPE_PAINTING) {
 		fOffs = 0.5f + 1.0f / 16.0f;
 		if (dir == Direction::NORTH) originalZ -= fOffs;
 		if (dir == Direction::WEST) originalX -= fOffs;
 		if (dir == Direction::SOUTH) originalZ += fOffs;
 		if (dir == Direction::EAST) originalX += fOffs;
-
 		if (dir == Direction::NORTH) originalX -= offs(getWidth());
 		if (dir == Direction::WEST) originalZ += offs(getWidth());
 		if (dir == Direction::SOUTH) originalX += offs(getWidth());
 		if (dir == Direction::EAST) originalZ -= offs(getWidth());
-
 		x = originalX;
 		z = originalZ;
 	}
-
 
 	// 4J Stu - Due to rotations the bb couold be set with a lower bound x/z being higher than the higher bound
 	float x0 = x - w - ss;
@@ -111,7 +100,7 @@ void HangingEntity::setDir(int dir)
 	float y1 = y + h + ss;
 	float z0 = z - d - ss;
 	float z1 = z + d + ss;
-	bb->set(min(x0, x1), min(y0, y1), min(z0, z1), max(x0, x1), max(y0, y1), max(z0, z1));
+	bb->set(min(x0,x1), min(y0,y1), min(z0,z1), max(x0,x1), max(y0,y1), max(z0,z1));
 }
 
 float HangingEntity::offs(int w)
@@ -124,8 +113,8 @@ float HangingEntity::offs(int w)
 void HangingEntity::tick()
 {
 	xo = x;
-	yo = y;
-	zo = z;
+    yo = y;
+    zo = z;
 	if (checkInterval++ == 20 * 5 && !level->isClientSide)
 	{
 		checkInterval = 0;
@@ -139,7 +128,7 @@ void HangingEntity::tick()
 
 bool HangingEntity::survives()
 {
-	if (level->getCubes(shared_from_this(), bb)->size() != 0)//isEmpty())
+	if (level->getCubes(shared_from_this(), bb)->size()!=0)//isEmpty())
 	{
 		return false;
 	}
@@ -152,16 +141,16 @@ bool HangingEntity::survives()
 		int yt = yTile;
 		int zt = zTile;
 		if (dir == Direction::NORTH) xt = Mth::floor(x - getWidth() / 32.0f);
-		if (dir == Direction::WEST) zt = Mth::floor(z - getWidth() / 32.0f);
+		if (dir == Direction::WEST) zt =  Mth::floor(z - getWidth() / 32.0f);
 		if (dir == Direction::SOUTH) xt = Mth::floor(x - getWidth() / 32.0f);
-		if (dir == Direction::EAST) zt = Mth::floor(z - getWidth() / 32.0f);
+		if (dir == Direction::EAST) zt =  Mth::floor(z - getWidth() / 32.0f);
 		yt = Mth::floor(y - getHeight() / 32.0f);
 
 		for (int ss = 0; ss < ws; ss++)
 		{
 			for (int yy = 0; yy < hs; yy++)
 			{
-				Material* m;
+				Material *m;
 				if (dir == Direction::NORTH || dir == Direction::SOUTH)
 				{
 					m = level->getMaterial(xt + ss, yt + yy, zTile);
@@ -176,13 +165,13 @@ bool HangingEntity::survives()
 				}
 			}
 
-			vector<shared_ptr<Entity> >* entities = level->getEntities(shared_from_this(), bb);
+			vector<shared_ptr<Entity> > *entities = level->getEntities(shared_from_this(), bb);
 
 			if (entities != nullptr && entities->size() > 0)
 			{
 				for (auto& e : *entities)
 				{
-					if (e && e->instanceof(eTYPE_HANGING_ENTITY))
+					if( e && e->instanceof(eTYPE_HANGING_ENTITY) )
 					{
 						return false;
 					}
@@ -200,23 +189,23 @@ bool HangingEntity::isPickable()
 
 bool HangingEntity::skipAttackInteraction(shared_ptr<Entity> source)
 {
-	if (source->GetType() == eTYPE_PLAYER)
+	if(source->GetType()==eTYPE_PLAYER)
 	{
-		return hurt(DamageSource::playerAttack(dynamic_pointer_cast<Player>(source)), 0);
+		return hurt(DamageSource::playerAttack(dynamic_pointer_cast<Player>( source)), 0);
 	}
 	return false;
 }
 
-bool HangingEntity::hurt(DamageSource* source, float damage)
+bool HangingEntity::hurt(DamageSource *source, float damage)
 {
 	if (isInvulnerable()) return false;
 	if (!removed && !level->isClientSide)
 	{
-		if (dynamic_cast<EntityDamageSource*>(source) != nullptr)
+		if (dynamic_cast<EntityDamageSource *>(source) != nullptr)
 		{
 			shared_ptr<Entity> sourceEntity = source->getDirectEntity();
 
-			if ((sourceEntity != nullptr) && sourceEntity->instanceof(eTYPE_PLAYER) && !dynamic_pointer_cast<Player>(sourceEntity)->isAllowedToHurtEntity(shared_from_this()))
+			if ( (sourceEntity != nullptr) && sourceEntity->instanceof(eTYPE_PLAYER) && !dynamic_pointer_cast<Player>(sourceEntity)->isAllowedToHurtEntity(shared_from_this()) )
 			{
 				return false;
 			}
@@ -227,9 +216,9 @@ bool HangingEntity::hurt(DamageSource* source, float damage)
 
 		shared_ptr<Player> player = nullptr;
 		shared_ptr<Entity> e = source->getEntity();
-		if ((e != nullptr) && e->instanceof(eTYPE_PLAYER)) // check if it's serverplayer or player
+		if ( (e!=nullptr) && e->instanceof(eTYPE_PLAYER) ) // check if it's serverplayer or player
 		{
-			player = dynamic_pointer_cast<Player>(e);
+			player = dynamic_pointer_cast<Player>( e );
 		}
 
 		if (player != nullptr && player->abilities.instabuild)
@@ -261,7 +250,7 @@ void HangingEntity::push(double xa, double ya, double za)
 	}
 }
 
-void HangingEntity::addAdditonalSaveData(CompoundTag* tag)
+void HangingEntity::addAdditonalSaveData(CompoundTag *tag)
 {
 	tag->putByte(L"Direction", static_cast<byte>(dir));
 	tag->putInt(L"TileX", xTile);
@@ -272,21 +261,21 @@ void HangingEntity::addAdditonalSaveData(CompoundTag* tag)
 	switch (dir)
 	{
 	case Direction::NORTH:
-		tag->putByte(L"Dir", (byte)0);
+		tag->putByte(L"Dir", (byte) 0);
 		break;
 	case Direction::WEST:
-		tag->putByte(L"Dir", (byte)1);
+		tag->putByte(L"Dir", (byte) 1);
 		break;
 	case Direction::SOUTH:
-		tag->putByte(L"Dir", (byte)2);
+		tag->putByte(L"Dir", (byte) 2);
 		break;
 	case Direction::EAST:
-		tag->putByte(L"Dir", (byte)3);
+		tag->putByte(L"Dir", (byte) 3);
 		break;
 	}
 }
 
-void HangingEntity::readAdditionalSaveData(CompoundTag* tag)
+void HangingEntity::readAdditionalSaveData(CompoundTag *tag)
 {
 	if (tag->contains(L"Direction"))
 	{

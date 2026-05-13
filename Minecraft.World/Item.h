@@ -90,6 +90,8 @@ public:
 		eMaterial_book,
 		eMaterial_bookshelf,
 		eMaterial_wheat,
+		eMaterial_acaciawood,
+		eMaterial_darkwood
 
 	}
 	eMaterial;
@@ -141,6 +143,10 @@ public:
 		eBaseItemType_lever,
 		eBaseItemType_paper,
 		eBaseItemType_MAXTYPES,
+		eBaseItemType_stick,
+		eBaseItemType_fenceGate,
+		eBaseItemType_decoration,
+		eBaseItemType_bowl
 	}
 	eBaseItemType;
 
@@ -220,6 +226,7 @@ public:
 	static Item *stick;
 	static Item *bowl;
 	static Item *mushroomStew;
+	static Item *rabbitStew;
 
 	static Item *sword_gold;
 	static Item *shovel_gold;
@@ -376,8 +383,8 @@ public:
 	static Item *frame;
 
 	// TU14
-	//static Item writingBook;
-	//static Item writtenBook;
+	static Item *writingBook;
+	static Item *writtenBook;
 
 	static Item *emerald;
 
@@ -411,6 +418,25 @@ public:
 	static Item *horseArmorDiamond;
 	static Item *lead;
 	static Item *nameTag;
+
+	// TU25
+	static Item* door_spruce;
+	static Item* door_birch;
+	static Item* door_jungle;
+	static Item* door_acacia;
+	static Item* door_dark;
+	//TU31
+	static Item* mutton_raw;
+	static Item* mutton_cooked;
+	static Item* rabbit_raw;
+	static Item* rabbit_cooked;
+	static Item* rabbit_hide;
+	static Item* rabbits_foot;
+	static Item* armor_stand;
+
+	static Item* prismarine_crystal;
+	static Item* prismarine_shard;
+	static Item* elytra;
 
 
 	static const int shovel_iron_Id			= 256;
@@ -568,21 +594,21 @@ public:
 	static const int record_05_Id			= 2260;
 	static const int record_06_Id			= 2261;
 	static const int record_07_Id			= 2262;
-	static const int record_09_Id			= 2263;
-	static const int record_10_Id		    = 2264;
-	static const int record_11_Id		    = 2265;
-	static const int record_12_Id			= 2266;
 
 	// 4J-PB - this one isn't playable in the PC game, but is fine in ours
-	static const int record_08_Id			= 2267;
+	static const int record_08_Id			= 2263;
+	static const int record_09_Id			= 2264;
+	static const int record_10_Id			= 2265;
+	static const int record_11_Id			= 2266;
+	static const int record_12_Id			= 2267;
 
 	// TU9
 	static const int fireball_Id			 = 385;
 	static const int itemFrame_Id			 = 389;
 
 	// TU14
-	//static const int writingBook_Id			 = 130;
-	//static const int writtenBook_Id			 = 131;
+	static const int writingBook_Id			 = 386;
+	static const int writtenBook_Id			 = 387;
 
 	static const int emerald_Id				 = 388;
 
@@ -617,6 +643,40 @@ public:
 	static const int horseArmorDiamond_Id = 419;
 	static const int lead_Id = 420;
 	static const int nameTag_Id = 421;
+	
+
+	// TU25
+
+	//422 command_block_minecart
+	static const int prismarine_shard_Id = 409;
+	static const int prismarine_cystal_Id = 410;
+	static const int rabbit_raw_Id = 411;
+	static const int rabbit_cooked_Id = 412;
+	static const int rabbitStew_Id = 413;
+	static const int rabbits_foot_Id = 414;
+	static const int rabbit_hide_Id = 415;
+	static const int armor_stand_Id = 416;
+
+	static const int mutton_raw_Id = 423;
+	static const int mutton_cooked_Id = 424;
+	//425 banner
+	//426 end_crystal
+
+	static const int door_spruce_Id = 427;
+	static const int door_birch_Id = 428;
+	static const int door_jungle_Id = 429;
+	static const int door_acacia_Id = 430;
+	static const int door_dark_Id = 431;
+
+
+	static const int elytra_Id = 443;
+	//TU31
+	
+	
+	
+
+	
+
 
 public:
 	const int id;

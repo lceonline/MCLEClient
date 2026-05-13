@@ -30,11 +30,6 @@ GameCommandPacket::GameCommandPacket(EGameCommand command, byteArray data)
 	}
 }
 
-GameCommandPacket::~GameCommandPacket()
-{
-	delete [] data.data;
-}
-
 void GameCommandPacket::read(DataInputStream *dis)
 {
 	command = static_cast<EGameCommand>(dis->readInt());

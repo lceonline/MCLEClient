@@ -24,13 +24,29 @@ private:
 //    public static Logger logger = Logger.getLogger("Minecraft");
 public:
 	vector<shared_ptr<ServerPlayer> > players;
+	CRITICAL_SECTION m_playersCS; // Protects players vector for concurrent access
+	vector<shared_ptr<ServerPlayer> > getPlayersSnapshot();
 
 private:
 	MinecraftServer *server;
     unsigned int maxPlayers;
 
+	// Pending disconnect queue: disconnect() enqueues here, tick() drains it.
+	// This avoids holding done_cs across PlayerList operations (deadlock fix).
+	struct PendingDisconnect
+	{
+		shared_ptr<ServerPlayer> player;
+		int reason;
+		wstring kickMessage;
+		bool wasKicked;
+		bool fourKitHandledQuit;
+	};
+	deque<PendingDisconnect> m_pendingDisconnects;
+	CRITICAL_SECTION m_disconnectCS;
+
 	// 4J Added
 	vector<PlayerUID> m_bannedXuids;
+	CRITICAL_SECTION m_banCS; // 4J Added - protects m_bannedXuids for concurrent access
 	deque<BYTE> m_smallIdsToKick;
 	CRITICAL_SECTION m_kickPlayersCS;
 	deque<BYTE> m_smallIdsToClose;
@@ -81,6 +97,7 @@ public:
     void add(shared_ptr<ServerPlayer> player);
     void move(shared_ptr<ServerPlayer> player);
     void remove(shared_ptr<ServerPlayer> player);
+	void queueDisconnect(shared_ptr<ServerPlayer> player, int reason, const wstring& kickMessage, bool wasKicked, bool fourKitHandledQuit);
     shared_ptr<ServerPlayer> getPlayerForLogin(PendingConnection *pendingConnection, const wstring& userName, PlayerUID xuid, PlayerUID OnlineXuid);
     shared_ptr<ServerPlayer> respawn(shared_ptr<ServerPlayer> serverPlayer, int targetDimension, bool keepAllPlayerData);
     void toggleDimension(shared_ptr<ServerPlayer> player, int targetDimension);
@@ -135,6 +152,8 @@ public:
 	void closePlayerConnectionBySmallId(BYTE networkSmallId);
 	void queueSmallIdForRecycle(BYTE smallId);
 	bool isXuidBanned(PlayerUID xuid);
+	void banXuid(PlayerUID xuid);  // 4J Added - for hardcore mode ban-on-death
+	void banPlayerForHardcoreDeath(ServerPlayer *player);  // Persistent XUID + IP ban on hardcore death
 	// AP added for Vita so the range can be increased once the level starts
 	void setViewDistance(int newViewDistance);
 };

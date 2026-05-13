@@ -2,7 +2,7 @@
 #include "net.minecraft.world.level.newbiome.layer.h"
 #include "net.minecraft.world.level.biome.h"
 
-AddIslandLayer::AddIslandLayer(int64_t seedMixup, shared_ptr<Layer>parent) : Layer(seedMixup)
+AddIslandLayer::AddIslandLayer(int64_t seed, shared_ptr<Layer> parent, int64_t seedMixup) : Layer(seedMixup)
 {
 	this->parent = parent;
 }
@@ -14,7 +14,7 @@ intArray AddIslandLayer::getArea(int xo, int yo, int w, int h)
 	int pw = w + 2;
 	int ph = h + 2;
 	intArray p = parent->getArea(px, py, pw, ph);
-
+	PIXBeginNamedEvent(0.0, "AddIslandLayer::getArea");
 	intArray result = IntCache::allocate(w * h);
 	for (int y = 0; y < h; y++)
 	{
@@ -40,7 +40,7 @@ intArray AddIslandLayer::getArea(int xo, int yo, int w, int h)
 				}
 				else
 				{
-					if (swap == Biome::iceFlats->id) result[x + y * w] = Biome::frozenOcean->id;
+					if (swap == 4) result[x + y * w] = Biome::frozenOcean->id;
 					else result[x + y * w] = 0;
 				}
 			}
@@ -48,7 +48,7 @@ intArray AddIslandLayer::getArea(int xo, int yo, int w, int h)
 			{
 				if (nextRandom(5) == 0)
 				{
-					if (c == Biome::iceFlats->id) result[x + y * w] = Biome::frozenOcean->id;
+					if (c == 4) result[x + y * w] = Biome::frozenOcean->id;
 					else result[x + y * w] = 0;
 				}
 				else result[x + y * w] = c;
@@ -59,6 +59,6 @@ intArray AddIslandLayer::getArea(int xo, int yo, int w, int h)
 			}
 		}
 	}
-
+	PIXEndNamedEvent();
 	return result;
 }

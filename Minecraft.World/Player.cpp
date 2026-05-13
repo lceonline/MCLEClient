@@ -42,6 +42,7 @@
 #include "../Minecraft.Client/LocalPlayer.h"
 #include "../Minecraft.Client/HumanoidModel.h"
 #include "SoundTypes.h"
+#include "ElytraItem.h"
 
 
 
@@ -83,6 +84,14 @@ void Player::_init()
 	m_uiDebugOptions=0L;
 
 	jumpTriggerTime = 0;
+	ticksElytraFlying = 0;
+	rotateElytraX = 0.2617994f;
+	rotateElytraY = 0.0f;
+	rotateElytraZ = -0.2617994f;
+	m_elytraImpactYd = 0.0f;
+	m_wasElytraFlying = false;
+	m_elytraFallProtectTicks = 0;
+
 	takeXpDelay = 0;
 	experienceLevel = totalExperience = 0;
 	experienceProgress = 0.0f;
@@ -1000,6 +1009,8 @@ void Player::serverAiStep()
 void Player::aiStep()
 {
 	if (jumpTriggerTime > 0) jumpTriggerTime--;
+	if (m_elytraFallProtectTicks > 0) m_elytraFallProtectTicks--;
+
 
 	if (level->difficulty == Difficulty::PEACEFUL && getHealth() < getMaxHealth() && level->getGameRules()->getBoolean(GameRules::RULE_NATURAL_REGENERATION))
 	{
@@ -1008,7 +1019,42 @@ void Player::aiStep()
 	inventory->tick();
 	oBob = bob;
 
+	if (jumping && !onGround && yd < 0.0 && !isElytraFlying() && !abilities.flying && jumpTriggerTime == 0)
+	{
+		shared_ptr<ItemInstance> chestItem = inventory->armor[LivingEntity::SLOT_CHEST - 1];
+		if (chestItem != nullptr && chestItem->getItem() != nullptr)
+		{
+			ElytraItem* elytra = dynamic_cast<ElytraItem*>(chestItem->getItem());
+			if (elytra != nullptr && ElytraItem::isFlyEnabled(chestItem))
+				setElytraFlying(true);
+		}
+	}
+
+
+
 	LivingEntity::aiStep();
+
+	if (isElytraFlying() && !onGround)
+	{
+		ticksElytraFlying++;
+
+		if (!level->isClientSide && ticksElytraFlying % 20 == 0)
+		{
+			shared_ptr<ItemInstance> chestItem = inventory->armor[LivingEntity::SLOT_CHEST - 1];
+			if (chestItem != nullptr && dynamic_cast<ElytraItem*>(chestItem->getItem()) != nullptr)
+			{
+				chestItem->hurtAndBreak(1, dynamic_pointer_cast<LivingEntity>(shared_from_this()));
+				if (!ElytraItem::isFlyEnabled(chestItem))
+					setElytraFlying(false);
+			}
+			else
+			{
+				setElytraFlying(false);
+			}
+		}
+	}
+
+
 
 	AttributeInstance *speed = getAttribute(SharedMonsterAttributes::MOVEMENT_SPEED);
 	if (!level->isClientSide) speed->setBaseValue(abilities.getWalkingSpeed());
@@ -1270,6 +1316,7 @@ void Player::readAdditionalSaveData(CompoundTag *entityTag)
 	sleepCounter = entityTag->getShort(L"SleepTimer");
 
 	experienceProgress = entityTag->getFloat(L"XpP");
+	enchantmentSeed = entityTag->getInt(L"enchSeed");
 	experienceLevel = entityTag->getInt(L"XpLevel");
 	totalExperience = entityTag->getInt(L"XpTotal");
 	setScore(entityTag->getInt(L"Score"));
@@ -1308,6 +1355,7 @@ void Player::addAdditonalSaveData(CompoundTag *entityTag)
 	entityTag->putShort(L"SleepTimer", static_cast<short>(sleepCounter));
 
 	entityTag->putFloat(L"XpP", experienceProgress);
+	entityTag->putInt(L"enchSeed", enchantmentSeed);
 	entityTag->putInt(L"XpLevel", experienceLevel);
 	entityTag->putInt(L"XpTotal", totalExperience);
 	entityTag->putInt(L"Score", getScore());
@@ -1384,7 +1432,10 @@ void Player::setDefaultHeadHeight()
 bool Player::hurt(DamageSource *source, float dmg)
 {
 	if (isInvulnerable()) return false;
+	
 	if ( hasInvulnerablePrivilege() || (abilities.invulnerable && !source->isBypassInvul()) )	return false;
+
+
 
 	// 4J-JEV: Fix for PSVita: #3987 - [IN GAME] The user can take damage/die, when attempting to re-enter fly mode when falling from a height.
 	if ( source == DamageSource::fall && isAllowedToFly() && abilities.flying )					return false;
@@ -1517,8 +1568,9 @@ bool Player::openTrading(shared_ptr<Merchant> traderTarget, const wstring &name)
 *
 * @param itemInstance
 */
-void Player::openItemInstanceGui(shared_ptr<ItemInstance> itemInstance)
+void Player::openItemInstanceGui(shared_ptr<ItemInstance> itemInstance, shared_ptr<Player> player)
 {
+	return;
 }
 
 bool Player::interact(shared_ptr<Entity> entity)
@@ -2106,7 +2158,90 @@ void Player::travel(float xa, float ya)
 {
 	double preX = x, preY = y, preZ = z;
 
-	if (abilities.flying && riding == nullptr)
+	m_elytraImpactYd = (float)yd;
+
+	if (isElytraFlying() && riding == nullptr)
+	{
+		double preHorizSpeed = Mth::sqrt(xd * xd + zd * zd);
+
+
+		if (yd > -0.5)
+			fallDistance = 1.0f;
+
+		Vec3* look = getLookAngle();
+		float pitchRad = xRot * (PI / 180.0f);
+		double horizLookLen = Mth::sqrt(look->x * look->x + look->z * look->z);
+		double horizSpeed = Mth::sqrt(xd * xd + zd * zd);
+
+
+		float cosPitch = Mth::cos(pitchRad);
+		cosPitch = cosPitch * cosPitch;
+
+
+		yd += -0.08 + (double)cosPitch * 0.06;
+
+		if (yd < 0.0 && horizLookLen > 0.0)
+		{
+			double thrust = yd * -0.1 * (double)cosPitch;
+			yd += thrust;
+			xd += look->x * thrust / horizLookLen;
+			zd += look->z * thrust / horizLookLen;
+		}
+
+		if (pitchRad < 0.0f && horizLookLen > 0.0)
+		{
+			double boost = horizSpeed * (double)(-Mth::sin(pitchRad)) * 0.04;
+			yd += boost * 3.2;
+			xd -= look->x * boost / horizLookLen;
+			zd -= look->z * boost / horizLookLen;
+		}
+
+
+		if (horizLookLen > 0.0)
+		{
+			xd += (look->x / horizLookLen * horizSpeed - xd) * 0.1;
+			zd += (look->z / horizLookLen * horizSpeed - zd) * 0.1;
+		}
+
+		// Air drag
+		xd *= 0.99;
+		yd *= 0.98;
+		zd *= 0.99;
+
+		if (jumping && abilities.instabuild)
+			yd += (double)abilities.getFlyingSpeed() * 3.0;
+
+		m_elytraImpactYd = (float)yd; 
+		move(xd, yd, zd);
+
+		if (horizontalCollision && !verticalCollision)
+		{
+			double postHorizSpeed = Mth::sqrt(xd * xd + zd * zd);
+			double speedLost = preHorizSpeed - postHorizSpeed;
+			float damage = (float)(speedLost * 10.0 - 3.0);
+
+			if (damage > 0.0f)
+				onElytraKineticDamage(damage);
+		}
+
+		if (onGround)
+		{
+			bool canStandUp = true;
+			if (level != nullptr)
+			{
+				float halfW = bbWidth / 2.0f;
+				AABB* standingBB = AABB::newTemp(
+					x - halfW, bb->y0, z - halfW,
+					x + halfW, bb->y0 + 1.8, z + halfW);
+				AABBList* collisions = level->getCubes(shared_from_this(), standingBB, true);
+				canStandUp = collisions->empty();
+			}
+			if (canStandUp)
+				setElytraFlying(false);
+		}
+	}
+	else if (abilities.flying && riding == nullptr)
+
 	{
 		double ydo = yd;
 		float ofs = flyingSpeed;
@@ -2274,6 +2409,13 @@ void Player::checkRidingStatistiscs(double dx, double dy, double dz)
 		}
 	}
 }
+void Player::checkFallDamage(double ya, bool onGround)
+{
+	LivingEntity::checkFallDamage(ya, onGround);
+}
+
+
+
 
 
 void Player::causeFallDamage(float distance)
@@ -2481,15 +2623,15 @@ void Player::startUsingItem(shared_ptr<ItemInstance> instance, int duration)
 	{
 		setUsingItemFlag(true);
 	}
-
+	//if (GenericStats::itemsUsed(instance->getItem()->id)->id < 0) return;
 	// 4J-JEV, hook for ItemUsed event, and ironbelly achievement.
 	awardStat(GenericStats::itemsUsed(instance->getItem()->id),
 		GenericStats::param_itemsUsed(dynamic_pointer_cast<Player>(shared_from_this()),instance));
 
-#if (!defined _DURANGO) && (defined _EXTENDED_ACHIEVEMENTS)
+
 	if ( (instance->getItem()->id == Item::rotten_flesh_Id) && (getFoodData()->getFoodLevel() == 0) )
 		awardStat(GenericStats::ironBelly(), GenericStats::param_ironBelly());
-#endif
+
 }
 
 bool Player::mayDestroyBlockAt(int x, int y, int z)
@@ -2575,6 +2717,29 @@ void Player::restoreFrom(shared_ptr<Player> oldPlayer, bool restoreAll)
 		setScore(oldPlayer->getScore());
 		portalEntranceDir = oldPlayer->portalEntranceDir;
 	}
+#if defined(MINECRAFT_SERVER_BUILD)
+	else if (oldPlayer->fk_hasDeathState)
+	{
+		if (oldPlayer->fk_deathKeepInventory || level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
+		{
+			inventory->replaceWith(oldPlayer->inventory);
+		}
+		if (oldPlayer->fk_deathKeepLevel || level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
+		{
+			experienceLevel = oldPlayer->experienceLevel;
+			totalExperience = oldPlayer->totalExperience;
+			experienceProgress = oldPlayer->experienceProgress;
+		}
+		else
+		{
+			experienceLevel = oldPlayer->fk_deathNewLevel;
+			totalExperience = 0;
+			int xpNeeded = getXpNeededForNextLevel();
+			experienceProgress = (xpNeeded > 0) ? (float)oldPlayer->fk_deathNewExp / (float)xpNeeded : 0.0f;
+		}
+		setScore(oldPlayer->getScore());
+	}
+#endif
 	else if (level->getGameRules()->getBoolean(GameRules::RULE_KEEPINVENTORY))
 	{
 		inventory->replaceWith(oldPlayer->inventory);
@@ -2659,6 +2824,37 @@ bool Player::isCapeHidden()
 {
 	return getPlayerFlag(FLAG_HIDE_CAPE);
 }
+bool Player::isElytraFlying()
+{
+	return getPlayerFlag(FLAG_ELYTRA_FLYING);
+}
+
+void Player::onElytraKineticDamage(float damage)
+{
+	hurt(DamageSource::fall, damage);
+}
+
+void Player::setElytraFlying(bool flying)
+{
+	setPlayerFlag(FLAG_ELYTRA_FLYING, flying);
+	if (flying)
+	{
+		m_wasElytraFlying = false;
+		setSize(0.6f, 0.6f);   
+		fallDistance = 0.0f;   
+	}
+	else
+	{
+		ticksElytraFlying = 0;
+
+		m_wasElytraFlying = true;
+		m_elytraFallProtectTicks = 60;
+		setSize(0.6f, 1.8f);  
+
+	}
+}
+
+
 
 bool Player::isPushedByWater()
 {
@@ -2706,6 +2902,26 @@ int Player::getTexture()
 		return TN_MOB_CHAR6; // 4J - was L"/mob/char6.png";
 	case eDefaultSkins_Skin7:
 		return TN_MOB_CHAR7; // 4J - was L"/mob/char7.png";
+	case eDefaultSkins_Skin8:
+		return TN_MOB_CHAR8; // 4J - was L"/mob/char8.png";
+	case eDefaultSkins_Skin9:
+		return TN_MOB_CHAR9; // 4J - was L"/mob/char9.png";
+	case eDefaultSkins_Skin10:
+		return TN_MOB_CHAR10; // 4J - was L"/mob/char10.png";
+	case eDefaultSkins_Skin11:
+		return TN_MOB_CHAR11; // 4J - was L"/mob/char11.png";
+	case eDefaultSkins_Skin12:
+		return TN_MOB_CHAR12; // 4J - was L"/mob/char12.png";
+	case eDefaultSkins_Skin13:
+		return TN_MOB_CHAR13; // 4J - was L"/mob/char13.png";
+	case eDefaultSkins_Skin14:
+		return TN_MOB_CHAR14; // 4J - was L"/mob/char14.png";
+	case eDefaultSkins_Skin15:
+		return TN_MOB_CHAR15; // 4J - was L"/mob/char15.png";
+	case eDefaultSkins_Skin16:
+		return TN_MOB_CHAR16; // 4J - was L"/mob/char16.png";
+	case eDefaultSkins_Skin17:
+		return TN_MOB_CHAR17; // 4J - was L"/mob/char17.png";
 
 	default:
 		return TN_MOB_CHAR; // 4J - was L"/mob/char.png";
@@ -2745,6 +2961,47 @@ unsigned int Player::getPlayerGamePrivilege(unsigned int uiGamePrivileges, EPlay
 		return uiGamePrivileges&(1<<privilege);
 	}
 	return 0;
+}
+
+
+
+
+_SkinAdjustments Player::getSkinAdjustmentsById(unsigned int skinId)
+{
+    
+    _SkinAdjustments adj = _SkinAdjustments();
+
+    
+    if ((int)skinId < 0)
+    {
+       
+        app.GetSkinAdjustments(&adj, skinId);
+
+        
+        unsigned int rawId = skinId & 0x7FFFFFFF;
+
+        
+        if (rawId == 2 || rawId == 3 || rawId == 0xC8 || rawId == 0xC9 || 
+            rawId == 0x194 || rawId == 0x195 || rawId == 0x1F8 || rawId == 0x220 || 
+            rawId == 0x23A || rawId == 0x23D || rawId == 0x247)
+        {
+            
+            adj.data[17] = 2; 
+        }
+        else if (rawId == 0x1F4)
+        {
+           
+            adj.data[17] = 5;
+        }
+        else if (rawId == 0x1FA)
+        {
+           
+            adj.data[17] = 6;
+        }
+    }
+
+    
+    return adj;
 }
 
 void Player::setPlayerGamePrivilege(EPlayerGamePrivileges privilege, unsigned int value)
@@ -3157,3 +3414,8 @@ void Player::SetPlayerNameValidState(bool bState)
 	}
 }
 #endif
+
+bool Player::isSpectator()
+{
+    return false;
+}

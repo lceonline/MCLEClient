@@ -63,6 +63,16 @@ typedef enum _TEXTURE_NAME
 	TN_MOB_CHAR5,
 	TN_MOB_CHAR6,
 	TN_MOB_CHAR7,
+	TN_MOB_CHAR8,
+	TN_MOB_CHAR9,
+	TN_MOB_CHAR10,
+	TN_MOB_CHAR11,
+	TN_MOB_CHAR12,
+	TN_MOB_CHAR13,
+	TN_MOB_CHAR14,
+	TN_MOB_CHAR15,
+	TN_MOB_CHAR16,
+	TN_MOB_CHAR17,
 	TN_TERRAIN_MOON,
 	TN_TERRAIN_SUN,
 	TN_POWERED_CREEPER,
@@ -146,10 +156,31 @@ typedef enum _TEXTURE_NAME
 	TN_MOB_WITHER_ARMOR,
 	TN_MOB_WITHER_INVULNERABLE,
 
+	//TU31
+	TN_MOB_RABBIT_BROWN,
+	TN_MOB_RABBIT_WHITE,
+	TN_MOB_RABBIT_BLACK,
+	TN_MOB_RABBIT_GOLD,
+	TN_MOB_RABBIT_SALT,
+	TN_MOB_RABBIT_WHITE_SPLOTCHED,
+	TN_MOB_RABBIT_TOAST,
+	TN_MOB_RABBIT_CAERBANNOG,
+	
+
 	TN_TILE_TRAP_CHEST,
 	TN_TILE_LARGE_TRAP_CHEST,
+
+	TN_MOB_ARMORSTAND,
 	//TN_TILE_XMAS_CHEST,	
 	//TN_TILE_LARGE_XMAS_CHEST,
+
+
+
+		TN_MOB_ENDERMITE,
+		TN_MOB_GUARDIAN,
+		TN_MOB_GUARDIAN_ELDER,
+		TN_MOB_GUARDIAN_BEAM,
+		
 
 #ifdef _LARGE_WORLDS
 	TN_MISC_ADDITIONALMAPICONS,
@@ -313,6 +344,8 @@ public:
 	// 4J-PB - for the GTS textures
 	int				loadMemTexture(const wstring& url, const wstring& backup);
 	int				loadMemTexture(const wstring& url, int backup);
+	int				getHeight(const wstring& url, int backup);
+	int				getHeight(ResourceLocation resource);
 	MemTexture *	addMemTexture(const wstring& url, MemTextureProcessor *processor);
 	//MemTexture *	getMemTexture(const wstring& url, MemTextureProcessor *processor);
 	void			removeMemTexture(const wstring& url);

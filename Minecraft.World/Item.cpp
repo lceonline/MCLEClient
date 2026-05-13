@@ -12,9 +12,12 @@
 #include "net.minecraft.world.effect.h"
 #include "net.minecraft.stats.h"
 #include "MapItem.h"
+#include "WrittenBook.h"
+#include "WritingBookItem.h"
 #include "Item.h"
 #include "HangingEntityItem.h"
 #include "HtmlString.h"
+#include "ElytraItem.h"
 
 typedef Item::Tier _Tier;
 
@@ -215,8 +218,8 @@ Item *Item::skull = nullptr;
 
 
 // TU14
-//Item *Item::writingBook = nullptr;
-//Item *Item::writtenBook = nullptr;
+Item *Item::writingBook = nullptr;
+Item *Item::writtenBook = nullptr;
 
 Item *Item::emerald = nullptr;
 
@@ -251,6 +254,26 @@ Item *Item::horseArmorDiamond = nullptr;
 Item *Item::lead = nullptr;
 Item *Item::nameTag = nullptr;
 
+Item* Item::door_spruce = nullptr;
+Item* Item::door_birch = nullptr;
+Item* Item::door_jungle = nullptr;
+Item* Item::door_acacia = nullptr;
+Item* Item::door_dark = nullptr;
+
+//TU31
+Item* Item::mutton_raw = nullptr;
+Item* Item::mutton_cooked = nullptr;
+Item* Item::rabbit_raw = nullptr;
+Item* Item::rabbit_cooked = nullptr;
+Item* Item::rabbits_foot = nullptr;
+Item* Item::rabbit_hide = nullptr;
+Item* Item::armor_stand = nullptr;
+Item* Item::rabbitStew = nullptr;
+Item* Item::prismarine_crystal = nullptr;
+Item* Item::prismarine_shard = nullptr;
+
+Item* Item::elytra = nullptr;
+
 
 void Item::staticCtor()
 {
@@ -284,8 +307,8 @@ void Item::staticCtor()
 	Item::hoe_diamond		= ( new HoeItem(37, _Tier::DIAMOND) )		->setBaseItemTypeAndMaterial(eBaseItemType_hoe,	eMaterial_diamond)	->setIconName(L"hoeDiamond")->setDescriptionId(IDS_ITEM_HOE_DIAMOND)->setUseDescriptionId(IDS_DESC_HOE);
 	Item::hoe_gold			= ( new HoeItem(38, _Tier::GOLD) )			->setBaseItemTypeAndMaterial(eBaseItemType_hoe,	eMaterial_gold)		->setIconName(L"hoeGold")->setDescriptionId(IDS_ITEM_HOE_GOLD)->setUseDescriptionId(IDS_DESC_HOE);
 
-	Item::door_wood			= ( new DoorItem(68, Material::wood) )		->setBaseItemTypeAndMaterial(eBaseItemType_door,	eMaterial_wood)->setIconName(L"doorWood")->setDescriptionId(IDS_ITEM_DOOR_WOOD)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
-	Item::door_iron			= ( new DoorItem(74, Material::metal) )		->setBaseItemTypeAndMaterial(eBaseItemType_door,	eMaterial_iron)->setIconName(L"doorIron")->setDescriptionId(IDS_ITEM_DOOR_IRON)->setUseDescriptionId(IDS_DESC_DOOR_IRON);
+	Item::door_wood			= ( new DoorItem(68, Material::wood, L"doorWood"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_wood)->setIconName(L"doorWood")->setDescriptionId(IDS_ITEM_DOOR_WOOD)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
+	Item::door_iron			= ( new DoorItem(74, Material::metal, L"doorIron"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_iron)->setIconName(L"doorIron")->setDescriptionId(IDS_ITEM_DOOR_IRON)->setUseDescriptionId(IDS_DESC_DOOR_IRON);
 
 	Item::helmet_leather		= static_cast<ArmorItem *>((new ArmorItem(42, ArmorItem::ArmorMaterial::CLOTH, 0, ArmorItem::SLOT_HEAD))->setBaseItemTypeAndMaterial(eBaseItemType_helmet, eMaterial_cloth)->setIconName(L"helmetCloth")->setDescriptionId(IDS_ITEM_HELMET_CLOTH)->setUseDescriptionId(IDS_DESC_HELMET_LEATHER));
 	Item::helmet_iron		= static_cast<ArmorItem *>((new ArmorItem(50, ArmorItem::ArmorMaterial::IRON, 2, ArmorItem::SLOT_HEAD))->setBaseItemTypeAndMaterial(eBaseItemType_helmet, eMaterial_iron)->setIconName(L"helmetIron")->setDescriptionId(IDS_ITEM_HELMET_IRON)->setUseDescriptionId(IDS_DESC_HELMET_IRON));
@@ -335,8 +358,9 @@ void Item::staticCtor()
 	Item::apple = ( new FoodItem(4, 4, FoodConstants::FOOD_SATURATION_LOW, false) )	->setIconName(L"apple")->setDescriptionId(IDS_ITEM_APPLE)->setUseDescriptionId(IDS_DESC_APPLE);
 	Item::coal = ( new CoalItem(7) )												->setBaseItemTypeAndMaterial(eBaseItemType_treasure,	eMaterial_coal)->setIconName(L"coal")->setDescriptionId(IDS_ITEM_COAL)->setUseDescriptionId(IDS_DESC_COAL);
 	Item::diamond = ( new Item(8) )													->setBaseItemTypeAndMaterial(eBaseItemType_treasure,	eMaterial_diamond)->setIconName(L"diamond")->setDescriptionId(IDS_ITEM_DIAMOND)->setUseDescriptionId(IDS_DESC_DIAMONDS);
-	Item::stick = ( new Item(24) )													->setIconName(L"stick")->handEquipped()->setDescriptionId(IDS_ITEM_STICK)->setUseDescriptionId(IDS_DESC_STICK);
+	Item::stick = ( new Item(24) )													->setBaseItemTypeAndMaterial(Item::eBaseItemType_stick, Item::eMaterial_wood)->setIconName(L"stick")->handEquipped()->setDescriptionId(IDS_ITEM_STICK)->setUseDescriptionId(IDS_DESC_STICK);
 	Item::mushroomStew = ( new BowlFoodItem(26, 6) )								->setIconName(L"mushroomStew")->setDescriptionId(IDS_ITEM_MUSHROOM_STEW)->setUseDescriptionId(IDS_DESC_MUSHROOMSTEW);
+	Item::rabbitStew = ( new BowlFoodItem(157, 10) )								->setIconName(L"rabbitStew")->setDescriptionId(IDS_ITEM_MUSHROOM_STEW)->setUseDescriptionId(IDS_DESC_MUSHROOMSTEW);
 
 	Item::string = ( new TilePlanterItem(31, Tile::tripWire) )						->setIconName(L"string")->setDescriptionId(IDS_ITEM_STRING)->setUseDescriptionId(IDS_DESC_STRING);
 	Item::feather = ( new Item(32) )												->setIconName(L"feather")->setDescriptionId(IDS_ITEM_FEATHER)->setUseDescriptionId(IDS_DESC_FEATHER);
@@ -367,7 +391,7 @@ void Item::staticCtor()
 
 	Item::boat = ( new BoatItem(77) )									->setIconName(L"boat")->setDescriptionId(IDS_ITEM_BOAT)->setUseDescriptionId(IDS_DESC_BOAT);
 
-	Item::leather = ( new Item(78) )									->setIconName(L"leather")->setDescriptionId(IDS_ITEM_LEATHER)->setUseDescriptionId(IDS_DESC_LEATHER);
+	Item::leather = ( new Item(78) )									->setIconName(L"leather")->setDescriptionId(IDS_ITEM_LEATHER)->setUseDescriptionId(IDS_DESC_LEATHER)->setBaseItemTypeAndMaterial(Item::eBaseItemType_decoration,Item::eMaterial_cloth); 
 	Item::brick = ( new Item(80) )										->setIconName(L"brick")->setDescriptionId(IDS_ITEM_BRICK)->setUseDescriptionId(IDS_DESC_BRICK);
 	Item::clay = ( new Item(81) )										->setIconName(L"clay")->setDescriptionId(IDS_ITEM_CLAY)->setUseDescriptionId(IDS_DESC_CLAY);
 	Item::reeds = ( new TilePlanterItem(82, Tile::reeds) )				->setIconName(L"reeds")->setDescriptionId(IDS_ITEM_REEDS)->setUseDescriptionId(IDS_DESC_REEDS);
@@ -379,8 +403,8 @@ void Item::staticCtor()
 	Item::egg = ( new EggItem(88) )										->setIconName(L"egg")->setDescriptionId(IDS_ITEM_EGG)->setUseDescriptionId(IDS_DESC_EGG);
 	Item::fishingRod = static_cast<FishingRodItem *>((new FishingRodItem(90))->setBaseItemTypeAndMaterial(eBaseItemType_rod, eMaterial_wood)->setIconName(L"fishingRod")->setDescriptionId(IDS_ITEM_FISHING_ROD)->setUseDescriptionId(IDS_DESC_FISHINGROD));
 	Item::yellowDust = ( new Item(92) )									->setIconName(L"yellowDust")->setDescriptionId(IDS_ITEM_YELLOW_DUST)->setUseDescriptionId(IDS_DESC_YELLOW_DUST)->setPotionBrewingFormula(PotionBrewing::MOD_GLOWSTONE);
-	Item::fish_raw = ( new FoodItem(93, 2, FoodConstants::FOOD_SATURATION_LOW, false) )			->setIconName(L"fishRaw")->setDescriptionId(IDS_ITEM_FISH_RAW)->setUseDescriptionId(IDS_DESC_FISH_RAW);
-	Item::fish_cooked = ( new FoodItem(94, 5, FoodConstants::FOOD_SATURATION_NORMAL, false) )	->setIconName(L"fishCooked")->setDescriptionId(IDS_ITEM_FISH_COOKED)->setUseDescriptionId(IDS_DESC_FISH_COOKED);
+	Item::fish_raw = ( new FishFoodItem(93, false) )			->setIconName(L"fishRaw")->setDescriptionId(IDS_ITEM_FISH_RAW)->setUseDescriptionId(IDS_DESC_FISH_RAW)->setStackedByData(true)->setPotionBrewingFormula(PotionBrewing::MOD_PUFFERFISH);
+	Item::fish_cooked = (new FishFoodItem(94, true))	->setIconName(L"fishCooked")->setDescriptionId(IDS_ITEM_FISH_COOKED)->setUseDescriptionId(IDS_DESC_FISH_COOKED)->setStackedByData(true);
 
 	Item::dye_powder = ( new DyePowderItem(95) )			->setBaseItemTypeAndMaterial(eBaseItemType_dyepowder,	eMaterial_dye)->setIconName(L"dyePowder")->setDescriptionId(IDS_ITEM_DYE_POWDER)->setUseDescriptionId(-1);
 
@@ -463,17 +487,21 @@ void Item::staticCtor()
 	// TU14
 	//Item::writingBook = (new WritingBookItem(130))->setIcon(11, 11)->setDescriptionId("writingBook");
 	//Item::writtenBook = (new WrittenBookItem(131))->setIcon(12, 11)->setDescriptionId("writtenBook");
+	//Item::book = ( new BookItem(84) )									->setBaseItemTypeAndMaterial(Item::eBaseItemType_paper, Item::eMaterial_book)->setIconName(L"book")->setDescriptionId(IDS_ITEM_BOOK)->setUseDescriptionId(IDS_DESC_BOOK);
+	//->setBaseItemTypeAndMaterial(Item::eBaseItemType_paper, Item::eMaterial_book)
+	Item::writingBook = (new WritingBookItem(130))->setBaseItemTypeAndMaterial(Item::eBaseItemType_paper, Item::eMaterial_book)->setIconName(L"writingBook")->setDescriptionId(IDS_ITEM_WRITINGBOOK)->setUseDescriptionId(IDS_DESC_WRITINGBOOK)->setMaxStackSize(1);
+	Item::writtenBook = (new WrittenBookItem(131))->setIconName(L"writtenBook")->setDescriptionId(IDS_ITEM_WRITTENBOOK)->setUseDescriptionId(IDS_DESC_WRITTENBOOK)->setMaxStackSize(1);
 
 	Item::emerald =				(new Item(132))														->setBaseItemTypeAndMaterial(eBaseItemType_treasure, eMaterial_emerald)->setIconName(L"emerald")->setDescriptionId(IDS_ITEM_EMERALD)->setUseDescriptionId(IDS_DESC_EMERALD);
 
-	Item::flowerPot = (new TilePlanterItem(134, Tile::flowerPot))									->setIconName(L"flowerPot")->setDescriptionId(IDS_FLOWERPOT)->setUseDescriptionId(IDS_DESC_FLOWERPOT);
+	Item::flowerPot = (new TilePlanterItem(134, Tile::flowerPot))									->setIconName(L"flowerPot")->setDescriptionId(IDS_FLOWERPOT)->setUseDescriptionId(IDS_DESC_FLOWERPOT)->setBaseItemTypeAndMaterial(eBaseItemType_decoration,eMaterial_brick);
 
 	Item::carrots = (new SeedFoodItem(135, 4, FoodConstants::FOOD_SATURATION_NORMAL, Tile::carrots_Id, Tile::farmland_Id))	->setIconName(L"carrots")->setDescriptionId(IDS_CARROTS)->setUseDescriptionId(IDS_DESC_CARROTS);
 	Item::potato = (new SeedFoodItem(136, 1, FoodConstants::FOOD_SATURATION_LOW, Tile::potatoes_Id, Tile::farmland_Id))		->setIconName(L"potato")->setDescriptionId(IDS_POTATO)->setUseDescriptionId(IDS_DESC_POTATO);
 	Item::potatoBaked = (new FoodItem(137, 6, FoodConstants::FOOD_SATURATION_NORMAL, false))								->setIconName(L"potatoBaked")->setDescriptionId(IDS_ITEM_POTATO_BAKED)->setUseDescriptionId(IDS_DESC_POTATO_BAKED);
 	Item::potatoPoisonous = (new FoodItem(138, 2, FoodConstants::FOOD_SATURATION_LOW, false))								->setEatEffect(MobEffect::poison->id, 5, 0, .6f)->setIconName(L"potatoPoisonous")->setDescriptionId(IDS_ITEM_POTATO_POISONOUS)->setUseDescriptionId(IDS_DESC_POTATO_POISONOUS);
 
-	Item::emptyMap = static_cast<EmptyMapItem *>((new EmptyMapItem(139))->setIconName(L"map_empty")->setDescriptionId(IDS_ITEM_MAP_EMPTY)->setUseDescriptionId(IDS_DESC_MAP_EMPTY));
+	Item::emptyMap = (EmptyMapItem*)(new EmptyMapItem(139))->setIconName(L"map_empty")->setBaseItemTypeAndMaterial(eBaseItemType_pockettool, eMaterial_map)->setDescriptionId(IDS_ITEM_MAP_EMPTY)->setUseDescriptionId(IDS_DESC_MAP_EMPTY);
 
 	Item::carrotGolden = (new FoodItem(140, 6, FoodConstants::FOOD_SATURATION_SUPERNATURAL, false))			->setBaseItemTypeAndMaterial(eBaseItemType_giltFruit,	eMaterial_carrot)->setIconName(L"carrotGolden")->setPotionBrewingFormula(PotionBrewing::MOD_GOLDENCARROT)->setDescriptionId(IDS_ITEM_CARROT_GOLDEN)->setUseDescriptionId(IDS_DESC_CARROT_GOLDEN);
 
@@ -493,7 +521,28 @@ void Item::staticCtor()
 	Item::horseArmorGold = (new Item(162))															->setIconName(L"gold_horse_armor")->setMaxStackSize(1)->setDescriptionId(IDS_ITEM_GOLD_HORSE_ARMOR)->setUseDescriptionId(IDS_DESC_GOLD_HORSE_ARMOR);
 	Item::horseArmorDiamond = (new Item(163))														->setIconName(L"diamond_horse_armor")->setMaxStackSize(1)->setDescriptionId(IDS_ITEM_DIAMOND_HORSE_ARMOR)->setUseDescriptionId(IDS_DESC_DIAMOND_HORSE_ARMOR);
 	Item::lead = (new LeashItem(164))																->setBaseItemTypeAndMaterial(eBaseItemType_pockettool,	eMaterial_undefined)->setIconName(L"lead")->setDescriptionId(IDS_ITEM_LEAD)->setUseDescriptionId(IDS_DESC_LEAD);
-	Item::nameTag = (new NameTagItem(165))															->setIconName(L"name_tag")->setDescriptionId(IDS_ITEM_NAME_TAG)->setUseDescriptionId(IDS_DESC_NAME_TAG);}
+	Item::nameTag = (new NameTagItem(165))															->setIconName(L"name_tag")->setDescriptionId(IDS_ITEM_NAME_TAG)->setUseDescriptionId(IDS_DESC_NAME_TAG);
+
+	Item::mutton_raw = (new FoodItem(167, 2, FoodConstants::FOOD_SATURATION_LOW, true))->setIconName(L"muttonRaw")->setDescriptionId(IDS_ITEM_MUTTON_RAW)->setUseDescriptionId(IDS_DESC_MUTTON_RAW);
+	Item::mutton_cooked = (new FoodItem(168, 6, FoodConstants::FOOD_SATURATION_NORMAL, true))->setIconName(L"muttonCooked")->setDescriptionId(IDS_ITEM_MUTTON_COOKED)->setUseDescriptionId(IDS_DESC_MUTTON_COOKED);
+	Item::rabbit_raw = (new FoodItem(155, 1, FoodConstants::FOOD_SATURATION_NORMAL, true))->setIconName(L"rabbitRaw")->setDescriptionId(IDS_ITEM_RABBIT_RAW)->setUseDescriptionId(IDS_DESC_RABBIT_RAW);
+	Item::rabbit_cooked = (new FoodItem(156, 5, FoodConstants::FOOD_SATURATION_NORMAL, true))->setIconName(L"rabbitCooked")->setDescriptionId(IDS_ITEM_RABBIT_COOKED)->setUseDescriptionId(IDS_DESC_RABBIT_COOKED);
+
+	Item::door_spruce = (new DoorItem(171, Material::wood, L"doorSpruce"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_wood)->setIconName(L"doorSpruce")->setDescriptionId(IDS_ITEM_DOOR_SPRUCE)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
+	Item::door_birch = (new DoorItem(172, Material::wood, L"doorBirch"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_wood)->setIconName(L"doorBirch")->setDescriptionId(IDS_ITEM_DOOR_BIRCH)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
+	Item::door_jungle = (new DoorItem(173, Material::wood, L"doorJungle"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_wood)->setIconName(L"doorJungle")->setDescriptionId(IDS_ITEM_DOOR_JUNGLE)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
+	Item::door_acacia = (new DoorItem(174, Material::wood, L"doorAcacia"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_wood)->setIconName(L"doorAcacia")->setDescriptionId(IDS_ITEM_DOOR_ACACIA)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
+	Item::door_dark = (new DoorItem(175, Material::wood, L"doorDark"))->setBaseItemTypeAndMaterial(eBaseItemType_door, eMaterial_wood)->setIconName(L"doorDark")->setDescriptionId(IDS_ITEM_DOOR_DARK)->setUseDescriptionId(IDS_DESC_DOOR_WOOD);
+
+	Item::rabbit_hide = ( new Item(159) )									->setIconName(L"rabbitHide")->setDescriptionId(IDS_ITEM_RABBIT_HIDE)->setUseDescriptionId(IDS_DESC_RABBIT_HIDE);
+	Item::rabbits_foot = ( new Item(158) )									->setIconName(L"rabbitsFoot")->setDescriptionId(IDS_ITEM_RABBIT_FOOT)->setUseDescriptionId(IDS_DESC_RABBIT_FOOT)->setPotionBrewingFormula(PotionBrewing::MOD_RABBITS_FOOT);;
+
+	Item::armor_stand = (new ArmorStandItem(160))							->setBaseItemTypeAndMaterial(eBaseItemType_HangingItem,eMaterial_cloth)->setIconName(L"armorStand")->setDescriptionId(IDS_ITEM_ARMOR_STAND)->setUseDescriptionId(IDS_DESC_ARMOR_STAND);
+	Item::prismarine_crystal = (new Item(154))->setIconName(L"prismarineCrystal")->setDescriptionId(IDS_ITEM_PRISMARINE_CRYSTAL)->setUseDescriptionId(IDS_ITEM_PRISMARINE_CRYSTAL_DESC);
+	Item::prismarine_shard = (new Item(153))->setIconName(L"prismarineShard")->setDescriptionId(IDS_ITEM_PRISMARINE_SHARD)->setUseDescriptionId(IDS_ITEM_PRISMARINE_SHARD_DESC);
+	Item::elytra = (new ElytraItem())->setBaseItemTypeAndMaterial(eBaseItemType_chestplate, eMaterial_cloth)->setIconName(L"elytra")->setDescriptionId(IDS_ITEM_ELYTRA)->setUseDescriptionId(IDS_ITEM_ELYTRA);
+}
+
 
 
 // 4J Stu - We need to do this after the staticCtor AND after staticCtors for other class
@@ -1016,6 +1065,7 @@ const int Item::hatchet_diamond_Id	;
 const int Item::stick_Id			;
 const int Item::bowl_Id				;
 const int Item::mushroomStew_Id		;
+const int Item::rabbitStew_Id		;
 const int Item::sword_gold_Id		;
 const int Item::shovel_gold_Id		;
 const int Item::pickAxe_gold_Id		;
@@ -1126,11 +1176,11 @@ const int Item::record_04_Id			;
 const int Item::record_05_Id			;
 const int Item::record_06_Id			;
 const int Item::record_07_Id			;
+const int Item::record_08_Id			;
 const int Item::record_09_Id			;
 const int Item::record_10_Id		    ;
 const int Item::record_11_Id		    ;
 const int Item::record_12_Id			;
-const int Item::record_08_Id			;
 const int Item::fireball_Id			;
 const int Item::itemFrame_Id			;
 const int Item::netherbrick_Id		;
@@ -1146,3 +1196,4 @@ const int Item::pumpkinPie_Id		;
 const int Item::enchantedBook_Id		;
 const int Item::netherQuartz_Id		;
 #endif
+

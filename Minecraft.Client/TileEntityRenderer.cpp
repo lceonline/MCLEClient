@@ -14,6 +14,13 @@ void TileEntityRenderer::bindTexture(const wstring& urlTexture, ResourceLocation
     if(t != nullptr) t->bind(t->loadHttpTexture(urlTexture, location->getTexture()));
 }
 
+int TileEntityRenderer::getHeight(ResourceLocation *location)
+{
+    Textures *t = tileEntityRenderDispatcher->textures;
+    if(t != nullptr) return t->getHeight(location->getTexture());
+    return 32;
+}
+
 Level *TileEntityRenderer::getLevel()
 {
 	return tileEntityRenderDispatcher->level;

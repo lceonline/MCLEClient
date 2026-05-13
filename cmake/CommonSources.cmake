@@ -1,6 +1,8 @@
 set(_INCLUDE_LCE_FILESYSTEM
   "${CMAKE_SOURCE_DIR}/include/lce_filesystem/lce_filesystem.cpp"
   "${CMAKE_SOURCE_DIR}/include/lce_filesystem/lce_filesystem.h"
+  "${CMAKE_SOURCE_DIR}/include/lce_filesystem/FolderFile.cpp"
+  "${CMAKE_SOURCE_DIR}/include/lce_filesystem/FolderFile.h"
 )
 source_group("include/lce_filesystem" FILES ${_INCLUDE_LCE_FILESYSTEM})
 

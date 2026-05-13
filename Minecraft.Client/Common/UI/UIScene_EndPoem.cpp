@@ -50,7 +50,19 @@ UIScene_EndPoem::UIScene_EndPoem(int iPad, void *initData, UILayer *parentLayer)
 	Minecraft *pMinecraft = Minecraft::GetInstance();
 
 	wstring playerName = L"";
-	playerName = escapeXML( pMinecraft->localplayers[ProfileManager.GetPrimaryPad()]->getDisplayName() );
+	unsigned int winIdx = ui.GetWinUserIndex();
+	if(winIdx < XUSER_MAX_COUNT && pMinecraft->localplayers[winIdx] != nullptr)
+	{
+		playerName = escapeXML( pMinecraft->localplayers[winIdx]->getDisplayName() );
+	}
+	else if(pMinecraft->localplayers[ProfileManager.GetPrimaryPad()] != nullptr)
+	{
+		playerName = escapeXML( pMinecraft->localplayers[ProfileManager.GetPrimaryPad()]->getDisplayName() );
+	}
+	else
+	{
+		playerName = L"Player";
+	}
 	noNoiseString = replaceAll(noNoiseString,L"{*PLAYER*}",playerName);
 
 	Random random(8124371);

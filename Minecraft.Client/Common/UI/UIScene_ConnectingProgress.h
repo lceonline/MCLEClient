@@ -12,7 +12,6 @@ private:
 	bool m_showingButton;
 	void (*m_cancelFunc)(LPVOID param);
 	LPVOID m_cancelFuncParam;
-
 #ifdef _WINDOWS64
 	bool m_asyncJoinActive;
 	bool m_asyncJoinFailed;

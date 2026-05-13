@@ -4,7 +4,6 @@
 #include "../../Minecraft.h"
 #ifdef _WINDOWS64
 #include "../../Windows64/Network/WinsockNetLayer.h"
-#include "../../../Minecraft.World/DisconnectPacket.h"
 
 static int ConnectingProgress_OnRejectedDialogOK(LPVOID, int iPad, const C4JStorage::EMessageResult)
 {
@@ -53,10 +52,10 @@ UIScene_ConnectingProgress::UIScene_ConnectingProgress(int iPad, void *_initData
 	m_cancelFuncParam = param->cancelFuncParam;
 	m_removeLocalPlayer = false;
 	m_showingButton = false;
-
 #ifdef _WINDOWS64
 	WinsockNetLayer::eJoinState initState = WinsockNetLayer::GetJoinState();
-	m_asyncJoinActive = (initState != WinsockNetLayer::eJoinState_Idle && initState != WinsockNetLayer::eJoinState_Cancelled);
+	m_asyncJoinActive = (initState == WinsockNetLayer::eJoinState_Connecting ||
+						 initState == WinsockNetLayer::eJoinState_Success);
 	m_asyncJoinFailed = false;
 #endif
 }
@@ -72,12 +71,12 @@ void UIScene_ConnectingProgress::updateTooltips()
 #ifdef _WINDOWS64
 	if (m_asyncJoinActive)
 	{
-		ui.SetTooltips( m_iPad, -1, IDS_TOOLTIPS_BACK);
+		ui.SetTooltips(m_iPad, -1, IDS_TOOLTIPS_BACK);
 		return;
 	}
 	if (m_asyncJoinFailed)
 	{
-		ui.SetTooltips( m_iPad, IDS_TOOLTIPS_SELECT, -1);
+		ui.SetTooltips(m_iPad, IDS_TOOLTIPS_SELECT, -1);
 		return;
 	}
 #endif
@@ -94,78 +93,54 @@ void UIScene_ConnectingProgress::tick()
 	if (m_asyncJoinActive)
 	{
 		WinsockNetLayer::eJoinState state = WinsockNetLayer::GetJoinState();
-		if (state == WinsockNetLayer::eJoinState_Connecting)
+		switch (state)
 		{
-			// connecting.............
+		case WinsockNetLayer::eJoinState_Connecting:
+		{
 			int attempt = WinsockNetLayer::GetJoinAttempt();
 			int maxAttempts = WinsockNetLayer::GetJoinMaxAttempts();
-			char buf[128];
-			if (attempt <= 1)
-				sprintf_s(buf, "Connecting...");
+			wchar_t buf[128];
+			if (attempt > 1)
+				swprintf_s(buf, L"Connecting... (attempt %d/%d)", attempt, maxAttempts);
 			else
-				sprintf_s(buf, "Connecting failed, trying again (%d/%d)", attempt, maxAttempts);
-			wchar_t wbuf[128];
-			mbstowcs(wbuf, buf, 128);
-			m_labelTitle.setLabel(wstring(wbuf));
+				swprintf_s(buf, L"Connecting...");
+			m_labelTitle.setLabel(buf);
+			break;
 		}
-		else if (state == WinsockNetLayer::eJoinState_Success)
-		{
+		case WinsockNetLayer::eJoinState_Success:
 			m_asyncJoinActive = false;
-			// go go go
-		}
-		else if (state == WinsockNetLayer::eJoinState_Cancelled)
-		{
-			// cancel
+			m_labelTitle.setLabel(L"Joining world...");
+			break;
+		case WinsockNetLayer::eJoinState_Cancelled:
 			m_asyncJoinActive = false;
 			navigateBack();
-		}
-		else if (state == WinsockNetLayer::eJoinState_Rejected)
+			break;
+		case WinsockNetLayer::eJoinState_Rejected:
 		{
-			// server full and banned are passed differently compared to other disconnects it seems
 			m_asyncJoinActive = false;
 			DisconnectPacket::eDisconnectReason reason = WinsockNetLayer::GetJoinRejectReason();
-			int exitReasonStringId;
-			switch (reason)
-			{
-			case DisconnectPacket::eDisconnect_ServerFull:
-				exitReasonStringId = IDS_DISCONNECTED_SERVER_FULL;
-				break;
-			case DisconnectPacket::eDisconnect_Banned:
-				exitReasonStringId = IDS_DISCONNECTED_KICKED;
-				break;
-			default:
-				exitReasonStringId = IDS_CONNECTION_LOST_SERVER;
-				break;
-			}
+			int reasonStringId = IDS_CONNECTION_LOST_SERVER;
+			if (reason == DisconnectPacket::eDisconnect_ServerFull)
+				reasonStringId = IDS_DISCONNECTED_SERVER_FULL;
+			else if (reason == DisconnectPacket::eDisconnect_Kicked)
+				reasonStringId = IDS_DISCONNECTED_KICKED;
+
 			UINT uiIDA[1];
 			uiIDA[0] = IDS_CONFIRM_OK;
-			ui.RequestErrorMessage(IDS_CONNECTION_FAILED, exitReasonStringId, uiIDA, 1, ProfileManager.GetPrimaryPad(), ConnectingProgress_OnRejectedDialogOK, nullptr, nullptr);
+			ui.RequestErrorMessage(IDS_CONNECTION_FAILED, reasonStringId, uiIDA, 1, m_iPad, ConnectingProgress_OnRejectedDialogOK, nullptr);
+			break;
 		}
-		else if (state == WinsockNetLayer::eJoinState_Failed)
-		{
-			// FAIL
+		case WinsockNetLayer::eJoinState_Failed:
 			m_asyncJoinActive = false;
 			m_asyncJoinFailed = true;
-
-			int maxAttempts = WinsockNetLayer::GetJoinMaxAttempts();
-			char buf[256];
-			sprintf_s(buf, "Failed to connect after %d attempts. The server may be unavailable.", maxAttempts);
-			wchar_t wbuf[256];
-			mbstowcs(wbuf, buf, 256);
-
-			// TIL that these exist
-			// not going to use a actual popup due to it requiring messing with strings which can really mess things up
-			// i dont trust myself with that
-			// these need to be touched up later as teh button is a bit offset
-			m_labelTitle.setLabel(L"Unable to connect to server");
-			m_progressBar.setLabel(wstring(wbuf));
-			m_progressBar.showBar(false);
-			m_progressBar.setVisible(true);
+			m_labelTitle.setLabel(app.GetString(IDS_CONNECTION_FAILED));
 			m_buttonConfirm.setVisible(true);
 			m_showingButton = true;
-			m_controlTimer.setVisible(false);
+			updateTooltips();
+			break;
+		default:
+			break;
 		}
-		return;
 	}
 #endif
 
@@ -202,7 +177,6 @@ void UIScene_ConnectingProgress::handleGainFocus(bool navBack)
 void UIScene_ConnectingProgress::handleLoseFocus()
 {
 	if (!m_runFailTimer) return;
-
 	int millisecsLeft = getTimer(0)->targetTime - System::currentTimeMillis();
 	int millisecsTaken = getTimer(0)->duration - millisecsLeft;
 	app.DebugPrintf("\n");
@@ -316,7 +290,6 @@ void UIScene_ConnectingProgress::handleInput(int iPad, int key, bool repeat, boo
 
 		switch(key)
 		{
-// 4J-PB - Removed the option to cancel join - it didn't work anyway
 #ifdef _WINDOWS64
 		case ACTION_MENU_CANCEL:
 			if (pressed && m_asyncJoinActive)
@@ -325,9 +298,11 @@ void UIScene_ConnectingProgress::handleInput(int iPad, int key, bool repeat, boo
 				WinsockNetLayer::CancelJoinGame();
 				navigateBack();
 				handled = true;
+				return;
 			}
 			break;
 #endif
+// 4J-PB - Removed the option to cancel join - it didn't work anyway
 // 		case ACTION_MENU_CANCEL:
 // 			{
 // 				if(m_cancelFunc != nullptr)
@@ -374,8 +349,8 @@ void UIScene_ConnectingProgress::handlePress(F64 controlId, F64 childId)
 			if (m_asyncJoinFailed)
 			{
 				navigateBack();
+				break;
 			}
-			else
 #endif
 			if( m_iPad != ProfileManager.GetPrimaryPad() && g_NetworkManager.IsInSession() )
 			{

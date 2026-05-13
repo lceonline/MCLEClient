@@ -1416,7 +1416,9 @@ void EntityHorse::travel(float xa, float ya)
 	flyingSpeed = getSpeed() * .1f;
 	if (!level->isClientSide)
 	{
-		setSpeed(static_cast<float>(getAttribute(SharedMonsterAttributes::MOVEMENT_SPEED)->getValue()));
+		float speed = static_cast<float>(getAttribute(SharedMonsterAttributes::MOVEMENT_SPEED)->getValue());
+		if (livingRider->isSprinting()) speed *= 1.3f;
+		setSpeed(speed);
 		Animal::travel(xa, ya);
 	}
 

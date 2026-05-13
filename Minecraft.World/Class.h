@@ -137,6 +137,7 @@ enum eINSTANCEOF
 							eTYPE_SHEEP				= eTYPE_ANIMAL | eTYPE_ANIMALS_SPAWN_LIMIT_CHECK | 0x2,
 							eTYPE_PIG				= eTYPE_ANIMAL | eTYPE_ANIMALS_SPAWN_LIMIT_CHECK | 0x3,
 							eTYPE_CHICKEN			= eTYPE_ANIMAL                                   | 0x4,
+							eTYPE_RABBIT    = eTYPE_ANIMAL | eTYPE_ANIMALS_SPAWN_LIMIT_CHECK | 0x5,
 
 							eTYPE_COW				= eTYPE_ANIMAL | eTYPE_ANIMALS_SPAWN_LIMIT_CHECK | BIT_COW,
 								eTYPE_MUSHROOMCOW	= eTYPE_COW | 0x1,
@@ -168,6 +169,11 @@ enum eINSTANCEOF
 						eTYPE_BLAZE			= eTYPE_MONSTER | eTYPE_VALID_IN_SPAWNER_FLAG | 0x6,
 						eTYPE_WITCH			= eTYPE_MONSTER | eTYPE_VALID_IN_SPAWNER_FLAG | 0x7,
 						eTYPE_WITHERBOSS	= eTYPE_MONSTER | eTYPE_VALID_IN_SPAWNER_FLAG | 0x8,
+						eTYPE_GUARDIAN	= eTYPE_MONSTER | eTYPE_VALID_IN_SPAWNER_FLAG | 0x9,
+						
+
+						eTYPE_ENDERMITE	= eTYPE_MONSTER | eTYPE_VALID_IN_SPAWNER_FLAG | 0x10,
+						eTYPE_ELDER_GUARDIAN = eTYPE_MONSTER | eTYPE_VALID_IN_SPAWNER_FLAG | 0x11,
 
 
 				eTYPE_AMBIENT			= eTYPE_MOB | BIT_AMBIENT_MOB,
@@ -186,6 +192,8 @@ enum eINSTANCEOF
 				eTYPE_REMOTEPLAYER	= eTYPE_PLAYER | 0x2,
 				eTYPE_LOCALPLAYER	= eTYPE_PLAYER | 0x3,
 
+			eTYPE_ARMORSTAND        = eTYPE_LIVINGENTITY | 0x10,
+
 		eTYPE_GLOBAL_ENTITY			= eTYPE_ENTITY | BIT_GLOBAL_ENTITY,
 			eTYPE_LIGHTNINGBOLT		= eTYPE_GLOBAL_ENTITY | 0x1,
 
@@ -200,9 +208,8 @@ enum eINSTANCEOF
 				
 				eTYPE_MINECART_CHEST	= eTYPE_MINECART_CONTAINER | 0x2,
 				eTYPE_MINECART_HOPPER	= eTYPE_MINECART_CONTAINER | 0x5,
-		
 
-		eTYPE_FIREBALL				= eTYPE_ENTITY | eTYPE_PROJECTILE | BIT_FIREBALL, //0x2,
+	eTYPE_FIREBALL				= eTYPE_ENTITY | eTYPE_PROJECTILE | BIT_FIREBALL, //0x2,
 
 			eTYPE_DRAGON_FIREBALL	= eTYPE_FIREBALL | 0x1,
 			eTYPE_WITHER_SKULL      = eTYPE_FIREBALL | 0x2,
@@ -258,6 +265,7 @@ enum eINSTANCEOF
 	eType_NETHERPORTALPARTICLE,
 	eType_REDDUSTPARTICLE,
 	eType_SMOKEPARTICLE,
+	eType_BARRIERPARTICLE,
 	eType_SNOWSHOVELPARTICLE,
 	eType_SPLASHPARTICLE,
 	eType_TAKEANIMATIONPARTICLE,
@@ -285,6 +293,9 @@ enum eINSTANCEOF
 	eType_FIREWORKSSTARTERPARTICLE,
 	eType_FIREWORKSSPARKPARTICLE,
 	eType_FIREWORKSOVERLAYPARTICLE,
+
+	//TU 31
+	eType_WAKEPARTICLE,
 
 	// === Tile Entities === //
 	
@@ -410,6 +421,7 @@ public:
 		classes->push_back( SUBCLASS(eTYPE_SHEEP				)->addParent( eTYPE_ANIMAL)->addParent(eTYPE_ANIMALS_SPAWN_LIMIT_CHECK ) );
 		classes->push_back( SUBCLASS(eTYPE_PIG				)->addParent( eTYPE_ANIMAL)->addParent(eTYPE_ANIMALS_SPAWN_LIMIT_CHECK  ) );
 		classes->push_back( SUBCLASS(eTYPE_CHICKEN			)->addParent( eTYPE_ANIMAL  ) );
+
 		classes->push_back( SUBCLASS(eTYPE_COW				)->addParent( eTYPE_ANIMAL)->addParent(eTYPE_ANIMALS_SPAWN_LIMIT_CHECK ) );
 		classes->push_back( SUBCLASS(eTYPE_MUSHROOMCOW	)->addParent( eTYPE_COW ) );
 		classes->push_back( SUBCLASS(eTYPE_WATERANIMAL	)->addParent(eTYPE_PATHFINDER_MOB) );
@@ -441,6 +453,7 @@ public:
 		classes->push_back( SUBCLASS(eTYPE_SERVERPLAYER	)->addParent( eTYPE_PLAYER ) );
 		classes->push_back( SUBCLASS(eTYPE_REMOTEPLAYER	)->addParent( eTYPE_PLAYER ) );
 		classes->push_back( SUBCLASS(eTYPE_LOCALPLAYER	)->addParent( eTYPE_PLAYER ) );
+		classes->push_back( SUBCLASS(eTYPE_ARMORSTAND   )->addParent( eTYPE_MOB ) );
 		classes->push_back( SUBCLASS(eTYPE_MINECART					)->addParent( eTYPE_ENTITY ) );
 		classes->push_back( SUBCLASS(eTYPE_MINECART_RIDEABLE     )->addParent( eTYPE_MINECART ) );
 		classes->push_back( SUBCLASS(eTYPE_MINECART_SPAWNER      )->addParent( eTYPE_MINECART ) );
@@ -481,7 +494,7 @@ public:
 		classes->push_back( SUBCLASS(eTYPE_MULTIENTITY_MOB_PART	)->addParent( eTYPE_ENTITY  ) );
 		classes->push_back( SUBCLASS(eTYPE_NETHER_SPHERE			)->addParent( eTYPE_ENTITY  ) );
 		classes->push_back( SUBCLASS(eTYPE_ENDER_CRYSTAL			)->addParent( eTYPE_ENTITY  ) );
-
+		classes->push_back( SUBCLASS(eTYPE_ENDERMITE    )->addParent( eTYPE_MONSTER)->addParent(eTYPE_VALID_IN_SPAWNER_FLAG ) );
 		classes->push_back( SUBCLASS(eType_BREAKINGITEMPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_BUBBLEPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_EXPLODEPARTICLE)->addParent(eTYPE_ENTITY) );
@@ -495,6 +508,7 @@ public:
 		classes->push_back( SUBCLASS(eType_SMOKEPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_SNOWSHOVELPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_SPLASHPARTICLE)->addParent(eTYPE_ENTITY) );
+		classes->push_back( SUBCLASS(eType_WAKEPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_TAKEANIMATIONPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_TERRAINPARTICLE)->addParent(eTYPE_ENTITY) );
 		classes->push_back( SUBCLASS(eType_WATERDROPPARTICLE)->addParent(eTYPE_ENTITY) );

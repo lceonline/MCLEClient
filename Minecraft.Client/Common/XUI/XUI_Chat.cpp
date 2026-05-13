@@ -2,6 +2,7 @@
 #include "XUI_Chat.h"
 #include "../../Minecraft.h"
 #include "../../Gui.h"
+#include "../../../Minecraft.World/ArabicShaping.h"
 
 HRESULT CScene_Chat::OnInit( XUIMessageInit* pInitData, BOOL& bHandled )
 {
@@ -29,7 +30,8 @@ HRESULT CScene_Chat::OnTimer( XUIMessageTimer *pXUIMessageTimer, BOOL &bHandled)
 		{
 			m_Backgrounds[i].SetOpacity(opacity);
 			m_Labels[i].SetOpacity(opacity);
-			m_Labels[i].SetText( pGui->getMessage(m_iPad,i).c_str() );
+			wstring shaped = shapeArabicText(pGui->getMessage(m_iPad, i));
+			m_Labels[i].SetText( shaped.c_str() );
 		}
 		else
 		{

@@ -1,11 +1,14 @@
 #pragma once
 #include "../Minecraft.World/net.minecraft.world.level.h"
 #include "../Minecraft.World/JavaIntHash.h"
+#include "../Minecraft.World/ArrayWithLength.h"
+#include "ParticleType.h"
 class ServerChunkCache;
 class MinecraftServer;
 class Node;
 class EntityTracker;
 class PlayerChunkMap;
+class ArrayWithLength;
 using namespace std;
 
 class ServerLevel : public Level
@@ -180,5 +183,6 @@ public:
 
 	static C4JThread*			m_updateThread;
 	static int 	runUpdate(void* lpParam);
-
+	virtual void sendParticles(const ParticleType* type, bool longDistance, double x, double y, double z, int count, double dx, double dy, double dz, double speed, arrayWithLength<int> data);
+	virtual void sendParticles(const ParticleType* type, double x, double y, double z, int count, double dx, double dy, double dz, double speed, arrayWithLength<int> data);
 };

@@ -178,7 +178,12 @@ enum eGameSetting
 	// PSVita
 	eGameSetting_PSVita_NetworkModeAdhoc,
 
+	// PC
+	eGameSetting_VSync,
+	eGameSetting_ExclusiveFullscreen,
 
+	//TU25
+	eGameSetting_ClassicCrafting,
 };
 
 
@@ -221,6 +226,9 @@ enum eMinecraftColour
 	eMinecraftColour_Foliage_ExtremeHillsEdge,
 	eMinecraftColour_Foliage_Jungle,
 	eMinecraftColour_Foliage_JungleHills,
+	eMinecraftColour_Foliage_Savanna,
+	eMinecraftColour_Foliage_RoofedForest,
+	eMinecraftColour_Foliage_Mesa,
 	
 	eMinecraftColour_Grass_Common,
 	eMinecraftColour_Grass_Ocean,
@@ -246,6 +254,9 @@ enum eMinecraftColour
 	eMinecraftColour_Grass_ExtremeHillsEdge,
 	eMinecraftColour_Grass_Jungle,
 	eMinecraftColour_Grass_JungleHills,
+	eMinecraftColour_Grass_Savanna,
+	eMinecraftColour_Grass_RoofedForest,
+	eMinecraftColour_Grass_Mesa,
 
 	eMinecraftColour_Water_Ocean,
 	eMinecraftColour_Water_Plains,
@@ -270,6 +281,7 @@ enum eMinecraftColour
 	eMinecraftColour_Water_ExtremeHillsEdge,
 	eMinecraftColour_Water_Jungle,
 	eMinecraftColour_Water_JungleHills,
+	eMinecraftColour_Water_Mesa,
 
 	eMinecraftColour_Sky_Ocean,
 	eMinecraftColour_Sky_Plains,
@@ -438,6 +450,14 @@ enum eMinecraftColour
 	eMinecraftColour_Mob_Witch_Colour2,
 	eMinecraftColour_Mob_Horse_Colour1,
 	eMinecraftColour_Mob_Horse_Colour2,
+	eMinecraftColour_Mob_Rabbit_Colour1,
+	eMinecraftColour_Mob_Rabbit_Colour2,
+	eMinecraftColour_Mob_Endermite_Colour1,
+	eMinecraftColour_Mob_Endermite_Colour2,
+	eMinecraftColour_Mob_Guardian_Colour1,
+	eMinecraftColour_Mob_Guardian_Colour2,
+	eMinecraftColour_Mob_ElderGuardian_Colour1,
+	eMinecraftColour_Mob_ElderGuardian_Colour2,
 
 	eMinecraftColour_Armour_Default_Leather_Colour,
 
@@ -607,6 +627,7 @@ enum _eTerrainFeatureType
 	eTerrainFeature_Ravine,
 	eTerrainFeature_NetherFortress,
 	eTerrainFeature_StrongholdEndPortal,
+	eTerrainFeature_OceanMonument,
 	eTerrainFeature_Count
 };
 
@@ -648,6 +669,7 @@ enum eGameHostOption
 	eGameHostOption_DoTileDrops,
 	eGameHostOption_NaturalRegeneration,
 	eGameHostOption_DoDaylightCycle,
+	eGameHostOption_Hardcore, // 4J Added - for hardcore mode
 };
 
 // 4J-PB - If any new DLC items are added to the TMSFiles, this array needs updated

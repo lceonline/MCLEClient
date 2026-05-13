@@ -36,7 +36,7 @@ private:
 public:
 	void tick(Level *level, int x, int y, int z, Random *random);
 private:
-	void trySpreadTo(Level *level, int x, int y, int z, int neighbor);
+	void trySpreadTo(Level *level, int x, int y, int z, int fromX, int fromY, int fromZ, int neighbor);
 
 	bool *result;
 	int *dist;

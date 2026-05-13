@@ -37,14 +37,14 @@ void HeavyTile::checkSlide(Level *level, int x, int y, int z)
 	int x2 = x;
 	int y2 = y;
 	int z2 = z;
-	if (isFree(level, x2, y2 - 1, z2) && y2 >= 0)
+	if (y2 > 0 && isFree(level, x2, y2 - 1, z2))
 	{
 		int r = 32;
 
 		if (instaFall || !level->hasChunksAt(x - r, y - r, z - r, x + r, y + r, z + r)  )
 		{
 			level->removeTile(x, y, z);
-			while (isFree(level, x, y - 1, z) && y > 0)
+			while (y > 0 && isFree(level, x, y - 1, z))
 				y--;
 			if (y > 0)
 			{

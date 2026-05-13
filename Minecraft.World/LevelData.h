@@ -141,6 +141,7 @@ public:
 	virtual wstring getGeneratorOptions();
 	virtual void setGeneratorOptions(const wstring &options);
 	virtual bool isHardcore();
+	virtual void setHardcore(bool hardcore);
 	virtual bool getAllowCommands();
 	virtual void setAllowCommands(bool allowCommands);
 	virtual bool isInitialized();

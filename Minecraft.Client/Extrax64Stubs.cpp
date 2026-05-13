@@ -45,7 +45,8 @@ C_4JProfile ProfileManager;
 CSentientManager SentientManager;
 CXuiStringTable StringTable;
 
-#ifndef _XBOX_ONE
+
+#if !defined(_XBOX_ONE) && !defined(_WINDOWS64)
 ATG::XMLParser::XMLParser() {}
 ATG::XMLParser::~XMLParser() {}
 HRESULT    ATG::XMLParser::ParseXMLBuffer(CONST CHAR* strBuffer, UINT uBufferSize) { return S_OK; }
@@ -192,19 +193,19 @@ D3DXVECTOR3& D3DXVECTOR3::operator += (CONST D3DXVECTOR3 & add) { x += add.x; y 
 BYTE IQNetPlayer::GetSmallId() { return m_smallId; }
 void IQNetPlayer::SendData(IQNetPlayer * player, const void* pvData, DWORD dwDataSize, DWORD dwFlags)
 {
-	if (WinsockNetLayer::IsActive())
-	{
-		if (!WinsockNetLayer::IsHosting() && !m_isRemote)
-		{
-			SOCKET sock = WinsockNetLayer::GetLocalSocket(m_smallId);
-			if (sock != INVALID_SOCKET)
-				WinsockNetLayer::SendOnSocket(sock, pvData, dwDataSize);
-		}
-		else
-		{
-			WinsockNetLayer::SendToSmallId(player->m_smallId, pvData, dwDataSize);
-		}
-	}
+    if (WinsockNetLayer::IsActive())
+    {
+        if (!WinsockNetLayer::IsHosting() && !m_isRemote)
+        {
+            SOCKET sock = WinsockNetLayer::GetLocalSocket(m_smallId);
+            if (sock != INVALID_SOCKET)
+                WinsockNetLayer::SendOnSocket(sock, pvData, dwDataSize);
+        }
+        else
+        {
+            WinsockNetLayer::SendToSmallId(player->m_smallId, pvData, dwDataSize);
+        }
+    }
 }
 bool IQNetPlayer::IsSameSystem(IQNetPlayer * player) { return (this == player) || (!m_isRemote && !player->m_isRemote); }
 DWORD IQNetPlayer::GetSendQueueSize(IQNetPlayer * player, DWORD dwFlags) { return 0; }
@@ -212,7 +213,15 @@ DWORD IQNetPlayer::GetCurrentRtt() { return 0; }
 bool IQNetPlayer::IsHost() { return m_isHostPlayer; }
 bool IQNetPlayer::IsGuest() { return false; }
 bool IQNetPlayer::IsLocal() { return !m_isRemote; }
-PlayerUID IQNetPlayer::GetXuid() { return (PlayerUID)(0xe000d45248242f2e + m_smallId); } // todo: restore to INVALID_XUID once saves support this
+PlayerUID IQNetPlayer::GetXuid()
+{
+	// Compatibility model:
+	// - Preferred path: use per-player resolved XUID populated from login/add-player flow.
+	// - Fallback path: keep legacy base+smallId behavior for peers/saves still on old scheme.
+	if (m_resolvedXuid != INVALID_XUID)
+		return m_resolvedXuid;
+	return (PlayerUID)(0xe000d45248242f2e + m_smallId);
+}
 LPCWSTR IQNetPlayer::GetGamertag() { return m_gamertag; }
 int IQNetPlayer::GetSessionIndex() { return m_smallId; }
 bool IQNetPlayer::IsTalking() { return false; }
@@ -238,6 +247,7 @@ void Win64_SetupRemoteQNetPlayer(IQNetPlayer * player, BYTE smallId, bool isHost
 	player->m_smallId = smallId;
 	player->m_isRemote = !isLocal;
 	player->m_isHostPlayer = isHost;
+	player->m_resolvedXuid = INVALID_XUID;
 	swprintf_s(player->m_gamertag, 32, L"Player%d", smallId);
 	if (smallId >= IQNet::s_playerCount)
 		IQNet::s_playerCount = smallId + 1;
@@ -314,7 +324,7 @@ IQNetPlayer* IQNet::GetPlayerByIndex(DWORD dwPlayerIndex)
 			found++;
 		}
 	}
-	return nullptr;
+	return &m_player[0];
 }
 IQNetPlayer* IQNet::GetPlayerBySmallId(BYTE SmallId)
 {
@@ -328,20 +338,13 @@ IQNetPlayer* IQNet::GetPlayerByXuid(PlayerUID xuid)
 {
 	for (DWORD i = 0; i < s_playerCount; i++)
 	{
-		// Conventional XUID implementation except for Windows 64.
 		if (!Win64_IsActivePlayer(&m_player[i], i))
 			continue;
 
 		if (m_player[i].GetXuid() == xuid)
 			return &m_player[i];
-
-		// For Windows 64, NameBase XUID is used.
-#ifdef _WINDOWS64
-		PlayerUID nameXuid = Win64Xuid::ResolvePersistentXuidFromName(m_player[i].GetGamertag());
-		if (nameXuid == xuid)
-			return &m_player[i];
-#endif
 	}
+	// Keep existing stub behavior: return host slot instead of nullptr on miss.
 	return &m_player[0];
 }
 DWORD IQNet::GetPlayerCount()
@@ -356,7 +359,11 @@ DWORD IQNet::GetPlayerCount()
 QNET_STATE IQNet::GetState() { return _iQNetStubState; }
 bool IQNet::IsHost() { return s_isHosting; }
 HRESULT IQNet::JoinGameFromInviteInfo(DWORD dwUserIndex, DWORD dwUserMask, const INVITE_INFO * pInviteInfo) { return S_OK; }
-void IQNet::HostGame() { _iQNetStubState = QNET_STATE_SESSION_STARTING; s_isHosting = true; }
+void IQNet::HostGame()
+{
+	_iQNetStubState = QNET_STATE_SESSION_STARTING;
+	s_isHosting = true;
+}
 void IQNet::ClientJoinGame()
 {
 	_iQNetStubState = QNET_STATE_SESSION_STARTING;
@@ -367,6 +374,7 @@ void IQNet::ClientJoinGame()
 		m_player[i].m_smallId = static_cast<BYTE>(i);
 		m_player[i].m_isRemote = true;
 		m_player[i].m_isHostPlayer = false;
+		m_player[i].m_resolvedXuid = INVALID_XUID;
 		m_player[i].m_gamertag[0] = 0;
 		m_player[i].SetCustomDataValue(0);
 	}
@@ -381,6 +389,7 @@ void IQNet::EndGame()
 		m_player[i].m_smallId = static_cast<BYTE>(i);
 		m_player[i].m_isRemote = false;
 		m_player[i].m_isHostPlayer = false;
+		m_player[i].m_resolvedXuid = INVALID_XUID;
 		m_player[i].m_gamertag[0] = 0;
 		m_player[i].SetCustomDataValue(0);
 	}
@@ -545,6 +554,126 @@ DWORD XEnableGuestSignin(BOOL fEnable) { return 0; }
 #ifdef _WINDOWS64
 static void* profileData[4];
 static bool s_bProfileIsFullVersion;
+static unsigned int s_profileDataBytesPerPad = 0;
+
+static void Win64_GetProfileDataPath(int iQuadrant, char* outPath, size_t outPathSize)
+{
+	if (outPath == nullptr || outPathSize == 0)
+		return;
+
+	outPath[0] = '\0';
+	GetModuleFileNameA(nullptr, outPath, static_cast<DWORD>(outPathSize));
+	char* lastSlash = strrchr(outPath, '\\');
+	char* lastForwardSlash = strrchr(outPath, '/');
+	if (lastForwardSlash != nullptr && (lastSlash == nullptr || lastForwardSlash > lastSlash))
+		lastSlash = lastForwardSlash;
+	if (lastSlash != nullptr)
+		*(lastSlash + 1) = '\0';
+
+	char profileFileName[32] = {};
+	sprintf_s(profileFileName, "profile%d.dat", iQuadrant);
+	strncat_s(outPath, outPathSize, profileFileName, _TRUNCATE);
+}
+
+static bool Win64_LoadProfileDataBlob(int iQuadrant, void* dstData, unsigned int dataSize)
+{
+	if (dstData == nullptr || dataSize == 0)
+		return false;
+
+	char filePath[MAX_PATH] = {};
+	Win64_GetProfileDataPath(iQuadrant, filePath, MAX_PATH);
+
+	FILE* profileFile = nullptr;
+	if (fopen_s(&profileFile, filePath, "rb") != 0 || profileFile == nullptr)
+		return false;
+
+	fseek(profileFile, 0, SEEK_END);
+	long fileSize = ftell(profileFile);
+	rewind(profileFile);
+
+	if (fileSize != static_cast<long>(dataSize))
+	{
+		fclose(profileFile);
+		return false;
+	}
+
+	const size_t bytesRead = fread(dstData, 1, dataSize, profileFile);
+	fclose(profileFile);
+
+	return bytesRead == dataSize;
+}
+
+static void Win64_SaveProfileDataBlob(int iQuadrant, const void* srcData, unsigned int dataSize)
+{
+	if (srcData == nullptr || dataSize == 0)
+		return;
+
+	char filePath[MAX_PATH] = {};
+	Win64_GetProfileDataPath(iQuadrant, filePath, MAX_PATH);
+
+	FILE* profileFile = nullptr;
+	if (fopen_s(&profileFile, filePath, "wb") != 0 || profileFile == nullptr)
+		return;
+
+	fwrite(srcData, 1, dataSize, profileFile);
+	fclose(profileFile);
+}
+
+static void Win64_ApplyDefaultProfileGameSettings(void* profileBytes)
+{
+	if (profileBytes == nullptr)
+		return;
+
+	// Set some sane initial values!
+	GAME_SETTINGS* pGameSettings = static_cast<GAME_SETTINGS*>(profileBytes);
+	pGameSettings->ucMenuSensitivity = 100; //eGameSetting_Sensitivity_InMenu
+	pGameSettings->ucInterfaceOpacity = 80; //eGameSetting_Sensitivity_InMenu
+	pGameSettings->usBitmaskValues |= 0x0200; //eGameSetting_DisplaySplitscreenGamertags - on
+	pGameSettings->usBitmaskValues |= 0x0400; //eGameSetting_Hints - on
+	pGameSettings->usBitmaskValues |= 0x1000; //eGameSetting_Autosave - 2
+	pGameSettings->usBitmaskValues |= 0x8000; //eGameSetting_Tooltips - on
+	pGameSettings->uiBitmaskValues = 0L; // reset
+	pGameSettings->uiBitmaskValues |= GAMESETTING_CLOUDS;					//eGameSetting_Clouds - on
+	pGameSettings->uiBitmaskValues |= GAMESETTING_ONLINE;					//eGameSetting_GameSetting_Online - on
+	pGameSettings->uiBitmaskValues |= GAMESETTING_FRIENDSOFFRIENDS;		//eGameSetting_GameSetting_FriendsOfFriends - on
+	pGameSettings->uiBitmaskValues |= GAMESETTING_DISPLAYUPDATEMSG;		//eGameSetting_DisplayUpdateMessage (counter)
+	pGameSettings->uiBitmaskValues &= ~GAMESETTING_BEDROCKFOG;			//eGameSetting_BedrockFog - off
+	pGameSettings->uiBitmaskValues |= GAMESETTING_DISPLAYHUD;				//eGameSetting_DisplayHUD - on
+	pGameSettings->uiBitmaskValues |= GAMESETTING_DISPLAYHAND;			//eGameSetting_DisplayHand - on
+	pGameSettings->uiBitmaskValues |= GAMESETTING_CUSTOMSKINANIM;			//eGameSetting_CustomSkinAnim - on
+	pGameSettings->uiBitmaskValues |= GAMESETTING_DEATHMESSAGES;			//eGameSetting_DeathMessages - on
+	pGameSettings->uiBitmaskValues |= (GAMESETTING_UISIZE & 0x00000800);				// uisize 2
+	pGameSettings->uiBitmaskValues |= (GAMESETTING_UISIZE_SPLITSCREEN & 0x00004000);	// splitscreen ui size 3
+	pGameSettings->uiBitmaskValues |= GAMESETTING_ANIMATEDCHARACTER;		//eGameSetting_AnimatedCharacter - on
+
+	// TU12
+	// favorite skins added, but only set in TU12 - set to FFs
+	for (int skinIndex = 0; skinIndex < MAX_FAVORITE_SKINS; ++skinIndex)
+	{
+		pGameSettings->uiFavoriteSkinA[skinIndex] = 0xFFFFFFFF;
+	}
+	pGameSettings->ucCurrentFavoriteSkinPos = 0;
+	// Added a bitmask in TU13 to enable/disable display of the Mash-up pack worlds in the saves list
+	pGameSettings->uiMashUpPackWorldsDisplay = 0xFFFFFFFF;
+
+	// PS3DEC13
+	pGameSettings->uiBitmaskValues &= ~GAMESETTING_PS3EULAREAD;		//eGameSetting_PS3_EULA_Read - off
+
+	// PS3 1.05 - added Greek
+	pGameSettings->ucLanguage = MINECRAFT_LANGUAGE_DEFAULT; // use the system language
+
+	// PS Vita - network mode added
+	pGameSettings->uiBitmaskValues &= ~GAMESETTING_PSVITANETWORKMODEADHOC;		//eGameSetting_PSVita_NetworkModeAdhoc - off
+
+	// Tutorials for most menus, and a few other things
+	pGameSettings->ucTutorialCompletion[0] = 0xFF;
+	pGameSettings->ucTutorialCompletion[1] = 0xFF;
+	pGameSettings->ucTutorialCompletion[2] = 0xF;
+
+	// Has gone halfway through the tutorial
+	pGameSettings->ucTutorialCompletion[28] |= 1 << 0;
+}
+
 void				C_4JProfile::Initialise(DWORD dwTitleID,
 	DWORD dwOfferID,
 	unsigned short usProfileVersion,
@@ -554,60 +683,24 @@ void				C_4JProfile::Initialise(DWORD dwTitleID,
 	int iGameDefinedDataSizeX4,
 	unsigned int* puiGameDefinedDataChangedBitmask)
 {
+	s_profileDataBytesPerPad = static_cast<unsigned int>(iGameDefinedDataSizeX4 / XUSER_MAX_COUNT);
+	if (s_profileDataBytesPerPad == 0)
+		s_profileDataBytesPerPad = static_cast<unsigned int>(iGameDefinedDataSizeX4 / 4);
+
 	for (int i = 0; i < 4; i++)
 	{
-		profileData[i] = new byte[iGameDefinedDataSizeX4 / 4];
-		ZeroMemory(profileData[i], sizeof(byte) * iGameDefinedDataSizeX4 / 4);
+		profileData[i] = new byte[s_profileDataBytesPerPad];
+		ZeroMemory(profileData[i], sizeof(byte) * s_profileDataBytesPerPad);
 
-		// Set some sane initial values!
-		GAME_SETTINGS* pGameSettings = static_cast<GAME_SETTINGS *>(profileData[i]);
-		pGameSettings->ucMenuSensitivity = 100; //eGameSetting_Sensitivity_InMenu
-		pGameSettings->ucInterfaceOpacity = 80; //eGameSetting_Sensitivity_InMenu
-		pGameSettings->usBitmaskValues |= 0x0200; //eGameSetting_DisplaySplitscreenGamertags - on
-		pGameSettings->usBitmaskValues |= 0x0400; //eGameSetting_Hints - on
-		pGameSettings->usBitmaskValues |= 0x1000; //eGameSetting_Autosave - 2
-		pGameSettings->usBitmaskValues |= 0x8000; //eGameSetting_Tooltips - on
-		pGameSettings->uiBitmaskValues = 0L; // reset
-		pGameSettings->uiBitmaskValues |= GAMESETTING_CLOUDS;					//eGameSetting_Clouds - on
-		pGameSettings->uiBitmaskValues |= GAMESETTING_ONLINE;					//eGameSetting_GameSetting_Online - on
-		pGameSettings->uiBitmaskValues |= GAMESETTING_FRIENDSOFFRIENDS;		//eGameSetting_GameSetting_FriendsOfFriends - on
-		pGameSettings->uiBitmaskValues |= GAMESETTING_DISPLAYUPDATEMSG;		//eGameSetting_DisplayUpdateMessage (counter)
-		pGameSettings->uiBitmaskValues &= ~GAMESETTING_BEDROCKFOG;			//eGameSetting_BedrockFog - off
-		pGameSettings->uiBitmaskValues |= GAMESETTING_DISPLAYHUD;				//eGameSetting_DisplayHUD - on
-		pGameSettings->uiBitmaskValues |= GAMESETTING_DISPLAYHAND;			//eGameSetting_DisplayHand - on
-		pGameSettings->uiBitmaskValues |= GAMESETTING_CUSTOMSKINANIM;			//eGameSetting_CustomSkinAnim - on
-		pGameSettings->uiBitmaskValues |= GAMESETTING_DEATHMESSAGES;			//eGameSetting_DeathMessages - on
-		pGameSettings->uiBitmaskValues |= (GAMESETTING_UISIZE & 0x00000800);				// uisize 2
-		pGameSettings->uiBitmaskValues |= (GAMESETTING_UISIZE_SPLITSCREEN & 0x00004000);	// splitscreen ui size 3
-		pGameSettings->uiBitmaskValues |= GAMESETTING_ANIMATEDCHARACTER;		//eGameSetting_AnimatedCharacter - on
-
-		// TU12
-		// favorite skins added, but only set in TU12 - set to FFs
-		for (int i = 0; i < MAX_FAVORITE_SKINS; i++)
+		if (!Win64_LoadProfileDataBlob(i, profileData[i], s_profileDataBytesPerPad))
 		{
-			pGameSettings->uiFavoriteSkinA[i] = 0xFFFFFFFF;
+			Win64_ApplyDefaultProfileGameSettings(profileData[i]);
 		}
-		pGameSettings->ucCurrentFavoriteSkinPos = 0;
-		// Added a bitmask in TU13 to enable/disable display of the Mash-up pack worlds in the saves list
-		pGameSettings->uiMashUpPackWorldsDisplay = 0xFFFFFFFF;
+	}
 
-		// PS3DEC13
-		pGameSettings->uiBitmaskValues &= ~GAMESETTING_PS3EULAREAD;		//eGameSetting_PS3_EULA_Read - off
-
-		// PS3 1.05 - added Greek
-		pGameSettings->ucLanguage = MINECRAFT_LANGUAGE_DEFAULT; // use the system language
-
-		// PS Vita - network mode added
-		pGameSettings->uiBitmaskValues &= ~GAMESETTING_PSVITANETWORKMODEADHOC;		//eGameSetting_PSVita_NetworkModeAdhoc - off
-
-
-		// Tutorials for most menus, and a few other things
-		pGameSettings->ucTutorialCompletion[0] = 0xFF;
-		pGameSettings->ucTutorialCompletion[1] = 0xFF;
-		pGameSettings->ucTutorialCompletion[2] = 0xF;
-
-		// Has gone halfway through the tutorial
-		pGameSettings->ucTutorialCompletion[28] |= 1 << 0;
+	if (puiGameDefinedDataChangedBitmask != nullptr)
+	{
+		*puiGameDefinedDataChangedBitmask = (1u << XUSER_MAX_COUNT) - 1u;
 	}
 }
 void				C_4JProfile::SetTrialTextStringTable(CXuiStringTable * pStringTable, int iAccept, int iReject) {}
@@ -624,22 +717,6 @@ void				C_4JProfile::SetPrimaryPlayerChanged(bool bVal) {}
 bool				C_4JProfile::QuerySigninStatus(void) { return true; }
 void				C_4JProfile::GetXUID(int iPad, PlayerUID * pXuid, bool bOnlineXuid)
 {
-#ifdef _WINDOWS64
-	if (iPad != 0)
-	{
-		*pXuid = INVALID_XUID;
-		return;
-	}
-	// LoginPacket reads this value as client identity:
-	// - host keeps legacy host XUID for world compatibility
-	// - non-host uses persistent uid.dat-backed XUID
-	if (IQNet::s_isHosting)
-		*pXuid = 0xe000d45248242f2e;
-	else
-		*pXuid = 0xe000d45248242f2e + WinsockNetLayer::GetLocalSmallId();
-#else
-	* pXuid = 0xe000d45248242f2e + iPad;
-#endif
 }
 BOOL				C_4JProfile::AreXUIDSEqual(PlayerUID xuid1, PlayerUID xuid2) { return xuid1 == xuid2; }
 BOOL				C_4JProfile::XUIDIsGuest(PlayerUID xuid) { return false; }
@@ -707,8 +784,31 @@ int					C_4JProfile::SetOldProfileVersionCallback(int(*Func)(LPVOID, unsigned ch
 C_4JProfile::PROFILESETTINGS ProfileSettingsA[XUSER_MAX_COUNT];
 
 C_4JProfile::PROFILESETTINGS* C_4JProfile::GetDashboardProfileSettings(int iPad) { return &ProfileSettingsA[iPad]; }
-void				C_4JProfile::WriteToProfile(int iQuadrant, bool bGameDefinedDataChanged, bool bOverride5MinuteLimitOnProfileWrites) {}
-void				C_4JProfile::ForceQueuedProfileWrites(int iPad) {}
+void				C_4JProfile::WriteToProfile(int iQuadrant, bool bGameDefinedDataChanged, bool bOverride5MinuteLimitOnProfileWrites)
+{
+	if (s_profileDataBytesPerPad == 0)
+		return;
+
+	if (iQuadrant == XUSER_INDEX_ANY)
+	{
+		for (int i = 0; i < XUSER_MAX_COUNT; ++i)
+		{
+			if (profileData[i] != nullptr)
+				Win64_SaveProfileDataBlob(i, profileData[i], s_profileDataBytesPerPad);
+		}
+		return;
+	}
+
+	if (iQuadrant < 0 || iQuadrant >= XUSER_MAX_COUNT)
+		return;
+
+	if (profileData[iQuadrant] != nullptr)
+		Win64_SaveProfileDataBlob(iQuadrant, profileData[iQuadrant], s_profileDataBytesPerPad);
+}
+void				C_4JProfile::ForceQueuedProfileWrites(int iPad)
+{
+	WriteToProfile(iPad, true, true);
+}
 void* C_4JProfile::GetGameDefinedProfileData(int iQuadrant)
 {
 	// 4J Stu - Don't reset the options when we call this!!

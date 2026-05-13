@@ -7,6 +7,9 @@
 #include "SoundTypes.h"
 #include "../Minecraft.Client/MinecraftServer.h"
 #include "../Minecraft.Client/PlayerList.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 // AP - added for Vita to set Alpha Cut out
 #include "IntBuffer.h"
@@ -45,6 +48,8 @@ void FireTile::init()
 	setFlammable(Tile::stairs_birchwood_Id, FLAME_HARD, BURN_MEDIUM);
 	setFlammable(Tile::stairs_sprucewood_Id, FLAME_HARD, BURN_MEDIUM);
 	setFlammable(Tile::stairs_junglewood_Id, FLAME_HARD, BURN_MEDIUM);
+	setFlammable(Tile::stairs_acaciawood_Id, FLAME_HARD, BURN_MEDIUM);
+	setFlammable(Tile::stairs_darkwood_Id, FLAME_HARD, BURN_MEDIUM);
 	setFlammable(Tile::treeTrunk_Id, FLAME_HARD, BURN_HARD);
 	setFlammable(Tile::leaves_Id, FLAME_EASY, BURN_EASY);
 	setFlammable(Tile::bookshelf_Id, FLAME_EASY, BURN_MEDIUM);
@@ -197,11 +202,16 @@ void FireTile::tick(Level *level, int x, int y, int z, Random *random)
 						}
 						if (odds > 0 && random->nextInt(rate) <= odds)
 						{
-							if (!(level->isRaining() && level->isRainingAt(xx, yy, zz) || level->isRainingAt(xx - 1, yy, z) || level->isRainingAt(xx + 1, yy, zz) || level->isRainingAt(xx, yy, zz - 1) || level->isRainingAt(xx, yy, zz + 1)))
-							{
-								int tAge = age + random->nextInt(5) / 4;
-								if (tAge > 15) tAge = 15;
-								level->setTileAndData(xx, yy, zz, id, tAge, Tile::UPDATE_ALL);
+													if (!(level->isRaining() && level->isRainingAt(xx, yy, zz) || level->isRainingAt(xx - 1, yy, z) || level->isRainingAt(xx + 1, yy, zz) || level->isRainingAt(xx, yy, zz - 1) || level->isRainingAt(xx, yy, zz + 1)))
+													{
+							#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+															if (!FourKitBridge::FireBlockSpread(level->dimension->id, xx, yy, zz, x, y, z, id, min(age + random->nextInt(5) / 4, 15)))
+							#endif
+															{
+									int tAge = age + random->nextInt(5) / 4;
+									if (tAge > 15) tAge = 15;
+									level->setTileAndData(xx, yy, zz, id, tAge, Tile::UPDATE_ALL);
+								}
 							}
 						}
 					}
@@ -221,6 +231,10 @@ void FireTile::checkBurnOut(Level *level, int x, int y, int z, int chance, Rando
 	int odds = burnOdds[level->getTile(x, y, z)];
 	if (random->nextInt(chance) < odds)
 	{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FireBlockBurn(level->dimension->id, x, y, z))
+			return;
+#endif
 		bool wasTnt = level->getTile(x, y, z) == Tile::tnt_Id;
 		if (random->nextInt(age + 10) < 5 && !level->isRainingAt(x, y, z) && app.GetGameHostOption(eGameHostOption_FireSpreads))
 		{

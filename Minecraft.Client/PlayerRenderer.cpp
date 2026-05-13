@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PlayerRenderer.h"
 #include "SkullTileRenderer.h"
+#include "../Minecraft.World/SkullTileEntity.h"
 #include "HumanoidMobRenderer.h"
 #include "HumanoidModel.h"
 #include "ModelPart.h"
@@ -13,6 +14,14 @@
 #include "../Minecraft.World/net.minecraft.world.level.tile.h"
 #include "../Minecraft.World/net.minecraft.h"
 #include "../Minecraft.World/StringHelpers.h"
+#include "SkeletonHeadModel.h"
+#include "Textures.h"
+#include "Skins.h"
+
+ResourceLocation PlayerRenderer::SKELETON_LOCATION = ResourceLocation(TN_MOB_SKELETON);
+ResourceLocation PlayerRenderer::WITHER_SKELETON_LOCATION = ResourceLocation(TN_MOB_WITHER_SKELETON);
+ResourceLocation PlayerRenderer::ZOMBIE_LOCATION = ResourceLocation(TN_MOB_ZOMBIE);
+ResourceLocation PlayerRenderer::CREEPER_LOCATION = ResourceLocation(TN_MOB_CREEPER);
 
 static unsigned int nametagColorForIndex(int index)
 {
@@ -39,12 +48,12 @@ static unsigned int nametagColorForIndex(int index)
 		float r = 0.f, g = 0.f, b = 0.f;
 		switch (i % 6)
 		{
-			case 0: r = 1.f; g = t;   b = 0.f; break;
-			case 1: r = q;   g = 1.f; b = 0.f; break;
-			case 2: r = 0.f; g = 1.f; b = t;   break;
-			case 3: r = 0.f; g = q;   b = 1.f; break;
-			case 4: r = t;   g = 0.f; b = 1.f; break;
-			default: r = 1.f; g = 0.f; b = q; break;
+		case 0: r = 1.f; g = t;   b = 0.f; break;
+		case 1: r = q;   g = 1.f; b = 0.f; break;
+		case 2: r = 0.f; g = 1.f; b = t;   break;
+		case 3: r = 0.f; g = q;   b = 1.f; break;
+		case 4: r = t;   g = 0.f; b = 1.f; break;
+		default: r = 1.f; g = 0.f; b = q; break;
 		}
 		int ri = (int)(r * 255.f) & 0xff, gi = (int)(g * 255.f) & 0xff, bi = (int)(b * 255.f) & 0xff;
 		return 0xff000000u | (ri << 16) | (gi << 8) | bi;
@@ -55,17 +64,21 @@ static unsigned int nametagColorForIndex(int index)
 
 ResourceLocation PlayerRenderer::DEFAULT_LOCATION = ResourceLocation(TN_MOB_CHAR);
 
-PlayerRenderer::PlayerRenderer() : LivingEntityRenderer( new HumanoidModel(0), 0.5f )
+PlayerRenderer::PlayerRenderer() : LivingEntityRenderer(new HumanoidModel(0), 0.5f, true, true)
 {
-    humanoidModel = static_cast<HumanoidModel *>(model);
+	humanoidModel = static_cast<HumanoidModel*>(model);
+	humanoidModelSlim = static_cast<HumanoidModel*>(modelSlim);
+	newHumanoidModel = static_cast<HumanoidModel*>(newModel);
+	newHumanoidModelSlim = static_cast<HumanoidModel*>(newModelSlim);
 
-    armorParts1 = new HumanoidModel(1.0f);
-    armorParts2 = new HumanoidModel(0.5f);
+	armorParts1 = new HumanoidModel(1.0f);
+	armorParts2 = new HumanoidModel(0.5f);
+	armorParts3 = new HumanoidModel(0.5f);
 }
 
 unsigned int PlayerRenderer::getNametagColour(int index)
 {
-	if( index >= 0 && index < MINECRAFT_NET_MAX_PLAYERS)
+	if (index >= 0 && index < MINECRAFT_NET_MAX_PLAYERS)
 		return nametagColorForIndex(index);
 	return 0xFF000000;
 }
@@ -76,32 +89,33 @@ int PlayerRenderer::prepareArmor(shared_ptr<LivingEntity> _player, int layer, fl
 	shared_ptr<Player> player = dynamic_pointer_cast<Player>(_player);
 
 	// 4J-PB - need to disable rendering armour for some special skins (Daleks)
-	unsigned int uiAnimOverrideBitmask=player->getAnimOverrideBitmask();
-	if(uiAnimOverrideBitmask&(1<<HumanoidModel::eAnim_DontRenderArmour))
+	unsigned int uiAnimOverrideBitmask = player->getAnimOverrideBitmask();
+	if (uiAnimOverrideBitmask & (1 << HumanoidModel::eAnim_DontRenderArmour))
 	{
 		return -1;
 	}
 
-    shared_ptr<ItemInstance> itemInstance = player->inventory->getArmor(3 - layer);
-    if (itemInstance != nullptr)
+	shared_ptr<ItemInstance> itemInstance = player->inventory->getArmor(3 - layer);
+	if (itemInstance != nullptr)
 	{
-        Item *item = itemInstance->getItem();
-        if (dynamic_cast<ArmorItem *>(item))
+		Item* item = itemInstance->getItem();
+		if (dynamic_cast<ArmorItem*>(item))
 		{
-            ArmorItem *armorItem = dynamic_cast<ArmorItem *>(item);
-            bindTexture(HumanoidMobRenderer::getArmorLocation(armorItem, layer));
+			ArmorItem* armorItem = dynamic_cast<ArmorItem*>(item);
+			bindTexture(HumanoidMobRenderer::getArmorLocation(armorItem, layer));
 
-            HumanoidModel *armor = layer == 2 ? armorParts2 : armorParts1;
+			SkullItem* skullItem = dynamic_cast<SkullItem*>(item);
+			HumanoidModel* armor = layer == 2 ? armorParts2 : armorParts1;
 
-            armor->head->visible = layer == 0;
-            armor->hair->visible = layer == 0;
-            armor->body->visible = layer == 1 || layer == 2;
-            armor->arm0->visible = layer == 1;
-            armor->arm1->visible = layer == 1;
-            armor->leg0->visible = layer == 2 || layer == 3;
-            armor->leg1->visible = layer == 2 || layer == 3;
+			armor->head->visible = layer == 0;
+			armor->hair->visible = layer == 0;
+			armor->body->visible = layer == 1 || layer == 2;
+			armor->arm0->visible = layer == 1;
+			armor->arm1->visible = layer == 1;
+			armor->leg0->visible = layer == 2 || layer == 3;
+			armor->leg1->visible = layer == 2 || layer == 3;
 
-            setArmor(armor);
+			setArmor(armor);
 			if (armor != nullptr) armor->attackTime = model->attackTime;
 			if (armor != nullptr) armor->riding = model->riding;
 			if (armor != nullptr) armor->young = model->young;
@@ -125,10 +139,57 @@ int PlayerRenderer::prepareArmor(shared_ptr<LivingEntity> _player, int layer, fl
 
 			if (itemInstance->isEnchanted()) return 0xf;
 
-            return 1;
-        }
-    }
-    return -1;
+			return 1;
+		}
+		else if (dynamic_cast<SkullItem*>(item)) {
+			SkullItem* skullItem = dynamic_cast<SkullItem*>(item);
+			HumanoidModel* armor = armorParts1;
+			//auto t = new SkeletonHeadModel(0, 0, 64, 64, 1);
+			//armor->head->_init();
+			//armor->head = t->head;
+			//armor->head->addHumanoidBox(-4, -8, -4, 8, 8, 8, 0.5); // Head
+			switch (itemInstance->getAuxValue())
+			{
+			case SkullTileEntity::TYPE_WITHER:
+				bindTexture(&WITHER_SKELETON_LOCATION);
+				break;
+			case SkullTileEntity::TYPE_ZOMBIE:
+				bindTexture(&ZOMBIE_LOCATION);
+				break;
+			case SkullTileEntity::TYPE_CREEPER:
+				bindTexture(&CREEPER_LOCATION);
+				break;
+			case SkullTileEntity::TYPE_CHAR:
+			{
+				armor = armorParts3;
+				auto t = new SkeletonHeadModel(0, 0, 64, 64, 1);
+				armor->head = t->head;
+				bindTexture(&PlayerRenderer::DEFAULT_LOCATION);
+				break;
+			}
+			case SkullTileEntity::TYPE_SKELETON:
+			default:
+				bindTexture(&SKELETON_LOCATION);
+				break;
+			}
+			armor->head->visible = layer == 0;
+
+			armor->hair->visible = false;
+			armor->body->visible = false;
+			armor->arm0->visible = false;
+			armor->arm1->visible = false;
+			armor->leg0->visible = false;
+			armor->leg1->visible = false;
+			setArmor(armor);
+			if (armor != nullptr) armor->attackTime = model->attackTime;
+			if (armor != nullptr) armor->riding = model->riding;
+			if (armor != nullptr) armor->young = model->young;
+
+			return 1;
+		}
+
+	}
+	return -1;
 
 }
 
@@ -139,11 +200,11 @@ void PlayerRenderer::prepareSecondPassArmor(shared_ptr<LivingEntity> _player, in
 	shared_ptr<ItemInstance> itemInstance = player->inventory->getArmor(3 - layer);
 	if (itemInstance != nullptr)
 	{
-		Item *item = itemInstance->getItem();
-		if (dynamic_cast<ArmorItem *>(item))
+		Item* item = itemInstance->getItem();
+		if (dynamic_cast<ArmorItem*>(item))
 		{
-            ArmorItem *armorItem = dynamic_cast<ArmorItem *>(item);
-			bindTexture(HumanoidMobRenderer::getArmorLocation(static_cast<ArmorItem *>(item), layer, true));
+			ArmorItem* armorItem = dynamic_cast<ArmorItem*>(item);
+			bindTexture(HumanoidMobRenderer::getArmorLocation(static_cast<ArmorItem*>(item), layer, true));
 
 			float brightness = SharedConstants::TEXTURE_LIGHTING ? 1 : player->getBrightness(a);
 			glColor3f(brightness, brightness, brightness);
@@ -160,12 +221,43 @@ void PlayerRenderer::render(shared_ptr<Entity> _mob, double x, double y, double 
 
 	// 4J - dynamic cast required because we aren't using templates/generics in our version
 	shared_ptr<Player> mob = dynamic_pointer_cast<Player>(_mob);
+	HumanoidModel* resModel = static_cast<HumanoidModel*>(model);
 
-	if(mob == nullptr) return;
-	if(mob->hasInvisiblePrivilege()) return;
+	if (mob == nullptr) return;
+	if (mob->hasInvisiblePrivilege()) return;
 
-    shared_ptr<ItemInstance> item = mob->inventory->getSelected();
-    armorParts1->holdingRightHand = armorParts2->holdingRightHand = humanoidModel->holdingRightHand = item != nullptr ? 1 : 0;
+	if (mob != nullptr)
+	{
+		Textures* textures = Minecraft::GetInstance()->textures;
+		int skinId = mob->getPlayerDefaultSkin() - 1;
+		int defaultSkin = mob->getPlayerDefaultSkin() + 35;
+
+		if (slim[skinId] == true)
+		{
+			if (textures->getHeight(mob->customTextureUrl, defaultSkin) == 64)
+				resModel = static_cast<HumanoidModel*>(newHumanoidModelSlim);
+			else
+				resModel = static_cast<HumanoidModel*>(humanoidModelSlim);
+		}
+		else
+		{
+			if (textures->getHeight(mob->customTextureUrl, defaultSkin) == 64)
+				resModel = static_cast<HumanoidModel*>(newHumanoidModel);
+			else
+				resModel = static_cast<HumanoidModel*>(humanoidModel);
+		}
+	}
+	else
+		resModel = static_cast<HumanoidModel*>(model);
+
+	/*if (mob != nullptr && newHumanoidModelSlim != nullptr && (mob->getCustomSkin() >= 10 && mob->getCustomSkin() <= 18)) resModel = newHumanoidModelSlim;
+	else if (mob != nullptr && newHumanoidModel != nullptr && (mob->getCustomSkin() >= 2 && mob->getCustomSkin() <= 9)) resModel = newHumanoidModel;
+	else resModel = humanoidModel;*/
+
+	shared_ptr<ItemInstance> item = mob->inventory->getSelected();
+
+	armorParts1->holdingRightHand = armorParts2->holdingRightHand = resModel->holdingRightHand = item != nullptr ? 1 : 0;
+
 	if (item != nullptr)
 	{
 		if (mob->getUseItemDuration() > 0)
@@ -173,125 +265,162 @@ void PlayerRenderer::render(shared_ptr<Entity> _mob, double x, double y, double 
 			UseAnim anim = item->getUseAnimation();
 			if (anim == UseAnim_block)
 			{
-				armorParts1->holdingRightHand = armorParts2->holdingRightHand = humanoidModel->holdingRightHand = 3;
+				armorParts1->holdingRightHand = armorParts2->holdingRightHand = resModel->holdingRightHand = 3;
 			}
 			else if (anim == UseAnim_bow)
 			{
-				armorParts1->bowAndArrow = armorParts2->bowAndArrow = humanoidModel->bowAndArrow = true;
+				armorParts1->bowAndArrow = armorParts2->bowAndArrow = resModel->bowAndArrow = true;
 			}
 		}
 	}
 	// 4J added, for 3rd person view of eating
-	if( item != nullptr && mob->getUseItemDuration() > 0 && item->getUseAnimation() == UseAnim_eat )
+	if (item != nullptr && mob->getUseItemDuration() > 0 && item->getUseAnimation() == UseAnim_eat)
 	{
 		// These factors are largely lifted from ItemInHandRenderer to try and keep the 3rd person eating animation as similar as possible
-        float t = (mob->getUseItemDuration() - a + 1);
-        float swing = 1 - (t / item->getUseDuration());
-		armorParts1->eating = armorParts2->eating = humanoidModel->eating = true;
-		armorParts1->eating_t = armorParts2->eating_t = humanoidModel->eating_t = t;
-		armorParts1->eating_swing = armorParts2->eating_swing = humanoidModel->eating_swing = swing;
+		float t = (mob->getUseItemDuration() - a + 1);
+		float swing = 1 - (t / item->getUseDuration());
+
+		armorParts1->eating = armorParts2->eating = resModel->eating = true;
+		armorParts1->eating_t = armorParts2->eating_t = resModel->eating_t = t;
+		armorParts1->eating_swing = armorParts2->eating_swing = resModel->eating_swing = swing;
 	}
 	else
 	{
-		armorParts1->eating = armorParts2->eating = humanoidModel->eating = false;
+		armorParts1->eating = armorParts2->eating = resModel->eating = false;
+	}
+	// Suppress crouch pose while elytra flying (superman pose is applied instead)
+	bool effectiveSneaking = mob->isSneaking() && !mob->isElytraFlying();
+	armorParts1->sneaking = armorParts2->sneaking = resModel->sneaking = effectiveSneaking;
+	// Signal models: elytraFlying suppresses walk/bob; elytraCrouching adds superman arms
+	// Suppress elytra pose in the inventory screen (isInventoryRender=true during that pass).
+	bool elytraFlying = mob->isElytraFlying() && !EntityRenderDispatcher::instance->isInventoryRender;
+	bool elytraCrouch = elytraFlying && mob->isSneaking();
+	armorParts1->elytraFlying = armorParts2->elytraFlying = resModel->elytraFlying = elytraFlying;
+	armorParts1->elytraCrouching = armorParts2->elytraCrouching = resModel->elytraCrouching = elytraCrouch;
+
+	double yp = y - mob->heightOffset;
+	if (mob->isSneaking() && !mob->instanceof(eTYPE_LOCALPLAYER))
+	{
+		yp -= 2 / 16.0f;
+	}
+	if (mob->getAnimOverrideBitmask() & (1 << HumanoidModel::eAnim_SmallModel))
+	{
+		if (mob->isRiding())
+		{
+			std::shared_ptr<Entity> ridingEntity = mob->riding;
+			if (ridingEntity != nullptr) // Safety check;
+			{
+				if (ridingEntity->instanceof(eTYPE_BOAT))
+				{
+					yp += 0.25f; // reverts the change in Boat.cpp for smaller models.
+				}
+			}
+		}
 	}
 
-    armorParts1->sneaking = armorParts2->sneaking = humanoidModel->sneaking = mob->isSneaking();
-
-    double yp = y - mob->heightOffset;
-    if (mob->isSneaking())
-	{
-        yp -= 2 / 16.0f;
-    }
-
-    if (mob->getAnimOverrideBitmask() & (1 << HumanoidModel::eAnim_SmallModel))
-    {
-        if (mob->isRiding())
-        {
-            std::shared_ptr<Entity> ridingEntity = mob->riding;
-            if (ridingEntity != nullptr) // Safety check;
-            {
-                if (ridingEntity->instanceof(eTYPE_BOAT))
-                {
-                    yp += 0.25f; // reverts the change in Boat.cpp for smaller models.
-                }
-            }
-        }
-    }
-
 	// Check if an idle animation is needed
-	if(mob->getAnimOverrideBitmask()&(1<<HumanoidModel::eAnim_HasIdle))
+	if (mob->getAnimOverrideBitmask() & (1 << HumanoidModel::eAnim_HasIdle))
 	{
-		if(mob->isIdle())
+		if (mob->isIdle())
 		{
-			humanoidModel->idle=true;
-			armorParts1->idle=true;
-			armorParts2->idle=true;
+			resModel->idle = true;
+			armorParts1->idle = true;
+			armorParts2->idle = true;
 		}
 		else
 		{
-			humanoidModel->idle=false;
-			armorParts1->idle=false;
-			armorParts2->idle=false;
+			resModel->idle = false;
+			armorParts1->idle = false;
+			armorParts2->idle = false;
 		}
 	}
 	else
 	{
-		humanoidModel->idle=false;
-		armorParts1->idle=false;
-		armorParts2->idle=false;
+		resModel->idle = false;
+		armorParts1->idle = false;
+		armorParts2->idle = false;
 	}
 
 	// 4J-PB - any additional parts to turn on for this player (skin dependent)
-	vector<ModelPart *> *pAdditionalModelParts=mob->GetAdditionalModelParts();
+	vector<ModelPart*>* pAdditionalModelParts = mob->GetAdditionalModelParts();
 	//turn them on
-	if(pAdditionalModelParts!=nullptr)
+	if (pAdditionalModelParts != nullptr)
 	{
-		for(ModelPart *pModelPart : *pAdditionalModelParts)
+		for (ModelPart* pModelPart : *pAdditionalModelParts)
 		{
-			pModelPart->visible=true;
+			pModelPart->visible = true;
 		}
 	}
 
-    LivingEntityRenderer::render(mob, x, yp, z, rot, a);
+	LivingEntityRenderer::render(mob, x, yp, z, rot, a);
 
 	// turn them off again
-	if(pAdditionalModelParts && pAdditionalModelParts->size()!=0)
+	if (pAdditionalModelParts && pAdditionalModelParts->size() != 0)
 	{
-		for(ModelPart *pModelPart : *pAdditionalModelParts)
+		for (ModelPart* pModelPart : *pAdditionalModelParts)
 		{
-			pModelPart->visible=false;
+			pModelPart->visible = false;
 		}
 	}
-	armorParts1->bowAndArrow = armorParts2->bowAndArrow = humanoidModel->bowAndArrow = false;
-    armorParts1->sneaking = armorParts2->sneaking = humanoidModel->sneaking = false;
-    armorParts1->holdingRightHand = armorParts2->holdingRightHand = humanoidModel->holdingRightHand = 0;
-
+	armorParts1->bowAndArrow = armorParts2->bowAndArrow = resModel->bowAndArrow = false;
+	armorParts1->sneaking = armorParts2->sneaking = resModel->sneaking = false;
+	armorParts1->elytraFlying = armorParts2->elytraFlying = resModel->elytraFlying = false;
+	armorParts1->elytraCrouching = armorParts2->elytraCrouching = resModel->elytraCrouching = false;
+	armorParts1->holdingRightHand = armorParts2->holdingRightHand = resModel->holdingRightHand = 0;
 }
 
 void PlayerRenderer::additionalRendering(shared_ptr<LivingEntity> _mob, float a)
 {
 	float brightness = SharedConstants::TEXTURE_LIGHTING ? 1 : _mob->getBrightness(a);
-    glColor3f(brightness, brightness, brightness);
+	glColor3f(brightness, brightness, brightness);
 
-	LivingEntityRenderer::additionalRendering(_mob,a);
+	LivingEntityRenderer::additionalRendering(_mob, a);
 	LivingEntityRenderer::renderArrows(_mob, a);
 
 	// 4J - dynamic cast required because we aren't using templates/generics in our version
 	shared_ptr<Player> mob = dynamic_pointer_cast<Player>(_mob);
+	HumanoidModel* resModel = static_cast<HumanoidModel*>(model);
 
-    shared_ptr<ItemInstance> headGear = mob->inventory->getArmor(3);
-    if (headGear != nullptr)
+	if (mob != nullptr)
+	{
+		Textures* textures = Minecraft::GetInstance()->textures;
+		int skinId = mob->getPlayerDefaultSkin() - 1;
+		int defaultSkin = mob->getPlayerDefaultSkin() + 35;
+
+		if (slim[skinId] == true)
+		{
+			if (textures->getHeight(mob->customTextureUrl, defaultSkin) == 64)
+				resModel = static_cast<HumanoidModel*>(newHumanoidModelSlim);
+			else
+				resModel = static_cast<HumanoidModel*>(humanoidModelSlim);
+		}
+		else
+		{
+			if (textures->getHeight(mob->customTextureUrl, defaultSkin) == 64)
+				resModel = static_cast<HumanoidModel*>(newHumanoidModel);
+			else
+				resModel = static_cast<HumanoidModel*>(humanoidModel);
+		}
+	}
+	else
+		resModel = static_cast<HumanoidModel*>(model);
+
+	/*if (mob != nullptr && newHumanoidModelSlim != nullptr && (mob->getCustomSkin() >= 10 && mob->getCustomSkin() <= 18)) resModel = newHumanoidModelSlim;
+	else if (mob != nullptr && newHumanoidModel != nullptr && (mob->getCustomSkin() >= 2 && mob->getCustomSkin() <= 9)) resModel = newHumanoidModel;
+	else resModel = humanoidModel;*/
+
+	shared_ptr<ItemInstance> headGear = mob->inventory->getArmor(3);
+	if (headGear != nullptr)
 	{
 		// don't render the pumpkin for the skins
-		unsigned int uiAnimOverrideBitmask = mob->getSkinAnimOverrideBitmask( mob->getCustomSkin());
+		unsigned int uiAnimOverrideBitmask = mob->getSkinAnimOverrideBitmask(mob->getCustomSkin());
 
-		if((uiAnimOverrideBitmask&(1<<HumanoidModel::eAnim_DontRenderArmour))==0)
+		if ((uiAnimOverrideBitmask & (1 << HumanoidModel::eAnim_DontRenderArmour)) == 0)
 		{
 			glPushMatrix();
-			humanoidModel->head->translateTo(1 / 16.0f);
+			resModel->head->translateTo(1 / 16.0f);
 
-			if(headGear->getItem()->id < 256)
+			if (headGear->getItem()->id < 256)
 			{
 				if (TileRenderer::canRender(Tile::tiles[headGear->id]->getRenderShape()))
 				{
@@ -303,7 +432,7 @@ void PlayerRenderer::additionalRendering(shared_ptr<LivingEntity> _mob, float a)
 
 				entityRenderDispatcher->itemInHandRenderer->renderItem(mob, headGear, 0);
 			}
-			else if (headGear->getItem()->id == Item::skull_Id)
+			/*else if (headGear->getItem()->id == Item::skull_Id)
 			{
 				float s = 17 / 16.0f;
 				glScalef(s, -s, -s);
@@ -314,239 +443,349 @@ void PlayerRenderer::additionalRendering(shared_ptr<LivingEntity> _mob, float a)
 					extra = headGear->getTag()->getString(L"SkullOwner");
 				}
 				SkullTileRenderer::instance->renderSkull(-0.5f, 0, -0.5f, Facing::UP, 180, headGear->getAuxValue(), extra);
-			}
-
+			}*/
+			//SkullTileRenderer::instance->renderSkull(-0.5f, 0, -0.5f, Facing::UP, 180, headGear->getAuxValue(), extra);
 			glPopMatrix();
 		}
-    }
+	}
 
 	// need to add a custom texture for deadmau5
-	if (mob != nullptr && app.isXuidDeadmau5( mob->getXuid() ) && bindTexture(mob->customTextureUrl, L"" ))
+	if (mob != nullptr && app.isXuidDeadmau5(mob->getXuid()) && bindTexture(mob->customTextureUrl, L""))
 	{
-        for (int i = 0; i < 2; i++)
+		for (int i = 0; i < 2; i++)
 		{
-            float yr = (mob->yRotO + (mob->yRot - mob->yRotO) * a) - (mob->yBodyRotO + (mob->yBodyRot - mob->yBodyRotO) * a);
-            float xr = mob->xRotO + (mob->xRot - mob->xRotO) * a;
-            glPushMatrix();
-            glRotatef(yr, 0, 1, 0);
-            glRotatef(xr, 1, 0, 0);
-            glTranslatef((6 / 16.0f) * (i * 2 - 1), 0, 0);
-            glTranslatef(0, -6 / 16.0f, 0);
-            glRotatef(-xr, 1, 0, 0);
-            glRotatef(-yr, 0, 1, 0);
+			float yr = (mob->yRotO + (mob->yRot - mob->yRotO) * a) - (mob->yBodyRotO + (mob->yBodyRot - mob->yBodyRotO) * a);
+			float xr = mob->xRotO + (mob->xRot - mob->xRotO) * a;
+			glPushMatrix();
+			glRotatef(yr, 0, 1, 0);
+			glRotatef(xr, 1, 0, 0);
+			glTranslatef((6 / 16.0f) * (i * 2 - 1), 0, 0);
+			glTranslatef(0, -6 / 16.0f, 0);
+			glRotatef(-xr, 1, 0, 0);
+			glRotatef(-yr, 0, 1, 0);
 
-            float s = 8 / 6.0f;
-            glScalef(s, s, s);
-            humanoidModel->renderEars(1 / 16.0f,true);
-            glPopMatrix();
-        }
-    }
+			float s = 8 / 6.0f;
+			glScalef(s, s, s);
+			resModel->renderEars(1 / 16.0f, true);
+			glPopMatrix();
+		}
+	}
 
 	// 4J: removed
 	/*boolean loaded = mob->getCloakTexture()->isLoaded();
-    boolean b1 = !mob->isInvisible();
-    boolean b2 = !mob->isCapeHidden();*/
+	boolean b1 = !mob->isInvisible();
+	boolean b2 = !mob->isCapeHidden();*/
 	if (bindTexture(mob->customTextureUrl2, L"") && !mob->isInvisible())
 	{
-        glPushMatrix();
-        glTranslatef(0, 0, 2 / 16.0f);
+		glPushMatrix();
+		glTranslatef(0, 0, 2 / 16.0f);
 
-        double xd = (mob->xCloakO + (mob->xCloak - mob->xCloakO) * a) - (mob->xo + (mob->x - mob->xo) * a);
-        double yd = (mob->yCloakO + (mob->yCloak - mob->yCloakO) * a) - (mob->yo + (mob->y - mob->yo) * a);
-        double zd = (mob->zCloakO + (mob->zCloak - mob->zCloakO) * a) - (mob->zo + (mob->z - mob->zo) * a);
+		double xd = (mob->xCloakO + (mob->xCloak - mob->xCloakO) * a) - (mob->xo + (mob->x - mob->xo) * a);
+		double yd = (mob->yCloakO + (mob->yCloak - mob->yCloakO) * a) - (mob->yo + (mob->y - mob->yo) * a);
+		double zd = (mob->zCloakO + (mob->zCloak - mob->zCloakO) * a) - (mob->zo + (mob->z - mob->zo) * a);
 
-        float yr = mob->yBodyRotO + (mob->yBodyRot - mob->yBodyRotO) * a;
+		float yr = mob->yBodyRotO + (mob->yBodyRot - mob->yBodyRotO) * a;
 
-        double xa = Mth::sin(yr * PI / 180);
-        double za = -Mth::cos(yr * PI / 180);
+		double xa = Mth::sin(yr * PI / 180);
+		double za = -Mth::cos(yr * PI / 180);
 
-        float flap = static_cast<float>(yd) * 10;
-        if (flap < -6) flap = -6;
-        if (flap > 32) flap = 32;
-        float lean = static_cast<float>(xd * xa + zd * za) * 100;
-        float lean2 = static_cast<float>(xd * za - zd * xa) * 100;
-        if (lean < 0) lean = 0;
+		float flap = static_cast<float>(yd) * 10;
+		if (flap < -6) flap = -6;
+		if (flap > 32) flap = 32;
+		float lean = static_cast<float>(xd * xa + zd * za) * 100;
+		float lean2 = static_cast<float>(xd * za - zd * xa) * 100;
+		if (lean < 0) lean = 0;
 
-        float pow = mob->oBob + (mob->bob - mob->oBob) * a;
+		float pow = mob->oBob + (mob->bob - mob->oBob) * a;
 
-        flap += sin((mob->walkDistO + (mob->walkDist - mob->walkDistO) * a) * 6) * 32 * pow;
-        if (mob->isSneaking())
+		flap += sin((mob->walkDistO + (mob->walkDist - mob->walkDistO) * a) * 6) * 32 * pow;
+		if (mob->isSneaking())
 		{
-            flap += 25;
-        }
+			flap += 25;
+		}
 
 		// 4J Stu - Fix for sprint-flying causing the cape to rotate up by 180 degrees or more
 		float xRot = 6.0f + lean / 2 + flap;
-		if(xRot > 64.0f) xRot = 64.0f;
+		glRotatef(xRot, 1, 0, 0);
+		glRotatef(lean2 / 2, 0, 0, 1);
+		glRotatef(-lean2 / 2, 0, 1, 0);
+		glRotatef(180, 0, 1, 0);
+		resModel->renderCloak(1 / 16.0f, true);
+		glPopMatrix();
+	}
 
-        glRotatef(xRot, 1, 0, 0);
-        glRotatef(lean2 / 2, 0, 0, 1);
-        glRotatef(-lean2 / 2, 0, 1, 0);
-        glRotatef(180, 0, 1, 0);
-        humanoidModel->renderCloak(1 / 16.0f,true);
-        glPopMatrix();
-    }
-
-    shared_ptr<ItemInstance> item = mob->inventory->getSelected();
-
-    if (item != nullptr)
 	{
-        glPushMatrix();
-        humanoidModel->arm0->translateTo(1 / 16.0f);
-        glTranslatef(-1 / 16.0f, 7 / 16.0f, 1 / 16.0f);
+		shared_ptr<ItemInstance> chestItem = mob->inventory->armor[LivingEntity::SLOT_CHEST - 1];
+		if (chestItem != nullptr && dynamic_cast<ElytraItem*>(chestItem->getItem()) != nullptr && !mob->isInvisible())
+		{
+			static ResourceLocation elytraTexture(L"item/elytra.png");
+			bindTexture(&elytraTexture);
 
-        if (mob->fishing != nullptr)
-		{
-            item = std::make_shared<ItemInstance>(Item::stick);
-        }
+			float brightness2 = SharedConstants::TEXTURE_LIGHTING ? 1 : mob->getBrightness(a);
+			glColor3f(brightness2, brightness2, brightness2);
 
-		UseAnim anim = UseAnim_none;//null;
-		if (mob->getUseItemDuration() > 0)
-		{
-			anim = item->getUseAnimation();
-		}
 
-        if (item->id < 256 && TileRenderer::canRender(Tile::tiles[item->id]->getRenderShape()))
-		{
-            float s = 8 / 16.0f;
-            glTranslatef(-0 / 16.0f, 3 / 16.0f, -5 / 16.0f);
-            s *= 0.75f;
-            glRotatef(20, 1, 0, 0);
-            glRotatef(45, 0, 1, 0);
-            glScalef(-s, -s, s);
-		}
-		else if (item->id == Item::bow->id)
-		{
-			float s = 10 / 16.0f;
-			glTranslatef(0 / 16.0f, 2 / 16.0f, 5 / 16.0f);
-			glRotatef(-20, 0, 1, 0);
-			glScalef(s, -s, s);
-			glRotatef(-100, 1, 0, 0);
-			glRotatef(45, 0, 1, 0);
-		}
-		else if (Item::items[item->id]->isHandEquipped())
-		{
-			float s = 10 / 16.0f;
-			if (Item::items[item->id]->isMirroredArt())
+			float wf = 0.2617994f;
+			float wf1 = -0.2617994f;
+			float wf2 = resModel->body->y;
+			float wf3 = 0.0f;
+
+			if (mob->isElytraFlying() && !EntityRenderDispatcher::instance->isInventoryRender)
 			{
-				glRotatef(180, 0, 0, 1);
-				glTranslatef(0, -2 / 16.0f, 0);
+				float f4 = 1.0f;
+				if (mob->yd < 0.0)
+				{
+					double speed = sqrt(mob->xd * mob->xd + mob->yd * mob->yd + mob->zd * mob->zd);
+					if (speed > 0.0)
+					{
+						double normY = mob->yd / speed;
+						f4 = 1.0f - (float)pow(-normY, 1.5);
+						if (f4 < 0.0f) f4 = 0.0f;
+						if (f4 > 1.0f) f4 = 1.0f;
+					}
+				}
+				wf = f4 * 0.34906584f + (1.0f - f4) * wf;
+				wf1 = f4 * (-(float)(PI / 2.0)) + (1.0f - f4) * wf1;
 			}
+			else if (mob->isSneaking())
+			{
+				wf = (float)(PI * 2.0 / 9.0);
+				wf1 = -(float)(PI / 4.0);
+				wf2 = 0.0f;
+				wf3 = 0.08726646f;
+			}
+
+			if (EntityRenderDispatcher::instance->isInventoryRender)
+			{
+				mob->rotateElytraX = wf;
+				mob->rotateElytraY = wf3;
+				mob->rotateElytraZ = wf1;
+			}
+			else
+			{
+				mob->rotateElytraX += (wf - mob->rotateElytraX) * 0.3f;
+				mob->rotateElytraY += (wf3 - mob->rotateElytraY) * 0.3f;
+				mob->rotateElytraZ += (wf1 - mob->rotateElytraZ) * 0.3f;
+			}
+
+
+			humanoidModel->elytraRight->y = wf2;
+			humanoidModel->elytraRight->xRot = mob->rotateElytraX;
+			humanoidModel->elytraRight->yRot = mob->rotateElytraY;
+			humanoidModel->elytraRight->zRot = mob->rotateElytraZ;
+
+			humanoidModel->elytraLeft->y = wf2;
+			humanoidModel->elytraLeft->xRot = mob->rotateElytraX;
+			humanoidModel->elytraLeft->yRot = -mob->rotateElytraY;
+			humanoidModel->elytraLeft->zRot = -mob->rotateElytraZ;
+
+			glPushMatrix();
+			glTranslatef(0, 0.0f, (2.0f + 0.125f) / 16.0f);
+			humanoidModel->renderElytra(1 / 16.0f, true);
+			glPopMatrix();
+		}
+
+
+		shared_ptr<ItemInstance> item = mob->inventory->getSelected();
+
+		if (item != nullptr)
+		{
+			glPushMatrix();
+			resModel->arm0->translateTo(1 / 16.0f);
+			glTranslatef(-1 / 16.0f, 7 / 16.0f, 1 / 16.0f);
+
+			if (mob->fishing != nullptr)
+			{
+				item = std::make_shared<ItemInstance>(Item::stick);
+			}
+
+			UseAnim anim = UseAnim_none;//null;
 			if (mob->getUseItemDuration() > 0)
 			{
-				if (anim == UseAnim_block)
+				anim = item->getUseAnimation();
+			}
+
+			if (item->id < 256 && TileRenderer::canRender(Tile::tiles[item->id]->getRenderShape()) && item->id != Tile::barrier_Id)
+			{
+				float s = 8 / 16.0f;
+				glTranslatef(-0 / 16.0f, 3 / 16.0f, -5 / 16.0f);
+				s *= 0.75f;
+				glRotatef(20, 1, 0, 0);
+				glRotatef(45, 0, 1, 0);
+				glScalef(-s, -s, s);
+			}
+			else if (item->id == Item::bow->id)
+			{
+				float s = 10 / 16.0f;
+				glTranslatef(0 / 16.0f, 2 / 16.0f, 5 / 16.0f);
+				glRotatef(-20, 0, 1, 0);
+				glScalef(s, -s, s);
+				glRotatef(-100, 1, 0, 0);
+				glRotatef(45, 0, 1, 0);
+			}
+			else if (Item::items[item->id]->isHandEquipped())
+			{
+				float s = 10 / 16.0f;
+				if (Item::items[item->id]->isMirroredArt())
 				{
-					glTranslatef(0.05f, 0, -0.1f);
-					glRotatef(-50, 0, 1, 0);
-					glRotatef(-10, 1, 0, 0);
-					glRotatef(-60, 0, 0, 1);
+					glRotatef(180, 0, 0, 1);
+					glTranslatef(0, -2 / 16.0f, 0);
+				}
+				if (mob->getUseItemDuration() > 0)
+				{
+					if (anim == UseAnim_block)
+					{
+						glTranslatef(0.05f, 0, -0.1f);
+						glRotatef(-50, 0, 1, 0);
+						glRotatef(-10, 1, 0, 0);
+						glRotatef(-60, 0, 0, 1);
+					}
+				}
+				glTranslatef(0, 3 / 16.0f, 0);
+				glScalef(s, -s, s);
+				glRotatef(-100, 1, 0, 0);
+				glRotatef(45, 0, 1, 0);
+			}
+			else if (item->id == Item::skull_Id)
+			{
+				float s = 0.5f;
+				glTranslatef(0, -3 / 16.0f, -4 / 16.0f);
+				glRotatef(45, 1, 0, 0);
+				glRotatef(45, 0, 1, 0);
+				glScalef(-s, -s, s);
+			}
+			else
+			{
+				float s = 6 / 16.0f;
+				glTranslatef(+4 / 16.0f, +3 / 16.0f, -3 / 16.0f);
+				glScalef(s, s, s);
+				glRotatef(60, 0, 0, 1);
+				glRotatef(-90, 1, 0, 0);
+				glRotatef(20, 0, 0, 1);
+			}
+
+			if (item->getItem()->hasMultipleSpriteLayers())
+			{
+				for (int layer = 0; layer <= 1; layer++)
+				{
+					int col = item->getItem()->getColor(item, layer);
+					float red = ((col >> 16) & 0xff) / 255.0f;
+					float g = ((col >> 8) & 0xff) / 255.0f;
+					float b = ((col) & 0xff) / 255.0f;
+
+					glColor4f(red, g, b, 1);
+					this->entityRenderDispatcher->itemInHandRenderer->renderItem(mob, item, layer, false);
 				}
 			}
-			glTranslatef(0, 3 / 16.0f, 0);
-			glScalef(s, -s, s);
-			glRotatef(-100, 1, 0, 0);
-			glRotatef(45, 0, 1, 0);
-		}
-		else
-		{
-            float s = 6 / 16.0f;
-            glTranslatef(+4 / 16.0f, +3 / 16.0f, -3 / 16.0f);
-            glScalef(s, s, s);
-            glRotatef(60, 0, 0, 1);
-            glRotatef(-90, 1, 0, 0);
-            glRotatef(20, 0, 0, 1);
-        }
-
-		if (item->getItem()->hasMultipleSpriteLayers())
-		{
-			for (int layer = 0; layer <= 1; layer++)
+			else
 			{
-				int col = item->getItem()->getColor(item,layer);
+				int col = item->getItem()->getColor(item, 0);
 				float red = ((col >> 16) & 0xff) / 255.0f;
 				float g = ((col >> 8) & 0xff) / 255.0f;
 				float b = ((col) & 0xff) / 255.0f;
 
 				glColor4f(red, g, b, 1);
-				this->entityRenderDispatcher->itemInHandRenderer->renderItem(mob, item, layer, false);
+				this->entityRenderDispatcher->itemInHandRenderer->renderItem(mob, item, 0);
 			}
-		}
-		else
-		{
-			int col = item->getItem()->getColor(item, 0);
-            float red = ((col >> 16) & 0xff) / 255.0f;
-            float g = ((col >> 8) & 0xff) / 255.0f;
-            float b = ((col) & 0xff) / 255.0f;
 
-            glColor4f(red, g, b, 1);
-			this->entityRenderDispatcher->itemInHandRenderer->renderItem(mob, item, 0);
+			glPopMatrix();
 		}
-
-        glPopMatrix();
 	}
 }
 
 void PlayerRenderer::renderNameTags(shared_ptr<LivingEntity> player, double x, double y, double z, const wstring& msg, float scale, double dist)
 {
 #if 0
-    if (dist < 10 * 10)
+	if (dist < 10 * 10)
 	{
-        Scoreboard *scoreboard = player->getScoreboard();
-        Objective *objective = scoreboard->getDisplayObjective(Scoreboard::DISPLAY_SLOT_BELOW_NAME);
+		Scoreboard* scoreboard = player->getScoreboard();
+		Objective* objective = scoreboard->getDisplayObjective(Scoreboard::DISPLAY_SLOT_BELOW_NAME);
 
-        if (objective != nullptr)
+		if (objective != nullptr)
 		{
-            Score *score = scoreboard->getPlayerScore(player->getAName(), objective);
+			Score* score = scoreboard->getPlayerScore(player->getAName(), objective);
 
-            if (player->isSleeping())
+			if (player->isSleeping())
 			{
-                renderNameTag(player, score->getScore() + " " + objective->getDisplayName(), x, y - 1.5f, z, 64);
-            }
+				renderNameTag(player, score->getScore() + " " + objective->getDisplayName(), x, y - 1.5f, z, 64);
+			}
 			else
 			{
-                renderNameTag(player, score->getScore() + " " + objective->getDisplayName(), x, y, z, 64);
-            }
+				renderNameTag(player, score->getScore() + " " + objective->getDisplayName(), x, y, z, 64);
+			}
 
-            y += getFont()->lineHeight * 1.15f * scale;
-        }
-    }
+			y += getFont()->lineHeight * 1.15f * scale;
+		}
+	}
 #endif
 
-	if (player->instanceof(eTYPE_PLAYER)) {
-		shared_ptr<Player> p = dynamic_pointer_cast<Player>(player);
-		p->nametagColor = getNametagColour(p->getPlayerIndex());
+	shared_ptr<Player> pPlayer = dynamic_pointer_cast<Player>(player);
+	int color = getNametagColour(pPlayer->getPlayerIndex());
+
+	if (player->isSleeping())
+	{
+		renderNameTag(player, msg, x, y - 1.5f, z, 64, color);
 	}
-	else {
-		player->nametagColor = 0xFF000000;
+	else
+	{
+		renderNameTag(player, msg, x, y, z, 64, color);
 	}
-	LivingEntityRenderer::renderNameTags(player, x, y, z, msg, scale, dist);
 }
 
 void PlayerRenderer::scale(shared_ptr<LivingEntity> player, float a)
 {
-    float s = 15 / 16.0f;
-    glScalef(s, s, s);
+	float s = 15 / 16.0f;
+	glScalef(s, s, s);
 }
 
 void PlayerRenderer::renderHand()
 {
-	float brightness = 1;
-    glColor3f(brightness, brightness, brightness);
+	shared_ptr<Player> player = dynamic_pointer_cast<Player>(Minecraft::GetInstance()->player);
+	HumanoidModel* resModel = static_cast<HumanoidModel*>(model);
 
-	humanoidModel->m_uiAnimOverrideBitmask = Minecraft::GetInstance()->player->getAnimOverrideBitmask();
-	armorParts1->eating = armorParts2->eating = humanoidModel->eating = humanoidModel->idle = false;
-    humanoidModel->attackTime = 0;
-    humanoidModel->setupAnim(0, 0, 0, 0, 0, 1 / 16.0f, Minecraft::GetInstance()->player);
-	// 4J-PB - does this skin have its arm0 disabled? (Dalek, etc)
-	if((humanoidModel->m_uiAnimOverrideBitmask&(1<<HumanoidModel::eAnim_DisableRenderArm0))==0)
+	if (player != nullptr)
 	{
-		humanoidModel->arm0->render(1 / 16.0f,true);
-	}
+		Textures* textures = Minecraft::GetInstance()->textures;
+		int skinId = player->getPlayerDefaultSkin() - 1;
+		int defaultSkin = player->getPlayerDefaultSkin() + 35;
 
+		if (slim[skinId] == true)
+		{
+			if (textures->getHeight(player->customTextureUrl, defaultSkin) == 64)
+				resModel = static_cast<HumanoidModel*>(newHumanoidModelSlim);
+			else
+				resModel = static_cast<HumanoidModel*>(humanoidModelSlim);
+		}
+		else
+		{
+			if (textures->getHeight(player->customTextureUrl, defaultSkin) == 64)
+				resModel = static_cast<HumanoidModel*>(newHumanoidModel);
+			else
+				resModel = static_cast<HumanoidModel*>(humanoidModel);
+		}
+	}
+	else
+		resModel = static_cast<HumanoidModel*>(model);
+
+	/*if (player != nullptr && newHumanoidModelSlim != nullptr && (player->getCustomSkin() >= 10 && player->getCustomSkin() <= 18)) resModel = newHumanoidModelSlim;
+	else if (player != nullptr && newHumanoidModel != nullptr && (player->getCustomSkin() >= 2 && player->getCustomSkin() <= 9)) resModel = newHumanoidModel;
+	else resModel = humanoidModel;*/
+
+	float brightness = 1;
+	glColor3f(brightness, brightness, brightness);
+
+	resModel->m_uiAnimOverrideBitmask = player->getAnimOverrideBitmask();
+	armorParts1->eating = armorParts2->eating = resModel->eating = resModel->idle = false;
+	resModel->attackTime = 0;
+	resModel->setupAnim(0, 0, 0, 0, 0, 1 / 16.0f, Minecraft::GetInstance()->player);
+	// 4J-PB - does this skin have its arm0 disabled? (Dalek, etc)
+	if ((resModel->m_uiAnimOverrideBitmask & (1 << HumanoidModel::eAnim_DisableRenderArm0)) == 0)
+		resModel->arm0->render(1 / 16.0f, true);
 
 	//Render custom skin boxes on viewmodel - Botch
 	vector<ModelPart*>* additionalModelParts = Minecraft::GetInstance()->player->GetAdditionalModelParts();
 	if (!additionalModelParts) return; //If there are no custom boxes, return. This fixes bug where the game will crash if you select a skin with no additional boxes.
-	vector<ModelPart*> armchildren = humanoidModel->arm0->children;
+	vector<ModelPart*> armchildren = resModel->arm0->children;
 	std::unordered_set<ModelPart*> additionalModelPartSet(additionalModelParts->begin(), additionalModelParts->end());
 	for (const auto& x : armchildren) {
 		if (x) {
@@ -562,8 +801,6 @@ void PlayerRenderer::renderHand()
 			}
 		}
 	}
-
-	
 }
 
 void PlayerRenderer::setupPosition(shared_ptr<LivingEntity> _mob, double x, double y, double z)
@@ -571,19 +808,19 @@ void PlayerRenderer::setupPosition(shared_ptr<LivingEntity> _mob, double x, doub
 	// 4J - dynamic cast required because we aren't using templates/generics in our version
 	shared_ptr<Player> mob = dynamic_pointer_cast<Player>(_mob);
 
-    if (mob->isAlive() && mob->isSleeping())
+	if (mob->isAlive() && mob->isSleeping())
 	{
-        LivingEntityRenderer::setupPosition(mob, x + mob->bedOffsetX, y + mob->bedOffsetY, z + mob->bedOffsetZ);
+		LivingEntityRenderer::setupPosition(mob, x + mob->bedOffsetX, y + mob->bedOffsetY, z + mob->bedOffsetZ);
 
-    }
+	}
 	else
 	{
-		if(mob->isRiding() && (mob->getAnimOverrideBitmask()&(1<<HumanoidModel::eAnim_SmallModel))!=0)
+		if (mob->isRiding() && (mob->getAnimOverrideBitmask() & (1 << HumanoidModel::eAnim_SmallModel)) != 0)
 		{
 			y += 0.5f;
 		}
-        LivingEntityRenderer::setupPosition(mob, x, y, z);
-    }
+		LivingEntityRenderer::setupPosition(mob, x, y, z);
+	}
 }
 
 void PlayerRenderer::setupRotations(shared_ptr<LivingEntity> _mob, float bob, float bodyRot, float a)
@@ -591,27 +828,51 @@ void PlayerRenderer::setupRotations(shared_ptr<LivingEntity> _mob, float bob, fl
 	// 4J - dynamic cast required because we aren't using templates/generics in our version
 	shared_ptr<Player> mob = dynamic_pointer_cast<Player>(_mob);
 
-    if (mob->isAlive() && mob->isSleeping())
+	if (mob->isAlive() && mob->isSleeping())
 	{
-        glRotatef(mob->getSleepRotation(), 0, 1, 0);
-        glRotatef(getFlipDegrees(mob), 0, 0, 1);
-        glRotatef(270, 0, 1, 0);
-    }
-	else
+		glRotatef(mob->getSleepRotation(), 0, 1, 0);
+		glRotatef(getFlipDegrees(mob), 0, 0, 1);
+		glRotatef(270, 0, 1, 0);
+	}
+	else if (mob->isElytraFlying() && !EntityRenderDispatcher::instance->isInventoryRender)
+	{
+		LivingEntityRenderer::setupRotations(mob, bob, bodyRot, a);
+
+		float f = (float)mob->ticksElytraFlying + a;
+		float f1 = Mth::clamp(f * f / 100.0f, 0.0f, 1.0f);
+		glRotatef(f1 * (-90.0f - mob->xRot), 1.0f, 0.0f, 0.0f);
+
+		Vec3* look = mob->getLookAngle();
+		double d0 = mob->xd * mob->xd + mob->zd * mob->zd; 
+		double d1 = look->x * look->x + look->z * look->z;
+
+		if (d0 > 0.0 && d1 > 0.0)
+		{
+			double d2 = (mob->xd * look->x + mob->zd * look->z) / (sqrt(d0) * sqrt(d1));
+			if (d2 > 1.0)  d2 = 1.0;
+			if (d2 < -1.0) d2 = -1.0;
+			double d3 = mob->xd * look->z - mob->zd * look->x; 
+			float sign = (d3 >= 0.0) ? 1.0f : -1.0f;
+			glRotatef(sign * (float)(acos(d2) * 180.0 / PI), 0.0f, 1.0f, 0.0f);
+		}
+
+	}
+		else
 	{
         LivingEntityRenderer::setupRotations(mob, bob, bodyRot, a);
     }
+
 }
 
 // 4J Added override to stop rendering shadow if player is invisible
 void PlayerRenderer::renderShadow(shared_ptr<Entity> e, double x, double y, double z, float pow, float a)
 {
-	if(app.GetGameHostOption(eGameHostOption_HostCanBeInvisible) > 0)
+	if (app.GetGameHostOption(eGameHostOption_HostCanBeInvisible) > 0)
 	{
 		shared_ptr<Player> player = dynamic_pointer_cast<Player>(e);
-		if(player != nullptr && player->hasInvisiblePrivilege()) return;
+		if (player != nullptr && player->hasInvisiblePrivilege()) return;
 	}
-	EntityRenderer::renderShadow(e,x,y,z,pow,a);
+	EntityRenderer::renderShadow(e, x, y, z, pow, a);
 }
 
 // 4J Added override
@@ -621,7 +882,7 @@ void PlayerRenderer::bindTexture(shared_ptr<Entity> entity)
 	bindTexture(player->customTextureUrl, player->getTexture());
 }
 
-ResourceLocation *PlayerRenderer::getTextureLocation(shared_ptr<Entity> entity)
+ResourceLocation* PlayerRenderer::getTextureLocation(shared_ptr<Entity> entity)
 {
 	shared_ptr<Player> player = dynamic_pointer_cast<Player>(entity);
 	return new ResourceLocation(static_cast<_TEXTURE_NAME>(player->getTexture()));

@@ -25,7 +25,9 @@ public:
 	MinecraftServer *server;
 	ServerPlayerGameMode *gameMode;
 	double lastMoveX, lastMoveZ;
-	list<ChunkPos> chunksToSend;
+	// Hash set for O(1) membership/erase. Find-nearest is done via
+	// spiral iteration in ServerPlayer::doChunkSendingTick, not a sweep.
+	unordered_set<ChunkPos, ChunkPosKeyHash, ChunkPosKeyEq> chunksToSend;
 	vector<int> entitiesToRemove;
 	unordered_set<ChunkPos, ChunkPosKeyHash, ChunkPosKeyEq> seenChunks;
 	int spewTimer;
@@ -158,6 +160,7 @@ public:
 
 	static int getFlagIndexForChunk(const ChunkPos& pos, int dimension);		// 4J - added
 	int getPlayerViewDistanceModifier(); // 4J Added, returns a number which is subtracted from the default view distance
+	bool isSpectator();
 
 public:
 	// 4J Stu - Added hooks for the game rules

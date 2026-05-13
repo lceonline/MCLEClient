@@ -28,6 +28,10 @@
   <colour name="Foliage_ExtremeHillsEdge" value="6da36b"/>
   <colour name="Foliage_Jungle" value="29bc05"/>
   <colour name="Foliage_JungleHills" value="29bc05"/>
+  <colour name="Foliage_Savanna" value="9eb34e"/>
+  <colour name="Foliage_RoofedForest" value="59ae30"/>
+  <colour name="Foliage_Mesa" value="9e814d"/>
+  
 
   <!-- Grass colours -->
   <!-- May be used for grass and tall grass -->
@@ -55,6 +59,9 @@
   <colour name="Grass_ExtremeHillsEdge" value="8ab689"/>
   <colour name="Grass_Jungle" value="53ca37"/>
   <colour name="Grass_JungleHills" value="53ca37"/>
+  <colour name="Grass_Savanna" value="bfb755"/>
+  <colour name="Grass_RoofedForest" value="507a32"/>
+  <colour name="Grass_Mesa" value="90814d"/>
 
   <!-- Water colours -->
   <colour name="Water_Ocean" value="ffffff"/>
@@ -80,6 +87,7 @@
   <colour name="Water_ExtremeHillsEdge" value="ffffff"/>
   <colour name="Water_Jungle" value="ffffff"/>
   <colour name="Water_JungleHills" value="ffffff"/>
+  <colour name="Water_Mesa" value="3f76e4"/>
 
   <!-- Sky colours -->  
   <colour name="Sky_Ocean" value="7BA5FF"/>
@@ -206,7 +214,7 @@ if __name__=="__main__": notecolors()
   <colour name="Effect_DamageBoost" value="932423"/>
   <colour name="Effect_Heal" value="f82423"/>
   <colour name="Effect_Harm" value="430a09"/>
-  <colour name="Effect_Jump" value="786297"/>
+  <colour name="Effect_Jump" value="22ff4c"/>
   <colour name="Effect_Confusion" value="551d4a"/>
   <colour name="Effect_Regeneration" value="cd5cab"/>
   <colour name="Effect_DamageResistance" value="99453a"/>
@@ -273,6 +281,14 @@ if __name__=="__main__": notecolors()
   <colour name="Mob_Witch_Colour2" value="51a03e"/>
   <colour name="Mob_Horse_Colour1" value="C09E7D"/>
   <colour name="Mob_Horse_Colour2" value="EEE500"/>
+   <colour name="Mob_Rabbit_Colour1" value="995F40"/>
+   <colour name="Mob_Rabbit_Colour2" value="734831"/>
+   <colour name="Mob_Endermite_Colour1" value="161616"/>
+   <colour name="Mob_Endermite_Colour2" value="6E6E6E"/>
+   <colour name="Mob_Guardian_Colour1" value="5A8272"/>
+   <colour name="Mob_Guardian_Colour2" value="F17D30"/>
+   <colour name="Mob_ElderGuardian_Colour1" value="CECCBA"/>
+   <colour name="Mob_ElderGuardian_Colour2" value="747693"/>
 
   <colour name="Armour_Default_Leather_Colour" value="A06540"/>
 

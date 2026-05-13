@@ -16,5 +16,5 @@ protected:
 	virtual bool mayPlaceOn(int tile);
 public:
 	virtual bool canSurvive(Level *level, int x, int y, int z);
-	bool growTree(Level *level, int x, int y, int z, Random *random);
+	bool growTree(Level* level, int x, int y, int z, Random* random, bool naturalGrowth = true, int entityId = -1);
 };

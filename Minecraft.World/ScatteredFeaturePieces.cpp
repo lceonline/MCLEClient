@@ -12,8 +12,8 @@
 void ScatteredFeaturePieces::loadStatic()
 {
 	StructureFeatureIO::setPieceId(eStructurePiece_DesertPyramidPiece, DesertPyramidPiece::Create, L"TeDP");
-	StructureFeatureIO::setPieceId(eStructurePiece_JunglePyramidPiece, DesertPyramidPiece::Create, L"TeJP");
-	StructureFeatureIO::setPieceId(eStructurePiece_SwamplandHut, DesertPyramidPiece::Create, L"TeSH");
+	StructureFeatureIO::setPieceId(eStructurePiece_JunglePyramidPiece, JunglePyramidPiece::Create, L"TeJP");
+	StructureFeatureIO::setPieceId(eStructurePiece_SwamplandHut, SwamplandHut::Create, L"TeSH");
 }
 
 ScatteredFeaturePieces::ScatteredFeaturePiece::ScatteredFeaturePiece()
@@ -258,41 +258,41 @@ bool ScatteredFeaturePieces::DesertPyramidPiece::postProcess(Level *level, Rando
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, width - 5, 1, z, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_HEIROGLYPHS, width - 5, 2, z, chunkBB);
 	}
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 10, 0, 7, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 10, 0, 8, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 9, 0, 9, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 11, 0, 9, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 8, 0, 10, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 12, 0, 10, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 7, 0, 10, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 13, 0, 10, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 9, 0, 11, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 11, 0, 11, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 10, 0, 12, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 10, 0, 13, chunkBB);
-	placeBlock(level, Tile::wool_Id, blue, 10, 0, 10, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 10, 0, 7, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 10, 0, 8, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 9, 0, 9, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 11, 0, 9, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 8, 0, 10, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 12, 0, 10, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 7, 0, 10, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 13, 0, 10, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 9, 0, 11, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 11, 0, 11, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 10, 0, 12, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 10, 0, 13, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, blue, 10, 0, 10, chunkBB);
 
 	// outdoor decoration
 	for (int x = 0; x <= width - 1; x += width - 1)
 	{
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 2, 1, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 2, 2, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 2, 2, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 2, 3, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 3, 1, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 3, 2, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 3, 2, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 3, 3, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 4, 1, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 4, 1, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_HEIROGLYPHS, x, 4, 2, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 4, 3, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 4, 3, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 5, 1, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 5, 2, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 5, 2, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 5, 3, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 6, 1, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 6, 1, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_HEIROGLYPHS, x, 6, 2, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 6, 3, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 7, 1, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 7, 2, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 7, 3, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 6, 3, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 7, 1, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 7, 2, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 7, 3, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 8, 1, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 8, 2, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 8, 3, chunkBB);
@@ -300,23 +300,23 @@ bool ScatteredFeaturePieces::DesertPyramidPiece::postProcess(Level *level, Rando
 	for (int x = 2; x <= width - 3; x += width - 3 - 2)
 	{
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x - 1, 2, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 2, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 2, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x + 1, 2, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x - 1, 3, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 3, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 3, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x + 1, 3, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x - 1, 4, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x - 1, 4, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_HEIROGLYPHS, x, 4, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x + 1, 4, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x + 1, 4, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x - 1, 5, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 5, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 5, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x + 1, 5, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x - 1, 6, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x - 1, 6, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_HEIROGLYPHS, x, 6, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x + 1, 6, 00, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x - 1, 7, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x, 7, 0, chunkBB);
-		placeBlock(level, Tile::wool_Id, baseDecoColor, x + 1, 7, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x + 1, 6, 00, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x - 1, 7, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x, 7, 0, chunkBB);
+		placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, x + 1, 7, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x - 1, 8, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x, 8, 0, chunkBB);
 		placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, x + 1, 8, 0, chunkBB);
@@ -324,9 +324,9 @@ bool ScatteredFeaturePieces::DesertPyramidPiece::postProcess(Level *level, Rando
 	generateBox(level, chunkBB, 8, 4, 0, 12, 6, 0, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, false);
 	placeBlock(level, 0, 0, 8, 6, 0, chunkBB);
 	placeBlock(level, 0, 0, 12, 6, 0, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 9, 5, 0, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 9, 5, 0, chunkBB);
 	placeBlock(level, Tile::sandStone_Id, SandStoneTile::TYPE_HEIROGLYPHS, 10, 5, 0, chunkBB);
-	placeBlock(level, Tile::wool_Id, baseDecoColor, 11, 5, 0, chunkBB);
+	placeBlock(level, Tile::clayHardened_colored_Id, baseDecoColor, 11, 5, 0, chunkBB);
 
 	// tombs
 	generateBox(level, chunkBB, 8, -14, 8, 12, -11, 12, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, Tile::sandStone_Id, SandStoneTile::TYPE_SMOOTHSIDE, false);
@@ -673,15 +673,15 @@ bool ScatteredFeaturePieces::SwamplandHut::postProcess(Level *level, Random *ran
 	}
 
 	// floor and ceiling
-	generateBox(level, chunkBB, 1, 1, 1, 5, 1, 7, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
-	generateBox(level, chunkBB, 1, 4, 2, 5, 4, 7, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
-	generateBox(level, chunkBB, 2, 1, 0, 4, 1, 0, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
+	generateBox(level, chunkBB, 1, 1, 1, 5, 1, 7, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
+	generateBox(level, chunkBB, 1, 4, 2, 5, 4, 7, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
+	generateBox(level, chunkBB, 2, 1, 0, 4, 1, 0, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
 
 	// walls
-	generateBox(level, chunkBB, 2, 2, 2, 3, 3, 2, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
-	generateBox(level, chunkBB, 1, 2, 3, 1, 3, 6, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
-	generateBox(level, chunkBB, 5, 2, 3, 5, 3, 6, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
-	generateBox(level, chunkBB, 2, 2, 7, 4, 3, 7, Tile::wood_Id, TreeTile::DARK_TRUNK, Tile::wood_Id, TreeTile::DARK_TRUNK, false);
+	generateBox(level, chunkBB, 2, 2, 2, 3, 3, 2, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
+	generateBox(level, chunkBB, 1, 2, 3, 1, 3, 6, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
+	generateBox(level, chunkBB, 5, 2, 3, 5, 3, 6, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
+	generateBox(level, chunkBB, 2, 2, 7, 4, 3, 7, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, Tile::wood_Id, TreeTile::SPRUCE_TRUNK, false);
 
 	// pillars
 	generateBox(level, chunkBB, 1, 0, 2, 1, 3, 2, Tile::treeTrunk_Id, Tile::treeTrunk_Id, false);

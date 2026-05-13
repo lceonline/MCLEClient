@@ -10,6 +10,9 @@
 #include "net.minecraft.world.h"
 #include "LevelChunk.h"
 #include "Dimension.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 const wstring PistonBaseTile::EDGE_TEX = L"piston_side";
 const wstring PistonBaseTile::PLATFORM_TEX = L"piston_top";
@@ -230,6 +233,31 @@ bool PistonBaseTile::triggerEvent(Level *level, int x, int y, int z, int param1,
 
 	if (param1 == TRIGGER_EXTEND)
 	{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		{
+			int pushLength = 0;
+			int cx = x + Facing::STEP_X[facing];
+			int cy = y + Facing::STEP_Y[facing];
+			int cz = z + Facing::STEP_Z[facing];
+			for (int i = 0; i < MAX_PUSH_DEPTH + 1; i++)
+			{
+				int block = level->getTile(cx, cy, cz);
+				if (block == 0) break;
+				if (!isPushable(block, level, cx, cy, cz, true)) break;
+				if (Tile::tiles[block]->getPistonPushReaction() == Material::PUSH_DESTROY) { pushLength++; break; }
+				pushLength++;
+				if (i == MAX_PUSH_DEPTH) break;
+				cx += Facing::STEP_X[facing];
+				cy += Facing::STEP_Y[facing];
+				cz += Facing::STEP_Z[facing];
+			}
+			if (FourKitBridge::FirePistonExtend(level->dimension->id, x, y, z, facing, pushLength))
+			{
+				ignoreUpdate(false);
+				return false;
+			}
+		}
+#endif
 		PIXBeginNamedEvent(0,"Create push\n");
 		if (createPush(level, x, y, z, facing))
 		{
@@ -256,6 +284,14 @@ bool PistonBaseTile::triggerEvent(Level *level, int x, int y, int z, int param1,
 	}
 	else if (param1 == TRIGGER_CONTRACT)
 	{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		if (FourKitBridge::FirePistonRetract(level->dimension->id, x, y, z, facing))
+		{
+			level->setData(x, y, z, facing | EXTENDED_BIT, UPDATE_CLIENTS);
+			ignoreUpdate(false);
+			return false;
+		}
+#endif
 		PIXBeginNamedEvent(0,"Contract phase A\n");
 		shared_ptr<TileEntity> prevTileEntity = level->getTileEntity(x + Facing::STEP_X[facing], y + Facing::STEP_Y[facing], z + Facing::STEP_Z[facing]);
 		if (prevTileEntity != nullptr && dynamic_pointer_cast<PistonPieceEntity>(prevTileEntity) != nullptr)

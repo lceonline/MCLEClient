@@ -50,6 +50,7 @@ public:
 #ifdef _XBOX_ONE
 		eDisconnect_ExitedGame,
 #endif
+		eDisconnect_HardcoreDeath,  // 4J Added - for hardcore mode multiplayer ban-on-death
 	};
 
 	// 4J Stu - The reason was a string, but we need to send a non-locale specific reason
@@ -69,5 +70,6 @@ public:
 	static shared_ptr<Packet> create() { return std::make_shared<DisconnectPacket>(); }
 	virtual int getId() { return 255; }
 };
+
 
 

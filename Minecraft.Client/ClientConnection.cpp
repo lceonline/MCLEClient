@@ -4049,20 +4049,22 @@ void ClientConnection::handleSetPlayerTeamPacket(shared_ptr<SetPlayerTeamPacket>
 
 void ClientConnection::handleParticleEvent(shared_ptr<LevelParticlesPacket> packet)
 {
-    wstring particleName = packet->getName();
-    ePARTICLE_TYPE particleId = (ePARTICLE_TYPE)Integer::parseInt(particleName);
+    const ParticleType* type = packet->getType();
+    if (type == nullptr) return;
 
-	for (int i = 0; i < packet->getCount(); i++)
-	{
-		double xVarience = random->nextGaussian() * packet->getXDist();
-		double yVarience = random->nextGaussian() * packet->getYDist();
-		double zVarience = random->nextGaussian() * packet->getZDist();
-		double xa = random->nextGaussian() * packet->getMaxSpeed();
-		double ya = random->nextGaussian() * packet->getMaxSpeed();
-		double za = random->nextGaussian() * packet->getMaxSpeed();
+    ePARTICLE_TYPE particleId = (ePARTICLE_TYPE)type->getId();
 
-		level->addParticle(particleId, packet->getX() + xVarience, packet->getY() + yVarience, packet->getZ() + zVarience, xa, ya, za);
-	}
+    for (int i = 0; i < packet->getCount(); i++)
+    {
+        double xVarience = random->nextGaussian() * packet->getXDist();
+        double yVarience = random->nextGaussian() * packet->getYDist();
+        double zVarience = random->nextGaussian() * packet->getZDist();
+        double xa = random->nextGaussian() * packet->getMaxSpeed();
+        double ya = random->nextGaussian() * packet->getMaxSpeed();
+        double za = random->nextGaussian() * packet->getMaxSpeed();
+
+        level->addParticle(particleId, packet->getX() + xVarience, packet->getY() + yVarience, packet->getZ() + zVarience, xa, ya, za);
+    }
 }
 
 void ClientConnection::handleUpdateAttributes(shared_ptr<UpdateAttributesPacket> packet)

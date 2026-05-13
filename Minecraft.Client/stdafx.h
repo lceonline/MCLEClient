@@ -31,6 +31,7 @@
 // TODO: reference additional headers your program requires here
 #include <DirectXMath.h>
 #include <d3d11.h>
+#include <dxgi1_5.h>
 using namespace DirectX;
 
 #define HRESULT_SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
@@ -221,6 +222,15 @@ typedef XUID GameSessionUID;
 #include "Common/Consoles_App.h"
 #include "Common/Minecraft_Macros.h"
 #include "Common/BuildVer.h"
+
+// Ensure fallback defines if BuildVer.h wasn't picked up by include paths
+#ifndef VER_FILEVERSION_STR_W
+#define VER_PRODUCTBUILD 560
+#define VER_PRODUCTVERSION_STR_W L"DEV (unknown version)"
+#define VER_FILEVERSION_STR_W VER_PRODUCTVERSION_STR_W
+#define VER_BRANCHVERSION_STR_W L"UNKNOWN BRANCH"
+#define VER_NETWORK VER_PRODUCTBUILD
+#endif
 
 #ifdef _XBOX
 	#include "Xbox/Xbox_App.h"

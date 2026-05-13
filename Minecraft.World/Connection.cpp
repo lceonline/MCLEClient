@@ -1,3 +1,4 @@
+#include "Connection.h"
 #include "stdafx.h"
 #include "InputOutputStream.h"
 #include "Socket.h"
@@ -32,6 +33,7 @@ void Connection::_init()
 	disconnectReason = DisconnectPacket::eDisconnect_None;
 	noInputTicks = 0;
 	estimatedRemaining = 0;
+	estimatedRemainingRaw = 0;
 	fakeLag = 0;
 	slowWriteDelay = 50;
 
@@ -145,6 +147,23 @@ void Connection::setListener(PacketListener *packetListener)
 	this->packetListener = packetListener;
 }
 
+void Connection::send(unsigned char* buffer, int size)
+{
+	if (quitting) 	return;
+
+	MemSect(15);
+	// 4J Jev, synchronized (&writeLock)
+	EnterCriticalSection(&writeLock);
+
+	estimatedRemainingRaw += size;
+
+	outgoingRaw.push(std::make_pair(buffer, size));
+
+	// 4J Jev, end synchronized.
+	LeaveCriticalSection(&writeLock);
+	MemSect(0);
+}
+
 void Connection::send(shared_ptr<Packet> packet)
 {
 	if (quitting) 	return;
@@ -229,6 +248,32 @@ bool Connection::writeTick()
 		//baos->reset();
 
 		writeSizes[packet->getId()] += packet->getEstimatedSize() + 1;
+		didSomething = true;
+	}
+
+	if (!outgoingRaw.empty())
+	{
+		std::pair<unsigned char*, int> rawPacket;
+		EnterCriticalSection(&writeLock);
+
+		rawPacket = outgoingRaw.front();
+		outgoingRaw.pop();
+		estimatedRemainingRaw -= rawPacket.second;
+
+		LeaveCriticalSection(&writeLock);
+
+		for (int i = 0; i < rawPacket.second; i++) {
+			byteArrayDos->writeByte(rawPacket.first[i]);
+		}
+
+		// 4J Stu - Changed this so that rather than writing to the network stream through a buffered stream we want to:
+		// a) Only push whole "game" packets to QNet, rather than amalgamated chunks of data that may include many packets, and partial packets
+		// b) To be able to change the priority and queue of a packet if required
+		//sos->writeWithFlags( baos->buf, 0, baos->size(), 0 );
+		//baos->reset();
+
+		int value = rawPacket.first[0];
+		writeSizes[value] += rawPacket.second;
 		didSomething = true;
 	}
 

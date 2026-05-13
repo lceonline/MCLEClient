@@ -127,8 +127,9 @@ void UIScene_HUD::tick()
 			return;
 		}
 
+	    int idx = BossMobGuiInfo::getIndexFromDimension(pMinecraft->localplayers[m_iPad]->dimension);
 		// Is boss present?
-		bool noBoss = BossMobGuiInfo::name.empty() || BossMobGuiInfo::displayTicks <= 0;
+	    bool noBoss = BossMobGuiInfo::name[idx].empty() || BossMobGuiInfo::displayTicks[idx] <= 0;
 		if (noBoss) 
 		{
 			if (m_showDragonHealth)
@@ -146,14 +147,14 @@ void UIScene_HUD::tick()
 		}
 		else
 		{
-			BossMobGuiInfo::displayTicks--;
+		    BossMobGuiInfo::displayTicks[idx]--;
 
 			m_ticksWithNoBoss = 0;			
-			SetDragonHealth(BossMobGuiInfo::healthProgress);
+		    SetDragonHealth(BossMobGuiInfo::healthProgress[idx]);
 
 			if (!m_showDragonHealth)
 			{
-				SetDragonLabel(BossMobGuiInfo::name);
+			    SetDragonLabel(BossMobGuiInfo::name[idx]);
 				ShowDragonHealth(true);
 			}
 		}
@@ -251,7 +252,15 @@ void UIScene_HUD::handleReload()
 
 	m_labelDisplayName.setVisible(m_lastShowDisplayName);
 
-	SetDragonLabel(BossMobGuiInfo::name);
+    Minecraft* pMinecraft = Minecraft::GetInstance();
+
+    int idx = 0;
+    if(pMinecraft->localplayers[m_iPad] != nullptr)
+    {
+        idx = BossMobGuiInfo::getIndexFromDimension(pMinecraft->localplayers[m_iPad]->dimension);
+    }
+
+    SetDragonLabel(BossMobGuiInfo::name[idx]);
 	SetSelectedLabel(L"");
 
 	for(unsigned int i = 0; i < CHAT_LINES_COUNT; ++i)
@@ -263,7 +272,7 @@ void UIScene_HUD::handleReload()
 	IggyValueSetBooleanRS(m_labelJukebox.getIggyValuePath(), 0, "m_bUseHtmlText", true);
 
 	int iGuiScale;	
-	Minecraft *pMinecraft = Minecraft::GetInstance();
+
 	if(pMinecraft->localplayers[m_iPad] == nullptr || pMinecraft->localplayers[m_iPad]->m_iScreenSection == C4JRender::VIEWPORT_TYPE_FULLSCREEN)
 	{
 		iGuiScale=app.GetGameSettings(m_iPad,eGameSetting_UISize);
@@ -660,6 +669,23 @@ void UIScene_HUD::SetHorseJumpBarProgress(float progress)
 	}
 }
 
+void UIScene_HUD::SetHardcoreMode(bool bHardcore)
+{
+	IggyDataValue result;
+	IggyDataValue value[1];
+	value[0].type = IGGY_DATATYPE_boolean;
+	value[0].boolval = bHardcore;
+	IggyResult out = IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ), m_funcSetHardcore , 1 , value );
+
+	// When hardcore state changes, invalidate SetHealth's dirty check
+	// so hearts are redrawn with the correct frame set on the next tick
+	if(bHardcore != m_lastHealthHardcore)
+	{
+		m_lastHealthHardcore = bHardcore;
+		m_lastMaxHealth = -1;
+	}
+}
+
 void UIScene_HUD::SetHealthAbsorb(int healthAbsorb)
 {
 	if(m_iCurrentHealthAbsorb != healthAbsorb)
@@ -784,7 +810,7 @@ void UIScene_HUD::handleTimerComplete(int id)
 			startIndex = maxScroll;
 		}
 
-		app.DebugPrintf("handleTimerComplete: %d | %d | %d\n", maxScroll, startIndex, totalMessages);
+		//app.DebugPrintf("handleTimerComplete: %d | %d | %d\n", maxScroll, startIndex, totalMessages);
 
 		for( unsigned int i = 0; i < messagesToDisplay; ++i )
 		{

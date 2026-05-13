@@ -6,14 +6,14 @@
 
 const WCHAR *ConsoleSoundEngine::wchSoundNames[eSoundType_MAX]=
 {
-	L"mob.chicken.say",					//	eSoundType_MOB_CHICKEN_AMBIENT	
-	L"mob.chicken.hurt",				//	eSoundType_MOB_CHICKEN_HURT
-	L"mob.chicken.plop",				//	eSoundType_MOB_CHICKENPLOP
-	L"mob.cow.say",						//	eSoundType_MOB_COW_AMBIENT
-	L"mob.cow.hurt",					//	eSoundType_MOB_COW_HURT
-	L"mob.pig.say",						//	eSoundType_MOB_PIG_AMBIENT
+	L"mob.chicken.say",						//	eSoundType_MOB_CHICKEN_AMBIENT	
+	L"mob.chicken.hurt",					//	eSoundType_MOB_CHICKEN_HURT
+	L"mob.chicken.plop",					//	eSoundType_MOB_CHICKENPLOP
+	L"mob.cow.say",							//	eSoundType_MOB_COW_AMBIENT
+	L"mob.cow.hurt",						//	eSoundType_MOB_COW_HURT
+	L"mob.pig.say",							//	eSoundType_MOB_PIG_AMBIENT
 	L"mob.pig.death",					//	eSoundType_MOB_PIG_DEATH
-	L"mob.sheep.say",					//	eSoundType_MOB_SHEEP_AMBIENT
+	L"mob.sheep.say",						//	eSoundType_MOB_SHEEP_AMBIENT
 	L"mob.wolf.growl",					//	eSoundType_MOB_WOLF_GROWL
 	L"mob.wolf.whine",					//	eSoundType_MOB_WOLF_WHINE
 	L"mob.wolf.panting",				//	eSoundType_MOB_WOLF_PANTING
@@ -43,15 +43,15 @@ const WCHAR *ConsoleSoundEngine::wchSoundNames[eSoundType_MAX]=
 	L"mob.silverfish.step",				//	eSoundType_MOB_SILVERFISH_STEP,
 	L"mob.skeleton",					//	eSoundType_MOB_SKELETON_AMBIENT,
 	L"mob.skeletonhurt",				//	eSoundType_MOB_SKELETON_HURT,
-	L"mob.spider.say",					//	eSoundType_MOB_SPIDER_AMBIENT,
-	L"mob.spider.death",				//	eSoundType_MOB_SPIDER_DEATH,
+	L"mob.spider.say",						//	eSoundType_MOB_SPIDER_AMBIENT,
+	L"mob.spider.death",					//	eSoundType_MOB_SPIDER_DEATH,
 	L"mob.slime",						//	eSoundType_MOB_SLIME,
-	L"mob.slime.attack",				//	eSoundType_MOB_SLIME_ATTACK,
-	L"mob.creeper.say",					//	eSoundType_MOB_CREEPER_HURT,
+	L"mob.slime.attack",					//	eSoundType_MOB_SLIME_ATTACK,
+	L"mob.creeper.say",						//	eSoundType_MOB_CREEPER_HURT,
 	L"mob.creeper.death",				//	eSoundType_MOB_CREEPER_DEATH,
-	L"mob.zombie.say",					//	eSoundType_MOB_ZOMBIE_AMBIENT,
+	L"mob.zombie.say",						//	eSoundType_MOB_ZOMBIE_AMBIENT,
 	L"mob.zombie.hurt",					//	eSoundType_MOB_ZOMBIE_HURT,
-	L"mob.zombie.death",				//	eSoundType_MOB_ZOMBIE_DEATH,
+	L"mob.zombie.death",					//	eSoundType_MOB_ZOMBIE_DEATH,
 	L"mob.zombie.wood",					//	eSoundType_MOB_ZOMBIE_WOOD,
 	L"mob.zombie.woodbreak",			//	eSoundType_MOB_ZOMBIE_WOOD_BREAK,
 	L"mob.zombie.metal",				//	eSoundType_MOB_ZOMBIE_METAL,
@@ -61,7 +61,7 @@ const WCHAR *ConsoleSoundEngine::wchSoundNames[eSoundType_MAX]=
 	L"mob.cat.purreow",					//  eSoundType_MOB_CAT_PURREOW
 	L"mob.cat.meow",					//  eSoundType_MOB_CAT_MEOW
 	// 4J-PB - correct the name of the event for hitting ocelots
-	L"mob.cat.hit",					    //  eSoundType_MOB_CAT_HITT
+	L"mob.cat.hit",					//  eSoundType_MOB_CAT_HITT
 //	L"mob.irongolem.throw",				//  eSoundType_MOB_IRONGOLEM_THROW
 //	L"mob.irongolem.hit",				//  eSoundType_MOB_IRONGOLEM_HIT
 //	L"mob.irongolem.death",				//  eSoundType_MOB_IRONGOLEM_DEATH
@@ -86,7 +86,7 @@ const WCHAR *ConsoleSoundEngine::wchSoundNames[eSoundType_MAX]=
 	L"random.door_close",				//	eSoundType_RANDOM_DOOR_CLOSE,
 	L"ambient.weather.rain",			//	eSoundType_AMBIENT_WEATHER_RAIN,
 	L"ambient.weather.thunder",			//	eSoundType_AMBIENT_WEATHER_THUNDER,
-	L"ambient.cave",				    //	eSoundType_CAVE_CAVE, DON'T USE FOR XBOX 360!!!
+	L"ambient.cave",				//	eSoundType_CAVE_CAVE, DON'T USE FOR XBOX 360!!!
 #ifdef _XBOX
 	L"ambient.cave.cave2",				//	eSoundType_CAVE_CAVE2 - removed the two sounds that were at 192k in the first ambient cave event
 #endif
@@ -187,30 +187,30 @@ const WCHAR *ConsoleSoundEngine::wchSoundNames[eSoundType_MAX]=
 
 	L"liquid.swim",						//eSoundType_LIQUID_SWIM,
 
-	L"mob.horse.land",					//eSoundType_MOB_HORSE_LAND,
-	L"mob.horse.armor",					//eSoundType_MOB_HORSE_ARMOR,
-	L"mob.horse.leather",				//eSoundType_MOB_HORSE_LEATHER,
-	L"mob.horse.zombie.death",			//eSoundType_MOB_HORSE_ZOMBIE_DEATH,
-	L"mob.horse.skeleton.death",		//eSoundType_MOB_HORSE_SKELETON_DEATH,
-	L"mob.horse.donkey.death",			//eSoundType_MOB_HORSE_DONKEY_DEATH,
-	L"mob.horse.death",					//eSoundType_MOB_HORSE_DEATH,
-	L"mob.horse.zombie.hit",			//eSoundType_MOB_HORSE_ZOMBIE_HIT,
-	L"mob.horse.skeleton.hit",			//eSoundType_MOB_HORSE_SKELETON_HIT,
-	L"mob.horse.donkey.hit",			//eSoundType_MOB_HORSE_DONKEY_HIT,
-	L"mob.horse.hit",					//eSoundType_MOB_HORSE_HIT,
-	L"mob.horse.zombie.idle",			//eSoundType_MOB_HORSE_ZOMBIE_IDLE,
-	L"mob.horse.skeleton.idle",			//eSoundType_MOB_HORSE_SKELETON_IDLE,
-	L"mob.horse.donkey.idle",			//eSoundType_MOB_HORSE_DONKEY_IDLE,
-	L"mob.horse.idle",					//eSoundType_MOB_HORSE_IDLE,
-	L"mob.horse.donkey.angry",			//eSoundType_MOB_HORSE_DONKEY_ANGRY,
-	L"mob.horse.angry",					//eSoundType_MOB_HORSE_ANGRY,
-	L"mob.horse.gallop",				//eSoundType_MOB_HORSE_GALLOP,
-	L"mob.horse.breathe",				//eSoundType_MOB_HORSE_BREATHE,
-	L"mob.horse.wood",					//eSoundType_MOB_HORSE_WOOD,
-	L"mob.horse.soft",					//eSoundType_MOB_HORSE_SOFT,
-	L"mob.horse.jump",					//eSoundType_MOB_HORSE_JUMP,
+	L"Mob.horse.land",					//eSoundType_MOB_HORSE_LAND,
+	L"Mob.horse.armor",					//eSoundType_MOB_HORSE_ARMOR,
+	L"Mob.horse.leather",				//eSoundType_MOB_HORSE_LEATHER,
+	L"Mob.horse.zombie.death",			//eSoundType_MOB_HORSE_ZOMBIE_DEATH,
+	L"Mob.horse.skeleton.death",		//eSoundType_MOB_HORSE_SKELETON_DEATH,
+	L"Mob.horse.donkey.death",			//eSoundType_MOB_HORSE_DONKEY_DEATH,
+	L"Mob.horse.death",					//eSoundType_MOB_HORSE_DEATH,
+	L"Mob.horse.zombie.hit",			//eSoundType_MOB_HORSE_ZOMBIE_HIT,
+	L"Mob.horse.skeleton.hit",			//eSoundType_MOB_HORSE_SKELETON_HIT,
+	L"Mob.horse.donkey.hit",			//eSoundType_MOB_HORSE_DONKEY_HIT,
+	L"Mob.horse.hit",					//eSoundType_MOB_HORSE_HIT,
+	L"Mob.horse.zombie.idle",			//eSoundType_MOB_HORSE_ZOMBIE_IDLE,
+	L"Mob.horse.skeleton.idle",			//eSoundType_MOB_HORSE_SKELETON_IDLE,
+	L"Mob.horse.donkey.idle",			//eSoundType_MOB_HORSE_DONKEY_IDLE,
+	L"Mob.horse.idle",					//eSoundType_MOB_HORSE_IDLE,
+	L"Mob.horse.donkey.angry",			//eSoundType_MOB_HORSE_DONKEY_ANGRY,
+	L"Mob.horse.angry",					//eSoundType_MOB_HORSE_ANGRY,
+	L"Mob.horse.gallop",				//eSoundType_MOB_HORSE_GALLOP,
+	L"Mob.horse.breathe",				//eSoundType_MOB_HORSE_BREATHE,
+	L"Mob.horse.wood",					//eSoundType_MOB_HORSE_WOOD,
+	L"Mob.horse.soft",					//eSoundType_MOB_HORSE_SOFT,
+	L"Mob.horse.jump",					//eSoundType_MOB_HORSE_JUMP,
 
-	L"mob.witch.ambient",				//eSoundType_MOB_WITCH_IDLE,
+	L"mob.witch.ambient",					//eSoundType_MOB_WITCH_IDLE,
 	L"mob.witch.hurt",					//eSoundType_MOB_WITCH_HURT,
 	L"mob.witch.death",					//eSoundType_MOB_WITCH_DEATH,
 
@@ -224,7 +224,72 @@ const WCHAR *ConsoleSoundEngine::wchSoundNames[eSoundType_MAX]=
 	// instead, we'll add the sounds as new ones and change the code to reference them
 	L"fire.new_ignite",
 
-	L"damage.critical",					//eSoundType_DAMAGE_CRITICAL,
+	L"mob.rabbit.idle",
+	L"mob.rabbit.hurt",
+	L"mob.rabbit.bunnymurder",
+	L"mob.rabbit.hop",
+
+	L"item.armor.equip_leather1",
+	L"item.armor.equip_leather2",
+	L"item.armor.equip_leather3",
+	L"item.armor.equip_leather4",
+	L"item.armor.equip_leather5",
+	L"item.armor.equip_leather6",
+
+	L"item.armor.equip_chain1",
+	L"item.armor.equip_chain2",
+	L"item.armor.equip_chain3",
+	L"item.armor.equip_chain4",
+	L"item.armor.equip_chain5",
+	L"item.armor.equip_chain6",
+
+	L"item.armor.equip_iron1",
+	L"item.armor.equip_iron2",
+	L"item.armor.equip_iron3",
+	L"item.armor.equip_iron4",
+	L"item.armor.equip_iron5",
+	L"item.armor.equip_iron6",
+
+	L"item.armor.equip_gold1",
+	L"item.armor.equip_gold2",
+	L"item.armor.equip_gold3",
+	L"item.armor.equip_gold4",
+	L"item.armor.equip_gold5",
+	L"item.armor.equip_gold6",
+
+	L"item.armor.equip_diamond1",
+	L"item.armor.equip_diamond2",
+	L"item.armor.equip_diamond3",
+	L"item.armor.equip_diamond4",
+	L"item.armor.equip_diamond5",
+	L"item.armor.equip_diamond6",
+
+	L"item.armor.equip_generic1",
+	L"item.armor.equip_generic2",
+	L"item.armor.equip_generic3",
+	L"item.armor.equip_generic4",
+	L"item.armor.equip_generic5",
+	L"item.armor.equip_generic6",
+
+	L"damage.critical",				//eSoundType_DAMAGE_CRITICAL,
+	L"item.elytra.flying",			// eSoundType_ITEM_ELYTRA_FLYING
+
+	L"mob.guardian.attack_loop",        
+	L"mob.guardian.guardian_death",             
+	L"mob.guardian.guardian_hit",               
+
+	L"mob.guardian.flop",             
+
+	L"mob.guardian.land_death",        
+	L"mob.guardian.land_hit",          
+	L"mob.guardian.land_idle",         
+
+	L"mob.guardian.curse",        
+	L"mob.guardian.elder_death",        
+	L"mob.guardian.elder_hit",         
+	L"mob.guardian.elder_idle"       
+
+
 };
 
 
@@ -236,4 +301,7 @@ const WCHAR *ConsoleSoundEngine::wchUISoundNames[eSFX_MAX]=
 	L"focus",
 	L"press",
 	L"scroll",
+	L"open_flip1",
+	L"open_flip2",
+	L"open_flip3"
 };

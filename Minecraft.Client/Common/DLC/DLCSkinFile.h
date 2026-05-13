@@ -1,6 +1,7 @@
 #pragma once
 #include "DLCFile.h"
 #include "../../../Minecraft.Client/HumanoidModel.h"
+#include "../../../Minecraft.World/Entity.h"
 
 class DLCSkinFile : public DLCFile
 {
@@ -12,11 +13,12 @@ private:
 	unsigned int m_uiAnimOverrideBitmask;
 	bool m_bIsFree;
 	vector<SKIN_BOX *> m_AdditionalBoxes;
+	_SkinAdjustments m_skinAdjustments;
 
 public:
 
 	DLCSkinFile(const wstring &path);
-
+	void getSkinAdjustments(_SkinAdjustments* adj);
     void addData(PBYTE pbData, DWORD dwBytes) override;
     void addParameter(DLCManager::EDLCParameterType type, const wstring &value) override;
 

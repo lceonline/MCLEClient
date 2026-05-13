@@ -46,6 +46,7 @@ enum EUIScene
 	eUIScene_PauseMenu,
 	eUIScene_Crafting2x2Menu,
 	eUIScene_Crafting3x3Menu,
+	eUIScene_ClassicCraftingMenu,
 	eUIScene_FurnaceMenu,
 	eUIScene_ContainerMenu,
 	eUIScene_LargeContainerMenu,// for splitscreen
@@ -85,6 +86,7 @@ enum EUIScene
 	eUIScene_InGamePlayerOptionsMenu,
 	eUIScene_CreativeMenu,
 	eUIScene_LaunchMoreOptionsMenu,
+	eUIScene_LoadCreateJoinMenu,
 	eUIScene_DLCMainMenu,
 	eUIScene_NewUpdateMessage,
 	eUIScene_EnchantingMenu,
@@ -98,7 +100,8 @@ enum EUIScene
 	eUIScene_BeaconMenu,
 	eUIScene_HorseMenu,
 	eUIScene_FireworksMenu,
-
+	eUIScene_BookMenu,
+	eUIScene_AchievementsMenu,
 #ifdef _XBOX
 //	eUIScene_TransferToXboxOne,
 #endif

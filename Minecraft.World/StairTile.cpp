@@ -484,16 +484,19 @@ HitResult *StairTile::clip(Level *level, int xt, int yt, int zt, Vec3 *a, Vec3 *
 	int *deadSpaces = DEAD_SPACES[dir + (upsideDown ? 4 : 0)];
 
 	isClipping = true;
+
 	for (int i = 0; i < 8; i++)
 	{
 		clipStep = i;
 
-		for(unsigned int j = 0; j < DEAD_SPACE_COLUMN_COUNT; ++j)
+		bool isDead = false;
+		for (unsigned int j = 0; j < DEAD_SPACE_COLUMN_COUNT; ++j)
 		{
-			if (deadSpaces[j] == i) continue;
+			if (deadSpaces[j] == i) { isDead = true; break; }
 		}
 
-		results[i] = Tile::clip(level, xt, yt, zt, a, b);
+		if (!isDead)
+			results[i] = Tile::clip(level, xt, yt, zt, a, b);
 	}
 
 	for(unsigned int j = 0; j < DEAD_SPACE_COLUMN_COUNT; ++j)

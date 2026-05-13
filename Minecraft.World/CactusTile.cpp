@@ -7,6 +7,10 @@
 #include "net.minecraft.h"
 #include "net.minecraft.world.h"
 #include "CactusTile.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 CactusTile::CactusTile(int id) : Tile(id, Material::cactus,isSolidRender())
 {
@@ -29,6 +33,10 @@ void CactusTile::tick(Level *level, int x, int y, int z, Random *random)
 			int age = level->getData(x, y, z);
 			if (age == 15)
 			{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+				if (FourKitBridge::FireBlockGrow(level->dimension->id, x, y + 1, z, id, 0))
+					return;
+#endif
 				level->setTileAndUpdate(x, y + 1, z, id);
 				level->setData(x, y, z, 0, Tile::UPDATE_NONE);
 				neighborChanged(level, x, y + 1, z, id);

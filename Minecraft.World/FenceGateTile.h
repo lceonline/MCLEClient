@@ -5,7 +5,7 @@ class FenceGateTile : public DirectionalTile
 {
 private:
 	static const int OPEN_BIT = 4;
-
+	Icon* icon;
 public:
 	FenceGateTile(int id);
 	Icon *getTexture(int face, int data);
@@ -22,5 +22,5 @@ public:
 	virtual bool use(Level *level, int x, int y, int z, shared_ptr<Player> player, int clickedFace, float clickX, float clickY, float clickZ, bool soundOnly = false); // 4J added soundOnly param
 	virtual void neighborChanged(Level *level, int x, int y, int z, int type);
 	static bool isOpen(int data);
-	void registerIcons(IconRegister *iconRegister);
+	virtual void registerIcons(IconRegister* iconRegister);
 };

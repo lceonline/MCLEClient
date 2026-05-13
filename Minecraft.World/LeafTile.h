@@ -1,6 +1,7 @@
 #pragma once
 #include "TransparentTile.h"
 
+class IconRegister;
 class Random;
 class ChunkRebuildData;
 

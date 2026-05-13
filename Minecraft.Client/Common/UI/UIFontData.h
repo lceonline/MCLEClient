@@ -125,6 +125,9 @@ public:
 	// Returns true if this unicodepoint is whitespace
 	bool				unicodeIsWhitespace(unsigned int unicodepoint);
 
+	// Returns true if this unicodepoint exists in the font's glyph map.
+	bool				hasGlyph(unsigned int unicodepoint);
+
 private:
 
 	// Move a pointer in an image dx pixels right and dy pixels down, wrap around in either dimension leads to unknown behaviour.

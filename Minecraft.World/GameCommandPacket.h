@@ -13,7 +13,6 @@ public:
 
 	GameCommandPacket();
 	GameCommandPacket(EGameCommand command, byteArray data);
-	~GameCommandPacket();
 
 	virtual void read(DataInputStream *dis);
 	virtual void write(DataOutputStream *dos);

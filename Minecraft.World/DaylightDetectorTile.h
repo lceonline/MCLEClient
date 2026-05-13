@@ -7,9 +7,10 @@ class DaylightDetectorTile : public BaseEntityTile
 	friend class ChunkRebuildData;
 private:
 	Icon *icons[2];
+	bool inverted;
 
 public:
-	DaylightDetectorTile(int id);
+	DaylightDetectorTile(int id, bool inverted);
 
 	virtual void updateDefaultShape(); // 4J Added override
 	virtual void updateShape(LevelSource *level, int x, int y, int z, int forceData = -1, shared_ptr<TileEntity> forceEntity = shared_ptr<TileEntity>());
@@ -24,4 +25,5 @@ public:
 	virtual shared_ptr<TileEntity> newTileEntity(Level *level);
 	virtual Icon *getTexture(int face, int data);
 	virtual void registerIcons(IconRegister *iconRegister);
+	bool use(Level* level, int x, int y, int z, shared_ptr<Player> player, int clickedFace, float clickX, float clickY, float clickZ, bool soundOnly = false); // 4J added soundOnly param
 };

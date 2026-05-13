@@ -43,6 +43,8 @@ protected:
 		eSectionInventoryUsing,
 		eSectionInventoryInventory,
 		eSectionInventoryArmor,
+		eSectionInventoryCraftingGrid,
+		eSectionInventoryCraftingResult,
 		eSectionInventoryMax,
 		
 		eSectionTrapUsing,
@@ -66,6 +68,7 @@ protected:
 		eSectionEnchantUsing,
 		eSectionEnchantInventory,
 		eSectionEnchantSlot,
+		eSectionLapisSlot,
 		eSectionEnchantButton1,
 		eSectionEnchantButton2,
 		eSectionEnchantButton3,
@@ -117,6 +120,12 @@ protected:
 		eSectionFireworksResult,
 		eSectionFireworksIngredients,
 		eSectionFireworksMax,
+
+		eSectionClassicCraftingHotbar,
+		eSectionClassicCraftingInventory,
+		eSectionClassicCraftingResult,
+		eSectionClassicCraftingGrid,
+		eSectionClassicCraftingMax,
 	};
 
 	AbstractContainerMenu* m_menu;
@@ -144,6 +153,8 @@ protected:
 	float	m_fPanelMaxY;
 
 	int		m_iConsectiveInputTicks;
+
+	int64_t	m_iLastMouseTickTimeNs;
 
 	// Used for detecting quick "taps" in a direction, should jump cursor to next slot.
 	enum ETapState
@@ -216,6 +227,7 @@ protected:
 	virtual void PlatformInitialize(int iPad, int startIndex) = 0;
 	virtual void InitDataAssociations(int iPad, AbstractContainerMenu *menu, int startIndex = 0) = 0;
 
+	void handleEnchantButton(int slot, int iPad);
 	void onMouseTick();
 	bool handleKeyDown(int iPad, int iAction, bool bRepeat);
 	virtual bool handleValidKeyPress(int iUserIndex, int buttonNum, BOOL quickKeyHeld);

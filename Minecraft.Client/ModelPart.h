@@ -60,4 +60,5 @@ public:
 	void compile(float scale);
 	int getfU() {return xTexOffs;}
 	int getfV() {return yTexOffs;}
+    static void copyModelPart(ModelPart* src, ModelPart* dst);
  };

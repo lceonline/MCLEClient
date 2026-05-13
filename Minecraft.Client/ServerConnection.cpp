@@ -10,12 +10,19 @@
 #include "../Minecraft.World/Socket.h"
 #include "../Minecraft.World/net.minecraft.world.level.h"
 #include "MultiPlayerLevel.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/Security/SecurityConfig.h"
+#include "../Minecraft.Server/ServerLogManager.h"
+#include "../Minecraft.Server/ServerLogger.h"
+#include "../Minecraft.World/System.h"
+#endif
 
 ServerConnection::ServerConnection(MinecraftServer *server)
 {
 	// 4J - added initialiser
 	connectionCounter = 0;
 	InitializeCriticalSection(&pending_cs);
+	InitializeCriticalSection(&players_cs);
 
 	this->server = server;
 }
@@ -23,6 +30,7 @@ ServerConnection::ServerConnection(MinecraftServer *server)
 ServerConnection::~ServerConnection()
 {
 	DeleteCriticalSection(&pending_cs);
+	DeleteCriticalSection(&players_cs);
 }
 
 // 4J - added to handle incoming connections, to replace thread that original used to have
@@ -34,12 +42,25 @@ void ServerConnection::NewIncomingSocket(Socket *socket)
 
 void ServerConnection::addPlayerConnection(shared_ptr<PlayerConnection> uc)
 {
+	EnterCriticalSection(&players_cs);
 	players.push_back(uc);
+	LeaveCriticalSection(&players_cs);
 }
 
 void ServerConnection::handleConnection(shared_ptr<PendingConnection> uc)
 {
 	EnterCriticalSection(&pending_cs);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	int maxPending = ServerRuntime::Security::GetSettings().maxPendingConnections;
+	if (maxPending > 0 && static_cast<int>(pending.size()) >= maxPending)
+	{
+		LeaveCriticalSection(&pending_cs);
+		app.DebugPrintf("SECURITY: Rejecting connection, too many pending (%d/%d)\n",
+			static_cast<int>(pending.size()), maxPending);
+		uc->disconnect(DisconnectPacket::eDisconnect_ServerFull);
+		return;
+	}
+#endif
 	pending.push_back(uc);
 	LeaveCriticalSection(&pending_cs);
 }
@@ -61,7 +82,9 @@ void ServerConnection::stop()
 	}
 
 	// Snapshot to avoid iterator invalidation if disconnect modifies the vector.
+	EnterCriticalSection(&players_cs);
 	std::vector<shared_ptr<PlayerConnection> > playerSnapshot = players;
+	LeaveCriticalSection(&players_cs);
 	for (unsigned int i = 0; i < playerSnapshot.size(); i++)
 	{
 		shared_ptr<PlayerConnection> player = playerSnapshot[i];
@@ -103,26 +126,84 @@ void ServerConnection::tick()
 	}
 	LeaveCriticalSection(&pending_cs);
 
-    for (unsigned int i = 0; i < players.size(); i++)
 	{
-        shared_ptr<PlayerConnection> player = players[i];
-		shared_ptr<ServerPlayer> serverPlayer = player->getPlayer();
-		if( serverPlayer )
+		EnterCriticalSection(&players_cs);
+		vector< shared_ptr<PlayerConnection> > tempPlayers = players;
+		LeaveCriticalSection(&players_cs);
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		// Substep timing for chunk / tick / flush across all players.
+		LARGE_INTEGER scFreq, scA, scB, scC, scD;
+		QueryPerformanceFrequency(&scFreq);
+		int64_t sc_chunkUs = 0;
+		int64_t sc_tickUs  = 0;
+		int64_t sc_flushUs = 0;
+		int64_t sc_loopT0  = System::currentTimeMillis();
+#endif
+
+		// Rotate the per-tick start offset so the chunk-send cap doesn't
+		// starve players at the back of the vector.
+		static unsigned int s_chunkRotationOffset = 0;
+		s_chunkRotationOffset++;
+		size_t playerCount = tempPlayers.size();
+		size_t startIdx = playerCount > 0 ? (s_chunkRotationOffset % playerCount) : 0;
+
+		for (unsigned int k = 0; k < tempPlayers.size(); k++)
 		{
-			serverPlayer->updateFrameTick();
-			serverPlayer->doChunkSendingTick(false);
+			unsigned int i = (unsigned int)((startIdx + k) % playerCount);
+			shared_ptr<PlayerConnection> player = tempPlayers[i];
+			shared_ptr<ServerPlayer> serverPlayer = player->getPlayer();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			QueryPerformanceCounter(&scA);
+#endif
+			if( serverPlayer )
+			{
+				serverPlayer->updateFrameTick();
+				serverPlayer->doChunkSendingTick(false);
+			}
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			QueryPerformanceCounter(&scB);
+			sc_chunkUs += (scB.QuadPart - scA.QuadPart) * 1000000 / scFreq.QuadPart;
+#endif
+			player->tick();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			QueryPerformanceCounter(&scC);
+			sc_tickUs += (scC.QuadPart - scB.QuadPart) * 1000000 / scFreq.QuadPart;
+#endif
+			if (player->done)
+			{
+				EnterCriticalSection(&players_cs);
+				auto it = find(players.begin(), players.end(), player);
+				if (it != players.end()) players.erase(it);
+				LeaveCriticalSection(&players_cs);
+			}
+			else
+			{
+				player->connection->flush();
+			}
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			QueryPerformanceCounter(&scD);
+			sc_flushUs += (scD.QuadPart - scC.QuadPart) * 1000000 / scFreq.QuadPart;
+#endif
 		}
-        player->tick();
-        if (player->done)
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		int64_t sc_loopTotal = System::currentTimeMillis() - sc_loopT0;
+		if (sc_loopTotal > 50)
 		{
-            players.erase(players.begin()+i);
-			i--;
-        }
-        else
-        {
-            player->connection->flush();
-        }
-    }
+			ServerRuntime::LogInfof("perf",
+				"conn playerLoop total=%lldms players=%d chunkUs=%lld tickUs=%lld flushUs=%lld | avg chunk=%lld tick=%lld flush=%lld",
+				(long long)sc_loopTotal,
+				(int)tempPlayers.size(),
+				(long long)sc_chunkUs,
+				(long long)sc_tickUs,
+				(long long)sc_flushUs,
+				tempPlayers.size() > 0 ? (long long)(sc_chunkUs / tempPlayers.size()) : 0LL,
+				tempPlayers.size() > 0 ? (long long)(sc_tickUs  / tempPlayers.size()) : 0LL,
+				tempPlayers.size() > 0 ? (long long)(sc_flushUs / tempPlayers.size()) : 0LL);
+		}
+#endif
+	}
 
 }
 
@@ -148,7 +229,10 @@ void ServerConnection::handleTextureReceived(const wstring &textureName)
 	{
 		m_pendingTextureRequests.erase(it);
 	}
-	for (auto& player : players)
+	EnterCriticalSection(&players_cs);
+	vector< shared_ptr<PlayerConnection> > tempPlayers = players;
+	LeaveCriticalSection(&players_cs);
+	for (auto& player : tempPlayers)
 	{
         if (!player->done)
 		{
@@ -164,7 +248,10 @@ void ServerConnection::handleTextureAndGeometryReceived(const wstring &textureNa
 	{
 		m_pendingTextureRequests.erase(it);
 	}
-	for (auto& player : players)
+	EnterCriticalSection(&players_cs);
+	vector< shared_ptr<PlayerConnection> > tempPlayers = players;
+	LeaveCriticalSection(&players_cs);
+	for (auto& player : tempPlayers)
 	{
 		if (!player->done)
 		{
@@ -216,4 +303,46 @@ void ServerConnection::handleServerSettingsChanged(shared_ptr<ServerSettingsChan
 vector< shared_ptr<PlayerConnection> >  * ServerConnection::getPlayers()
 {
 	return &players;
+}
+
+vector< shared_ptr<PlayerConnection> > ServerConnection::getPlayersSnapshot()
+{
+	EnterCriticalSection(&players_cs);
+	vector< shared_ptr<PlayerConnection> > snapshot = players;
+	LeaveCriticalSection(&players_cs);
+	return snapshot;
+}
+
+void ServerConnection::sortPlayersByChunkPriority()
+{
+	EnterCriticalSection(&players_cs);
+	if( players.size() )
+	{
+		vector< shared_ptr<PlayerConnection> > playersOrig = players;
+		players.clear();
+
+		do
+		{
+			int longestTime = 0;
+			auto playerConnectionBest = playersOrig.begin();
+			for( auto it = playersOrig.begin(); it != playersOrig.end(); it++)
+			{
+				int thisTime = 0;
+				INetworkPlayer *np = (*it)->getNetworkPlayer();
+				if( np )
+				{
+					thisTime = np->GetTimeSinceLastChunkPacket_ms();
+				}
+
+				if( thisTime > longestTime )
+				{
+					playerConnectionBest = it;
+					longestTime = thisTime;
+				}
+			}
+			players.push_back(*playerConnectionBest);
+			playersOrig.erase(playerConnectionBest);
+		} while ( playersOrig.size() > 0 );
+	}
+	LeaveCriticalSection(&players_cs);
 }

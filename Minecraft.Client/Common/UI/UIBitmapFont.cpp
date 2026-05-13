@@ -141,6 +141,9 @@ S32 UIBitmapFont::GetCodepointGlyph(U32 codepoint)
 	// 4J-JEV: Change "right single quotation marks" to apostrophies.
 	if (codepoint == 0x2019) codepoint = 0x27;
 
+	if (!m_cFontData->hasGlyph(codepoint))
+		return IGGY_GLYPH_INVALID;
+
 	return m_cFontData->getGlyphId(codepoint);
 }
 
@@ -252,19 +255,6 @@ rrbool UIBitmapFont::GetGlyphBitmap(S32 glyph,F32 pixel_scale,IggyBitmapCharacte
 	float glyphScale = 1.0f, truePixelScale = 1.0f / m_cFontData->getFontData()->m_fAdvPerPixel;
 	while ( (0.5f + glyphScale) * truePixelScale < pixel_scale)
 		glyphScale++;
-
-	// Debug: log each unique (font, pixel_scale) pair
-	{
-		static std::unordered_set<int> s_loggedScaleKeys;
-		// Encode font pointer + quantized scale into a key to log each combo once
-		int scaleKey = (int)(pixel_scale * 100.0f) ^ (int)(uintptr_t)m_cFontData;
-		if (s_loggedScaleKeys.find(scaleKey) == s_loggedScaleKeys.end() && s_loggedScaleKeys.size() < 50) {
-			s_loggedScaleKeys.insert(scaleKey);
-			float tps = truePixelScale;
-			app.DebugPrintf("[FONT-DBG] GetGlyphBitmap: font=%s glyph=%d pixel_scale=%.3f truePixelScale=%.1f glyphScale=%.0f\n",
-				m_cFontData->getFontName().c_str(), glyph, pixel_scale, tps, glyphScale);
-		}
-	}
 
 	// 4J-JEV: Debug code to check which font sizes are being used.
 #if (!defined _CONTENT_PACKAGE) && (VERBOSE_FONT_OUTPUT > 0)

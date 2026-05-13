@@ -277,24 +277,36 @@ void Boat::tick()
 		shared_ptr<LivingEntity> livingRider = dynamic_pointer_cast<LivingEntity>(rider.lock());
 		double forward = livingRider->yya;
 
-		if (forward > 0)
+		if (forward != 0)
 		{
 			double riderXd = -sin(livingRider->yRot * PI / 180);
 			double riderZd = cos(livingRider->yRot * PI / 180);
-			xd += riderXd * acceleration * 0.05f;
-			zd += riderZd * acceleration * 0.05f;
+			float mult = livingRider->isSprinting() ? 2.0f : 1.0f;
+			float moveFactor = (float)forward;
+			if (forward < 0) moveFactor *= 0.5f; // Move slower backwards
+			xd += riderXd * acceleration * 0.05f * mult * moveFactor;
+			zd += riderZd * acceleration * 0.05f * mult * moveFactor;
 		}
 	}
 
 	double curSpeed = sqrt(xd * xd + zd * zd);
-
-	if (curSpeed > MAX_SPEED)
+	double maxSpeed = MAX_SPEED;
+	if (rider.lock() != nullptr && rider.lock()->instanceof(eTYPE_LIVINGENTITY))
 	{
-		double ratio = MAX_SPEED / curSpeed;
+		shared_ptr<LivingEntity> livingRider = dynamic_pointer_cast<LivingEntity>(rider.lock());
+		if (livingRider->isSprinting())
+		{
+			maxSpeed *= 1.5;
+		}
+	}
+
+	if (curSpeed > maxSpeed)
+	{
+		double ratio = maxSpeed / curSpeed;
 
 		xd *= ratio;
 		zd *= ratio;
-		curSpeed = MAX_SPEED;
+		curSpeed = maxSpeed;
 	}
 
 	if (curSpeed > lastSpeed && acceleration < MAX_ACCELERATION)

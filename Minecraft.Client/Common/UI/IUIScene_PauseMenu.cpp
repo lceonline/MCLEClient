@@ -410,10 +410,72 @@ int IUIScene_PauseMenu::ExitWorldThreadProc( void* lpParameter )
 	return S_OK;
 }
 
+#ifdef _WINDOWS64
+static bool Win64_DeleteSaveDirectory(const wchar_t* wPath)
+{
+	wchar_t wSearch[MAX_PATH];
+	swprintf_s(wSearch, MAX_PATH, L"%s\\*", wPath);
+	WIN32_FIND_DATAW fd;
+	HANDLE hFind = FindFirstFileW(wSearch, &fd);
+	if (hFind != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if (wcscmp(fd.cFileName, L".") == 0 || wcscmp(fd.cFileName, L"..") == 0) continue;
+			wchar_t wChild[MAX_PATH];
+			swprintf_s(wChild, MAX_PATH, L"%s\\%s", wPath, fd.cFileName);
+			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				Win64_DeleteSaveDirectory(wChild);
+			else
+				DeleteFileW(wChild);
+		} while (FindNextFileW(hFind, &fd));
+		FindClose(hFind);
+	}
+	return RemoveDirectoryW(wPath) != 0;
+}
+#endif // _WINDOWS64
+
 // This function performs the meat of exiting from a level. It should be called from a thread other than the main thread.
 void IUIScene_PauseMenu::_ExitWorld(LPVOID lpParameter)
 {
+#ifndef MINECRAFT_SERVER_BUILD
 	Minecraft *pMinecraft=Minecraft::GetInstance();
+
+	// 4J Added: Capture hardcore delete info before the server is destroyed
+#ifdef _WINDOWS64
+	bool shouldDeleteHardcoreWorld = false;
+	wstring hardcoreSaveFolderName;
+	if (MinecraftServer::getInstance() != nullptr && MinecraftServer::getInstance()->getDeleteWorldOnExit())
+	{
+		shouldDeleteHardcoreWorld = true;
+		// Try 1: Use the save folder name stored by UIScene_LoadMenu::StartGameFromSave (works for existing saves)
+		hardcoreSaveFolderName = app.GetCurrentSaveFolderName();
+		if (!hardcoreSaveFolderName.empty())
+		{
+			app.DebugPrintf("Hardcore mode: save folder from app = '%ls'\n", hardcoreSaveFolderName.c_str());
+		}
+		// Try 2: StorageManager (may work for new saves after first autosave)
+		if (hardcoreSaveFolderName.empty())
+		{
+			char szSaveFolder[MAX_SAVEFILENAME_LENGTH] = {};
+			StorageManager.GetSaveUniqueFilename(szSaveFolder);
+			if (szSaveFolder[0] != '\0')
+			{
+				wchar_t wSaveFolder[MAX_SAVEFILENAME_LENGTH] = {};
+				mbstowcs(wSaveFolder, szSaveFolder, MAX_SAVEFILENAME_LENGTH - 1);
+				hardcoreSaveFolderName = wSaveFolder;
+				app.DebugPrintf("Hardcore mode: save folder from StorageManager = '%s'\n", szSaveFolder);
+			}
+		}
+		// Try 3: Stored during loadLevel
+		if (hardcoreSaveFolderName.empty())
+		{
+			hardcoreSaveFolderName = MinecraftServer::getInstance()->getSaveFolderName();
+			app.DebugPrintf("Hardcore mode: save folder from server = '%ls'\n", hardcoreSaveFolderName.c_str());
+		}
+		MinecraftServer::getInstance()->setDeleteWorldOnExit(false);
+	}
+#endif
 
 	int exitReasonStringId = pMinecraft->progressRenderer->getCurrentTitle();
 	int exitReasonTitleId = IDS_CONNECTION_LOST;
@@ -625,6 +687,17 @@ void IUIScene_PauseMenu::_ExitWorld(LPVOID lpParameter)
 	{
 		Sleep(1);
 	}
+	// 4J Added: Hardcore mode — delete world save data now that the server is fully stopped
+#ifdef _WINDOWS64
+	if (shouldDeleteHardcoreWorld && !hardcoreSaveFolderName.empty())
+	{
+		wchar_t wFolderPath[MAX_PATH] = {};
+		swprintf_s(wFolderPath, MAX_PATH, L"Windows64\\GameHDD\\%s", hardcoreSaveFolderName.c_str());
+		app.DebugPrintf("Hardcore mode: Deleting world save folder '%ls'\n", wFolderPath);
+		Win64_DeleteSaveDirectory(wFolderPath);
+	}
+#endif
+
 	pMinecraft->setLevel(nullptr,exitReasonStringId,nullptr,saveStats);
 
 	TelemetryManager->Flush();
@@ -651,6 +724,7 @@ void IUIScene_PauseMenu::_ExitWorld(LPVOID lpParameter)
 #if defined(_XBOX_ONE) || defined(__ORBIS__)
 	// Make sure we don't think saving is disabled in the menus
 	StorageManager.SetSaveDisabled(false);
+#endif
 #endif
 }
 

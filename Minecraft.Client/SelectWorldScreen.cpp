@@ -303,6 +303,12 @@ void SelectWorldScreen::WorldSelectionList::renderItem(int i, int x, int y, int 
         info = parent->conversionLang + L" " + info;
     }
 
+    // 4J Added: Show [Hardcore] badge for hardcore worlds
+    if (levelSummary->isHardcore())
+    {
+        name = name + L" [Hardcore]";
+    }
+
     parent->drawString(parent->font, name, x + 2, y + 1, 0xffffff);
     parent->drawString(parent->font, id, x + 2, y + 12, 0x808080);
     parent->drawString(parent->font, info, x + 2, y + 12 + 10, 0x808080);

@@ -27,6 +27,7 @@ public:
 	void adjustPlayer(shared_ptr<Player> player);
 	bool isCutScene();
 	void setLocalMode(GameType *mode);
+	GameType* getLocalPlayerMode() const { return localPlayerMode; }
     virtual void initPlayer(shared_ptr<Player> player);
 	virtual bool canHurtPlayer();
     virtual bool destroyBlock(int x, int y, int z, int face);

@@ -32,6 +32,7 @@ public:
 	static const int KEY_TOGGLE_HUD = VK_F1;
 	static const int KEY_DEBUG_INFO = VK_F3;
 	static const int KEY_DEBUG_MENU = VK_F4;
+    static const int KEY_CONTROL = VK_CONTROL;
 	static const int KEY_THIRD_PERSON = VK_F5;
 	static const int KEY_DEBUG_CONSOLE = VK_F6;
 	static const int KEY_HOST_SETTINGS = VK_TAB;

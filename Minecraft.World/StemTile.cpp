@@ -6,6 +6,10 @@
 #include "../Minecraft.Client/Minecraft.h"
 #include "../Minecraft.Client/Common/Colours/ColourTable.h"
 #include "StemTile.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 const wstring StemTile::TEXTURE_ANGLED = L"stem_bent";
 
@@ -60,6 +64,9 @@ void StemTile::tick(Level *level, int x, int y, int z, Random *random)
 				int below = level->getTile(xx, y - 1, zz);
 				if (level->getTile(xx, y, zz) == 0 && (below == Tile::farmland_Id || below == Tile::dirt_Id || below == Tile::grass_Id))
 				{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+					if (!FourKitBridge::FireBlockGrow(level->dimension->id, xx, y, zz, fruit->id, 0))
+#endif
 					level->setTileAndUpdate(xx, y, zz, fruit->id);
 				}
 

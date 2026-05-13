@@ -70,6 +70,7 @@
 #include "UIScene_LoadMenu.h"
 #include "UIScene_JoinMenu.h"
 #include "UIScene_LoadOrJoinMenu.h"
+#include "UIScene_LoadCreateJoinMenu.h"
 #include "UIScene_CreateWorldMenu.h"
 #include "UIScene_LaunchMoreOptionsMenu.h"
 #include "UIScene_FullscreenProgress.h"
@@ -109,7 +110,10 @@
 #include "UIScene_BeaconMenu.h"
 #include "UIScene_FireworksMenu.h"
 
+#include "UIScene_BookAndQuillMenu.h"
+
 #include "UIScene_CraftingMenu.h"
+#include "UIScene_ClassicCraftingMenu.h"
 #include "UIScene_SignEntryMenu.h"
 
 #include "UIScene_ConnectingProgress.h"

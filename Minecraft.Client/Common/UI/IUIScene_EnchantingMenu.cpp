@@ -2,7 +2,10 @@
 #include "../../../Minecraft.World/net.minecraft.world.inventory.h"
 #include "../../Minecraft.h"
 #include "../../MultiPlayerLocalPlayer.h"
+#include "../../PlayerList.h"
+#include "../../ServerPlayer.h"
 #include "IUIScene_EnchantingMenu.h"
+#include <MinecraftServer.h>
 
 IUIScene_AbstractContainerMenu::ESceneSection IUIScene_EnchantingMenu::GetSectionAndSlotInDirection( IUIScene_AbstractContainerMenu::ESceneSection eSection, ETapState eTapDirection, int *piTargetX, int *piTargetY )
 {
@@ -154,11 +157,14 @@ int IUIScene_EnchantingMenu::getSectionStartOffset(ESceneSection eSection)
 	case eSectionEnchantSlot:
 		offset = 0;
 		break;
-	case eSectionEnchantInventory:
+	case eSectionLapisSlot:
 		offset = 1;
 		break;
+	case eSectionEnchantInventory:
+		offset = 2;
+		break;
 	case eSectionEnchantUsing:
-		offset = 1 + 27;
+		offset = 2 + 27;
 		break;
 	default:
 		assert( false );
@@ -174,6 +180,7 @@ bool IUIScene_EnchantingMenu::IsSectionSlotList( ESceneSection eSection )
 		case eSectionEnchantInventory:
 		case eSectionEnchantUsing:
 		case eSectionEnchantSlot:
+		case eSectionLapisSlot:
 			return true;
 	}
 	return false;

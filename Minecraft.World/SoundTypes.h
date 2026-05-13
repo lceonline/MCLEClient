@@ -58,14 +58,14 @@ enum eSOUND_TYPE
 	eSoundType_MOB_CAT_PURREOW,
 	eSoundType_MOB_CAT_MEOW,
 	eSoundType_MOB_CAT_HIT,
-//	eSoundType_MOB_IRONGOLEM_THROW,
-//	eSoundType_MOB_IRONGOLEM_HIT,
-//	eSoundType_MOB_IRONGOLEM_DEATH,
-//	eSoundType_MOB_IRONGOLEM_WALK,
+	//	eSoundType_MOB_IRONGOLEM_THROW,
+	//	eSoundType_MOB_IRONGOLEM_HIT,
+	//	eSoundType_MOB_IRONGOLEM_DEATH,
+	//	eSoundType_MOB_IRONGOLEM_WALK,
 	eSoundType_RANDOM_BOW,
 	eSoundType_RANDOM_BOW_HIT,
 	eSoundType_RANDOM_EXPLODE,
-	eSoundType_RANDOM_FIZZ,	
+	eSoundType_RANDOM_FIZZ,
 	eSoundType_RANDOM_POP,
 	eSoundType_RANDOM_FUSE,
 	eSoundType_RANDOM_DRINK,
@@ -213,8 +213,69 @@ enum eSOUND_TYPE
 
 	eSoundType_FIRE_NEWIGNITE,
 
-	eSoundType_DAMAGE_CRITICAL,
+	eSoundType_MOB_RABBIT_IDLE,
+	eSoundType_MOB_RABBIT_HURT,
+	eSoundType_MOB_RABBIT_DEATH,
+	eSoundType_MOB_RABBIT_HOP,
 
+	eSoundType_ITEM_ARMOR_equipLeather1,
+	eSoundType_ITEM_ARMOR_equipLeather2,
+	eSoundType_ITEM_ARMOR_equipLeather3,
+	eSoundType_ITEM_ARMOR_equipLeather4,
+	eSoundType_ITEM_ARMOR_equipLeather5,
+	eSoundType_ITEM_ARMOR_equipLeather6,
+
+	eSoundType_ITEM_ARMOR_equipChain1,
+	eSoundType_ITEM_ARMOR_equipChain2,
+	eSoundType_ITEM_ARMOR_equipChain3,
+	eSoundType_ITEM_ARMOR_equipChain4,
+	eSoundType_ITEM_ARMOR_equipChain5,
+	eSoundType_ITEM_ARMOR_equipChain6,
+
+	eSoundType_ITEM_ARMOR_equipIron1,
+	eSoundType_ITEM_ARMOR_equipIron2,
+	eSoundType_ITEM_ARMOR_equipIron3,
+	eSoundType_ITEM_ARMOR_equipIron4,
+	eSoundType_ITEM_ARMOR_equipIron5,
+	eSoundType_ITEM_ARMOR_equipIron6,
+
+	eSoundType_ITEM_ARMOR_equipGold1,
+	eSoundType_ITEM_ARMOR_equipGold2,
+	eSoundType_ITEM_ARMOR_equipGold3,
+	eSoundType_ITEM_ARMOR_equipGold4,
+	eSoundType_ITEM_ARMOR_equipGold5,
+	eSoundType_ITEM_ARMOR_equipGold6,
+
+	eSoundType_ITEM_ARMOR_equipDiamond1,
+	eSoundType_ITEM_ARMOR_equipDiamond2,
+	eSoundType_ITEM_ARMOR_equipDiamond3,
+	eSoundType_ITEM_ARMOR_equipDiamond4,
+	eSoundType_ITEM_ARMOR_equipDiamond5,
+	eSoundType_ITEM_ARMOR_equipDiamond6,
+
+	eSoundType_ITEM_ARMOR_equipGeneric1,
+	eSoundType_ITEM_ARMOR_equipGeneric2,
+	eSoundType_ITEM_ARMOR_equipGeneric3,
+	eSoundType_ITEM_ARMOR_equipGeneric4,
+	eSoundType_ITEM_ARMOR_equipGeneric5,
+	eSoundType_ITEM_ARMOR_equipGeneric6,
+
+	eSoundType_DAMAGE_CRITICAL,
+	eSoundType_ITEM_ELYTRA_FLYING,
+
+	
+	eSoundType_MOB_GUARDIAN_ATTACK_LOOP,
+	eSoundType_MOB_GUARDIAN_DEATH,
+	eSoundType_MOB_GUARDIAN_HIT,
+	eSoundType_MOB_GUARDIAN_FLOP,
+	eSoundType_MOB_GUARDIAN_LAND_DEATH,
+	eSoundType_MOB_GUARDIAN_LAND_HIT,
+	eSoundType_MOB_GUARDIAN_LAND_IDLE,
+	eSoundType_MOB_ELDER_GUARDIAN_CURSE,
+	eSoundType_MOB_ELDER_GUARDIAN_DEATH,
+	eSoundType_MOB_ELDER_GUARDIAN_HIT,
+	eSoundType_MOB_ELDER_GUARDIAN_IDLE,
+	
 	eSoundType_MAX
 };
 
@@ -227,6 +288,9 @@ enum ESoundEffect
 	eSFX_Focus,
 	eSFX_Press,
 	eSFX_Scroll,
+	eSFX_BookTurn1,
+	eSFX_BookTurn2,
+	eSFX_BookTurn3,
 	eSFX_MAX
 };
 

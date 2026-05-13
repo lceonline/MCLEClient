@@ -8,18 +8,19 @@
 #include "net.minecraft.world.h"
 #include "net.minecraft.h"
 
-const wstring DoorTile::TEXTURES[] = { L"doorWood_lower", L"doorWood_upper", L"doorIron_lower", L"doorIron_upper" };
+static std::map<wstring, int> doorItemMap = {
+	{ L"doorWood",   Item::door_wood_Id   },
+	{ L"doorIron",   Item::door_iron_Id   },
+	{ L"doorSpruce", Item::door_spruce_Id },
+	{ L"doorBirch",  Item::door_birch_Id  },
+	{ L"doorJungle", Item::door_jungle_Id },
+	{ L"doorAcacia", Item::door_acacia_Id },
+	{ L"doorDark",   Item::door_dark_Id   }
+};
 
-DoorTile::DoorTile(int id, Material *material) : Tile(id, material,isSolidRender())
+DoorTile::DoorTile(int id, Material *material, const wstring& doorType) : Tile(id, material,isSolidRender())
 {
-	if (material == Material::metal)
-	{
-		texBase = 2;
-	}
-	else
-	{
-		texBase = 0;
-	}
+	this->doorType = doorType;
 
 	float r = 0.5f;
 	float h = 1.0f;
@@ -247,7 +248,7 @@ void DoorTile::neighborChanged(Level *level, int x, int y, int z, int type)
 			level->removeTile(x, y, z);
 			spawn = true;
 		}
-		if (!level->isSolidBlockingTile(x, y - 1, z))
+		if (!level->isTopSolidBlocking(x, y - 1, z))
 		{
 			level->removeTile(x, y, z);
 			spawn = true;
@@ -288,8 +289,7 @@ void DoorTile::neighborChanged(Level *level, int x, int y, int z, int type)
 int DoorTile::getResource(int data, Random *random, int playerBonusLevel)
 {
 	if ((data & 8) != 0) return 0;
-	if (material == Material::metal) return Item::door_iron->id;
-	return Item::door_wood->id;
+	return doorItemMap[doorType];
 }
 
 HitResult *DoorTile::clip(Level *level, int xt, int yt, int zt, Vec3 *a, Vec3 *b)
@@ -339,7 +339,7 @@ int DoorTile::getCompositeData(LevelSource *level, int x, int y, int z)
 
 int DoorTile::cloneTileId(Level *level, int x, int y, int z)
 {
-	return material == Material::metal ? Item::door_iron_Id : Item::door_wood_Id;
+	return doorItemMap[doorType];
 }
 
 void DoorTile::playerWillDestroy(Level *level, int x, int y, int z, int data, shared_ptr<Player> player)

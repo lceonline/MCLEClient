@@ -5,6 +5,11 @@
 #include "../../Options.h"
 #include "../../GameRenderer.h"
 
+#ifdef _WINDOWS64
+extern bool g_bVSync;
+extern void SetExclusiveFullscreen(bool enabled);
+#endif
+
 namespace
 {
     constexpr int FOV_MIN = 70;
@@ -62,12 +67,14 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 	m_checkboxClouds.init(app.GetString(IDS_CHECKBOX_RENDER_CLOUDS),eControl_Clouds,(app.GetGameSettings(m_iPad,eGameSetting_Clouds)!=0));
 	m_checkboxBedrockFog.init(app.GetString(IDS_CHECKBOX_RENDER_BEDROCKFOG),eControl_BedrockFog,(app.GetGameSettings(m_iPad,eGameSetting_BedrockFog)!=0));
 	m_checkboxCustomSkinAnim.init(app.GetString(IDS_CHECKBOX_CUSTOM_SKIN_ANIM),eControl_CustomSkinAnim,(app.GetGameSettings(m_iPad,eGameSetting_CustomSkinAnim)!=0));
+	m_checkboxVSync.init(L"VSync",eControl_VSync,(app.GetGameSettings(m_iPad,eGameSetting_VSync)!=0));
+	m_checkboxExclusiveFullscreen.init(L"Fullscreen",eControl_ExclusiveFullscreen,(app.GetGameSettings(m_iPad,eGameSetting_ExclusiveFullscreen)!=0));
 
-	
+
 	WCHAR TempString[256];
 
 	swprintf(TempString, 256, L"Render Distance: %d",app.GetGameSettings(m_iPad,eGameSetting_RenderDistance));	
-	m_sliderRenderDistance.init(TempString,eControl_RenderDistance,0,5,DistanceToLevel(app.GetGameSettings(m_iPad,eGameSetting_RenderDistance)));
+	m_sliderRenderDistance.init(TempString,eControl_RenderDistance,0,3,DistanceToLevel(app.GetGameSettings(m_iPad,eGameSetting_RenderDistance)));
 	
 	swprintf( TempString, 256, L"%ls: %d%%", app.GetString( IDS_SLIDER_GAMMA ),app.GetGameSettings(m_iPad,eGameSetting_Gamma));	
 	m_sliderGamma.init(TempString,eControl_Gamma,0,100,app.GetGameSettings(m_iPad,eGameSetting_Gamma));
@@ -82,28 +89,50 @@ UIScene_SettingsGraphicsMenu::UIScene_SettingsGraphicsMenu(int iPad, void *initD
 
 	doHorizontalResizeCheck();
 
+#ifndef _WINDOWS64
+	// VSync and Exclusive Fullscreen are only available on PC
+	removeControl(&m_checkboxVSync, true);
+	removeControl(&m_checkboxExclusiveFullscreen, true);
+#else
+	// The SWF's original focus chain skips VSync, Fullscreen, and RenderDistance
+	// (CustomSkinAnim -> Gamma). Rewire the navigation so all controls are reachable:
+	// CustomSkinAnim -> VSync -> Fullscreen -> RenderDistance -> Gamma
+	{
+		IggyName navDown = registerFastName(L"m_objNavDown");
+		IggyName navUp   = registerFastName(L"m_objNavUp");
+
+		IggyValueSetStringUTF8RS(m_checkboxCustomSkinAnim.getIggyValuePath(), navDown, nullptr, "VSync", -1);
+
+		IggyValueSetStringUTF8RS(m_checkboxVSync.getIggyValuePath(), navUp, nullptr, "CustomSkinAnim", -1);
+		IggyValueSetStringUTF8RS(m_checkboxVSync.getIggyValuePath(), navDown, nullptr, "ExclusiveFullscreen", -1);
+
+		IggyValueSetStringUTF8RS(m_checkboxExclusiveFullscreen.getIggyValuePath(), navUp, nullptr, "VSync", -1);
+		IggyValueSetStringUTF8RS(m_checkboxExclusiveFullscreen.getIggyValuePath(), navDown, nullptr, "RenderDistance", -1);
+
+		IggyValueSetStringUTF8RS(m_sliderRenderDistance.getIggyValuePath(), navUp, nullptr, "ExclusiveFullscreen", -1);
+	}
+#endif
+
 	const bool bInGame=(Minecraft::GetInstance()->level!=nullptr);
 	const bool bIsPrimaryPad=(ProfileManager.GetPrimaryPad()==m_iPad);
-	// if we're not in the game, we need to use basescene 0 
+	// if we're not in the game, we need to use basescene 0
 	if(bInGame)
 	{
-		// If the game has started, then you need to be the host to change the in-game gamertags
+#ifndef _WINDOWS64
+		// Console splitscreen: non-host and non-primary players can't change world-level settings
 		if(bIsPrimaryPad)
-		{	
-			// we are the primary player on this machine, but not the game host
-			// are we the game host? If not, we need to remove the bedrockfog setting
+		{
 			if(!g_NetworkManager.IsHost())
 			{
-				// hide the in-game bedrock fog setting
 				removeControl(&m_checkboxBedrockFog, true);
 			}
 		}
 		else
 		{
-			// We shouldn't have the bedrock fog option, or the m_CustomSkinAnim option
 			removeControl(&m_checkboxBedrockFog, true);
 			removeControl(&m_checkboxCustomSkinAnim, true);
 		}
+#endif
 	}
 
 	if(app.GetLocalPlayerCount()>1)
@@ -165,6 +194,12 @@ void UIScene_SettingsGraphicsMenu::handleInput(int iPad, int key, bool repeat, b
 			app.SetGameSettings(m_iPad,eGameSetting_Clouds,m_checkboxClouds.IsChecked()?1:0);
 			app.SetGameSettings(m_iPad,eGameSetting_BedrockFog,m_checkboxBedrockFog.IsChecked()?1:0);
 			app.SetGameSettings(m_iPad,eGameSetting_CustomSkinAnim,m_checkboxCustomSkinAnim.IsChecked()?1:0);
+			app.SetGameSettings(m_iPad,eGameSetting_VSync,m_checkboxVSync.IsChecked()?1:0);
+			app.SetGameSettings(m_iPad,eGameSetting_ExclusiveFullscreen,m_checkboxExclusiveFullscreen.IsChecked()?1:0);
+#ifdef _WINDOWS64
+			g_bVSync = m_checkboxVSync.IsChecked();
+			SetExclusiveFullscreen(m_checkboxExclusiveFullscreen.IsChecked());
+#endif
 
 			navigateBack();
 			handled = true;

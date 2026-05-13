@@ -123,7 +123,7 @@ void glClearColor(float r, float g, float b, float a)
 
 	RenderManager.SetClearColour(D3DCOLOR_RGBA(ir,ig,ib,ia));
 #else
-	float rgba[4] = {r,g,b,a};
+	float rgba[4] = {r,g,b,1.0f}; // Force alpha=1 to prevent DWM window transparency
 	RenderManager.SetClearColour(rgba);
 #endif
 }
@@ -389,4 +389,9 @@ void glTexGen(int coord, int mode, FloatBuffer *vec)
 void glCullFace(int dir)
 {
 	RenderManager.StateSetFaceCullCW( dir == GL_BACK);
+}
+
+void glTexParameterf(int target, int param, float value)
+{
+    RenderManager.TextureSetParam(param, (int)value);
 }

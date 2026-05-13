@@ -9,4 +9,5 @@ class GrassColor
 //
 //	static void init(intArray pixels);
 //    static int get(double temp, double rain);
+	
 };

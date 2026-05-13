@@ -12,3 +12,4 @@
 #include "MinecartSpawner.h"
 #include "MinecartTNT.h"
 #include "PrimedTnt.h"
+#include "ArmorStandItem.h"

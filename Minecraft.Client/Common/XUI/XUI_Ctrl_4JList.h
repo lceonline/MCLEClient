@@ -75,4 +75,5 @@ private:
 	static bool IndexSortFn(const void *a, const void *b);
 
 	HXUIOBJ m_hSelectionChangedHandlerObj;
+	std::wstring m_shapedTextCache; // temp buffer for Arabic-shaped text in OnGetSourceDataText
 };

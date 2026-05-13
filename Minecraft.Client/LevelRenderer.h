@@ -6,6 +6,7 @@
 #include "../Minecraft.World/Level.h"
 #include "ResourceLocation.h"
 #include <xmcore.h>
+#include <unordered_set>
 #ifdef __PS3__
 #include "C4JSpursJob.h"
 #endif
@@ -45,7 +46,10 @@ private:
 	static ResourceLocation END_SKY_LOCATION;
 
 public:
+    void doBarrierParticles(int posX, int posY, int posZ); 
+
 	static const int CHUNK_XZSIZE = 16;
+	static const int CHUNK_RENDER_LAYERS = 3;
 #ifdef _LARGE_WORLDS
 	static const int CHUNK_SIZE = 16;
 #else
@@ -66,6 +70,13 @@ public:
 public:
 	LevelRenderer(Minecraft *mc, Textures *textures);
 private:
+	void spawnBarrierParticles(
+			int x, int y, int z,
+			int radius,
+			Random& random,
+			bool holdingBarrier,
+			BlockPos& pos,
+			std::unordered_set<int> &spawnedPositions);
 	void renderStars();
 	void createCloudMesh();	// 4J added
 public:
@@ -83,6 +94,7 @@ private:
 	void resortChunks(int xc, int yc, int zc);
 public:
 	int render(shared_ptr<LivingEntity> player, int layer, double alpha, bool updateChunks);
+	void renderChunksDirect(int layer, double alpha);
 private:
 	int renderChunks(int from, int to, int layer, double alpha);
 public:
@@ -269,6 +281,14 @@ public:
 #endif
 
 	XLockFreeStack<int> dirtyChunksLockFreeStack;
+
+	// Visible chunk lists built by cull(), consumed by renderChunks()
+	int *visibleLists_layer0;
+	int *visibleLists_layer1;
+	int *visibleLists_layer2;
+	int visibleCount_layer0;
+	int visibleCount_layer1;
+	int visibleCount_layer2;
 
 	bool				dirtyChunkPresent;
 	int64_t				lastDirtyChunkFound;

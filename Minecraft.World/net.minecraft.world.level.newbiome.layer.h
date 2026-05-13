@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AddIslandLayer.h"
+#include "AddEdgeLayer.h"
 #include "AddMushroomIslandLayer.h"
 #include "AddSnowLayer.h"
 #include "BiomeInitLayer.h"
@@ -8,9 +9,12 @@
 #include "DownfallMixerLayer.h"
 #include "FlatLayer.h"
 #include "FuzzyZoomLayer.h"
+#include "DeepOceanLayer.h"
 #include "IntCache.h"
 #include "IslandLayer.h"
 #include "Layer.h"
+#include "RemoveTooMuchOceanLayer.h"
+#include "RareBiomeLayer.h"
 #include "RiverInitLayer.h"
 #include "RiverLayer.h"
 #include "RiverMixerLayer.h"
@@ -26,3 +30,7 @@
 // 1.1.
 #include "RegionHillsLayer.h"
 #include "SwampRiversLayer.h"
+
+#include "RareBiomeSpotLayer.h"
+#include "BiomeEdgeLayer.h"
+#include "ImposeContinentsLayer.h"

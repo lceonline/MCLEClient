@@ -3,11 +3,15 @@
 #include "Vec3.h"
 #include "Definitions.h"
 #include "SoundTypes.h"
+
+
 using namespace std;
 
 class GrassTile;
 class LeafTile;
+class LeafTile2;
 class TallGrass;
+class BarrierTile;
 class DeadBushTile;
 class FireTile;
 class PortalTile;
@@ -39,6 +43,7 @@ class TileEntity;
 class HalfSlabTile;
 class Icon;
 class IconRegister;
+class TallGrass2;
 
 class ChunkRebuildData;
 
@@ -184,12 +189,14 @@ public:
 	static  bool	propagate[TILE_NUM_COUNT];
 
 	// 4J - this array of simple constants made so the compiler can optimise references to Ids that were previous of the form Tile::<whatever>->id, and are now simply Tile::whatever_Id
+	static const int air_Id = 0;
 	static const int stone_Id = 1;
 	static const int grass_Id = 2;
 	static const int dirt_Id = 3;
 	static const int cobblestone_Id = 4;
 	static const int wood_Id = 5;
 	static const int sapling_Id = 6;
+	//static const int sapling2_Id = 199;//should go inside sapling.
 	static const int unbreakable_Id = 7;
 	static const int water_Id = 8;
 	static const int calmWater_Id = 9;
@@ -203,6 +210,8 @@ public:
 	static const int coalOre_Id = 16;
 	static const int treeTrunk_Id = 17;
 	static const int leaves_Id = 18;
+	static const int leaves2_Id = 161;
+
 	static const int sponge_Id = 19;
 	static const int glass_Id = 20;
 
@@ -360,11 +369,64 @@ public:
 	static const int clayHardened_colored_Id = 159;
 	static const int stained_glass_pane_Id = 160;
 
+	static const int tree2Trunk_Id = 162;
+
+	static const int stairs_acaciawood_Id = 163;
+	static const int stairs_darkwood_Id = 164;
+	//165 slimeblock
+	static const int barrier_Id = 166;
+	static const int iron_trapdoor_Id = 167;
+	static const int prismarine_Id = 168;
+	static const int seaLantern_Id = 169;
 	static const int hayBlock_Id = 170;
 	static const int woolCarpet_Id = 171;
 	static const int clayHardened_Id = 172;
 	static const int coalBlock_Id = 173;
-
+	static const int packedIce_Id = 174;
+	static const int tallgrass2_Id = 175;
+	//176 standing_banner
+	//177 wall_banner
+	static const int invertedDaylightDetector_Id = 178;
+	static const int red_sandstone_Id = 179;
+	static const int stairs_red_sandstone_Id = 180;
+	static const int double_stone_slab2_Id = 181;
+	static const int stone_slab2_Id = 182;
+	static const int spruceGate_Id = 183;
+	static const int birchGate_Id = 184;
+	static const int jungleGate_Id = 185;
+	static const int darkGate_Id = 186;
+	static const int acaciaGate_Id = 187;
+	static const int spruceFence_Id = 188;
+	static const int birchFence_Id = 189;
+	static const int jungleFence_Id = 190;
+	static const int darkFence_Id = 191;
+	static const int acaciaFence_Id = 192;
+	static const int spruce_door_Id = 193;
+	static const int birch_door_Id = 194;
+	static const int jungle_door_Id = 195;
+	static const int acacia_door_Id = 196;
+	static const int dark_oak_door_Id = 197;
+	//end_rod 			198
+	//chorus_plant 		199
+	//chorus_flower 	200
+	//purpur_block      201
+	//purpur_pillar		202
+	//purpur_stairs     203
+	//purpur_double_slab 204
+	//purpur_slab		205
+	//end_bricks		206
+	//beetroots         207
+	//grass_path		208
+	//end_gateway		209
+	//frosted_ice		212
+	//magma				213
+	//nether_wart_block 214
+	//red_nether_brick  215
+	//bone_block		216
+	//structure_void    217
+	// 
+	//
+	
 
 	static Tile *stone;
 	static GrassTile *grass;
@@ -372,6 +434,7 @@ public:
 	static Tile *cobblestone;
 	static Tile *wood;
 	static Tile *sapling;
+	//static Tile *sapling2;
 	static Tile *unbreakable;
 	static LiquidTile *water;
 	static Tile *calmWater;
@@ -384,6 +447,7 @@ public:
 	static Tile *coalOre;
 	static Tile *treeTrunk;
 	static LeafTile *leaves;
+	static LeafTile2 *leaves2;
 	static Tile *sponge;
 	static Tile *glass;
 	static Tile *lapisOre;
@@ -494,9 +558,11 @@ public:
 	static Tile *redstoneLight_lit;
 
 	static Tile *stairs_sandstone;
-	static Tile *woodStairsDark;
+	static Tile *woodStairsSpruce;
 	static Tile *woodStairsBirch;
 	static Tile *woodStairsJungle;
+	static Tile *woodStairsAcacia;
+	static Tile *woodStairsDark;
 	static Tile *commandBlock;
 	static BeaconTile *beacon;
 	static Tile *button_wood;
@@ -540,6 +606,40 @@ public:
 	static Tile *woolCarpet;
 	static Tile *clayHardened;
 	static Tile *coalBlock;
+
+	static Tile *barrier;
+	static Tile *iron_trapdoor;
+
+	static Tile* door_spruce;
+	static Tile* door_birch;
+	static Tile* door_jungle;
+	static Tile* door_acacia;
+	static Tile* door_dark;
+	
+	static Tile* spruceFence;
+	static Tile* birchFence;
+	static Tile* jungleFence;
+	static Tile* acaciaFence;
+	static Tile* darkFence;
+
+	static Tile* spruceGate;
+	static Tile* birchGate;
+	static Tile* jungleGate;
+	static Tile* acaciaGate;
+	static Tile* darkGate;
+
+	static Tile* invertedDaylightDetector;
+	static Tile* red_sandstone;
+	static Tile* stairs_red_sandstone;
+	static HalfSlabTile* stoneSlab2;
+	static HalfSlabTile* stoneSlab2Half;
+	static Tile* tree2Trunk;
+	static Tile* packedIce;
+	static Tile* seaLantern;
+	static Tile* prismarine;
+
+	static TallGrass2* tallgrass2;
+	
 
 	static void staticCtor();
 
@@ -712,6 +812,7 @@ public:
 	static bool isMatching(int tileIdA, int tileIdB);
 	virtual bool hasAnalogOutputSignal();
 	virtual int getAnalogOutputSignal(Level *level, int x, int y, int z, int dir);
+	virtual bool blocksLight() { return Tile::lightBlock[id] > 0; }
 
 protected:
 	virtual Tile *setIconName(const wstring &iconName);

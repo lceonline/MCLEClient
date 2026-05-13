@@ -12,10 +12,11 @@ using namespace std;
 #include "GenericStats.h"
 #include "DoorItem.h"
 
-DoorItem::DoorItem(int id, Material *material) :  Item(id)
+DoorItem::DoorItem(int id, Material *material, const wstring& doorType) :  Item(id)
 {
 	this->material = material;
-	maxStackSize = 1;
+	this->doorType = doorType;
+	maxStackSize = 64;
 }
 
 bool DoorItem::useOn(shared_ptr<ItemInstance> instance, shared_ptr<Player> player, Level *level, int x, int y, int z, int face, float clickX, float clickY, float clickZ, bool bTestUseOnOnly) 
@@ -25,8 +26,13 @@ bool DoorItem::useOn(shared_ptr<ItemInstance> instance, shared_ptr<Player> playe
 
 	Tile *tile;
 
-	if (material == Material::wood) tile = Tile::door_wood;
-	else tile = Tile::door_iron;
+	if (doorType == L"doorWood")        tile = Tile::door_wood;
+	else if (doorType == L"doorIron")      tile = Tile::door_iron;
+	else if (doorType == L"doorSpruce")    tile = Tile::door_spruce;
+	else if (doorType == L"doorBirch")    tile = Tile::door_birch;
+	else if (doorType == L"doorJungle")    tile = Tile::door_jungle;
+	else if (doorType == L"doorAcacia")    tile = Tile::door_acacia;
+	else if (doorType == L"doorDark")    tile = Tile::door_dark;
 
 	if (!player->mayUseItemAt(x, y, z, face, instance) || !player->mayUseItemAt(x, y + 1, z, face, instance)) return false;
 	if (!tile->mayPlace(level, x, y, z)) return false;

@@ -10,8 +10,17 @@
 #include "../Minecraft.World/net.minecraft.world.level.h"
 #include "../Minecraft.World/net.minecraft.world.level.chunk.h"
 #include "../Minecraft.World/net.minecraft.world.level.dimension.h"
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.World/EnchantmentHelper.h"
+#include "../Minecraft.World/ExperienceOrb.h"
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
+
 #include "MultiPlayerLevel.h"
 #include "LevelRenderer.h"
+
+extern bool g_suppressExpDrops;
 
 ServerPlayerGameMode::ServerPlayerGameMode(Level *level)
 {
@@ -56,11 +65,10 @@ bool ServerPlayerGameMode::isSurvival()
 	return gameModeForPlayer->isSurvival();
 }
 
-bool ServerPlayerGameMode::isCreative()
-{
-	return gameModeForPlayer->isCreative();
+bool ServerPlayerGameMode::isCreative() {
+    if (!this || !gameModeForPlayer) return false; 
+    return gameModeForPlayer->isCreative();
 }
-
 void ServerPlayerGameMode::updateGameMode(GameType *gameType)
 {
 	if (gameModeForPlayer == GameType::NOT_SET)
@@ -247,7 +255,43 @@ bool ServerPlayerGameMode::destroyBlock(int x, int y, int z)
 
 	int t = level->getTile(x, y, z);
 	int data = level->getData(x, y, z);
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	int eventExp = 0;
+	if (!isCreative() && !gameModeForPlayer->isAdventureRestricted())
+	{
+		Tile *tile = Tile::tiles[t];
+		if (tile != nullptr && player->canDestroy(tile))
+		{
+			if (!EnchantmentHelper::hasSilkTouch(player))
+			{
+				// (SYLV)todo: shouldnt we get these values from the actual blocks?
+				if (t == Tile::coalOre_Id)
+					eventExp = Mth::nextInt(level->random, 0, 2);
+				else if (t == Tile::diamondOre_Id)
+					eventExp = Mth::nextInt(level->random, 3, 7);
+				else if (t == Tile::emeraldOre_Id)
+					eventExp = Mth::nextInt(level->random, 3, 7);
+				else if (t == Tile::lapisOre_Id)
+					eventExp = Mth::nextInt(level->random, 2, 5);
+				else if (t == Tile::netherQuartz_Id)
+					eventExp = Mth::nextInt(level->random, 2, 5);
+				else if (t == Tile::redStoneOre_Id || t == Tile::redStoneOre_lit_Id)
+					eventExp = 1 + level->random->nextInt(5);
+				else if (t == Tile::mobSpawner_Id)
+					eventExp = 15 + level->random->nextInt(15) + level->random->nextInt(15);
+			}
+		}
+	}
 
+	int dimId = level->dimension ? level->dimension->id : 0;
+	int breakResult = FourKitBridge::FireBlockBreak(player->entityId, dimId, x, y, z, t, data, eventExp);
+	if (breakResult < 0)
+	{
+		player->connection->send(std::make_shared<TileUpdatePacket>(x, y, z, level));
+		return false;
+	}
+	int finalExp = breakResult;
+#endif
 	level->levelEvent(player, LevelEvent::PARTICLES_DESTROY_BLOCK, x, y, z, t + (level->getData(x, y, z) << Tile::TILE_NUM_SHIFT));
 
 	// 4J - In creative mode, the point where we need to tell the renderer that we are about to destroy a tile via destroyingTileAt is quite complicated.
@@ -305,8 +349,25 @@ bool ServerPlayerGameMode::destroyBlock(int x, int y, int z)
 			}
 		}
 		if (changed && canDestroy)
-		{
+        {
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			g_suppressExpDrops = true;
+#endif
+
 			Tile::tiles[t]->playerDestroy(level, player, x, y, z, data);
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+			g_suppressExpDrops = false;
+			if (finalExp > 0)
+			{
+				while (finalExp > 0)
+				{
+					int xpDrop = ExperienceOrb::getExperienceValue(finalExp);
+					finalExp -= xpDrop;
+					level->addEntity(std::make_shared<ExperienceOrb>(level, x + .5, y + .5, z + .5, xpDrop));
+				}
+			}
+#endif
 		}
 	}
 	return changed;
@@ -325,6 +386,7 @@ bool ServerPlayerGameMode::useItem(shared_ptr<Player> player, Level *level, shar
 		player->inventory->items[player->inventory->selected] = itemInstance;
 		if (isCreative())
 		{
+			//if  (!(Item::items[itemInstance->id]->getBaseItemType() == 7 || Item::items[itemInstance->id]->getBaseItemType() == 8 || Item::items[itemInstance->id]->getBaseItemType() == 9 || Item::items[itemInstance->id]->getBaseItemType() == 10)) 
 			itemInstance->count = oldCount;
 			if (itemInstance->isDamageableItem()) itemInstance->setAuxValue(oldAux);
 		}
@@ -391,4 +453,9 @@ void ServerPlayerGameMode::setGameRules(GameRulesInstance *rules)
 {
 	if(m_gameRules != nullptr) delete m_gameRules;
 	m_gameRules = rules;
+}
+GameType* ServerPlayerGameMode::getGameType()
+{
+    
+     return gameModeForPlayer;
 }

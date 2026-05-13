@@ -5,6 +5,8 @@
 #include "../../../Minecraft.World/net.minecraft.world.item.h"
 #include "../../../Minecraft.World/net.minecraft.world.entity.ai.attributes.h"
 #include "../../../Minecraft.World/net.minecraft.world.entity.monster.h"
+#include "../../MultiPlayerLevel.h"
+#include "../../../Minecraft.World/LevelData.h"
 #include "IUIScene_HUD.h"
 
 #include "UI.h"
@@ -20,6 +22,7 @@ IUIScene_HUD::IUIScene_HUD()
 	m_lastMaxHealth = 20;
 	m_lastHealthBlink = false;
 	m_lastHealthPoison = false;
+	m_lastHealthHardcore = false;
 	m_iCurrentFood = -1;
 	m_lastFoodPoison = false;
 	m_lastAir = 10;
@@ -94,9 +97,10 @@ void IUIScene_HUD::updateFrameTick()
 		ShowHealth(false);
 		ShowFood(false);
 		ShowAir(false);
-		ShowArmour(false);		
+		ShowArmour(false);
 		ShowExpBar(false);
-		SetHealthAbsorb(0);			
+		SetHealthAbsorb(0);
+		SetHardcoreMode(false);			
 	}
 
 	if(pMinecraft->localplayers[iPad]->isRidingJumpable())
@@ -205,6 +209,12 @@ void IUIScene_HUD::renderPlayerHealth()
 
 	// Update armour
 	int armor = pMinecraft->localplayers[iPad]->getArmorValue();
+
+	// Check hardcore mode
+	bool bHardcore = pMinecraft->level != nullptr
+		&& pMinecraft->level->getLevelData() != nullptr
+		&& pMinecraft->level->getLevelData()->isHardcore();
+	SetHardcoreMode(bHardcore);
 
 	SetHealth(currentHealth, oldHealth, blink, bHasPoison || bHasWither, bHasWither);
 	SetHealthAbsorb(totalAbsorption);

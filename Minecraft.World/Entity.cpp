@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "com.mojang.nbt.h"
 #include "net.minecraft.world.item.h"
 #include "net.minecraft.world.item.enchantment.h"
@@ -709,6 +709,8 @@ void Entity::move(double xa, double ya, double za, bool noEntityCubes)   // 4J -
 		return;
 	}
 
+	auto self = shared_from_this();
+
 	ySlideOffset *= 0.4f;
 
 	double xo = x;
@@ -738,21 +740,21 @@ void Entity::move(double xa, double ya, double za, bool noEntityCubes)   // 4J -
 	if (isPlayerSneaking)
 	{
 		double d = 0.05;
-		while (xa != 0 && level->getCubes(shared_from_this(), bb->cloneMove(xa, -1.0, 0))->empty())
+		while (xa != 0 && level->getCubes(self, bb->cloneMove(xa, -1.0, 0), true)->empty())
 		{
 			if (xa < d && xa >= -d) xa = 0;
 			else if (xa > 0) xa -= d;
 			else xa += d;
 			xaOrg = xa;
 		}
-		while (za != 0 && level->getCubes(shared_from_this(), bb->cloneMove(0, -1.0, za))->empty())
+		while (za != 0 && level->getCubes(self, bb->cloneMove(0, -1.0, za), true)->empty())
 		{
 			if (za < d && za >= -d) za = 0;
 			else if (za > 0) za -= d;
 			else za += d;
 			zaOrg = za;
 		}
-		while (xa != 0 && za != 0 && level->getCubes(shared_from_this(), bb->cloneMove(xa, -1.0, za))->empty())
+		while (xa != 0 && za != 0 && level->getCubes(self, bb->cloneMove(xa, -1.0, za), true)->empty())
 		{
 			if (xa < d && xa >= -d) xa = 0;
 			else if (xa > 0) xa -= d;
@@ -765,7 +767,7 @@ void Entity::move(double xa, double ya, double za, bool noEntityCubes)   // 4J -
 		}
 	}
 
-	AABBList *aABBs = level->getCubes(shared_from_this(), bb->expand(xa, ya, za), noEntityCubes, true);
+	AABBList *aABBs = level->getCubes(self, bb->expand(xa, ya, za), noEntityCubes, true);
 
 
 	// 4J Stu - Particles (and possibly other entities) don't have xChunk and zChunk set, so calculate the chunk instead
@@ -820,7 +822,7 @@ void Entity::move(double xa, double ya, double za, bool noEntityCubes)   // 4J -
 		bb->set(bbOrg);
 		// 4J - added extra expand, as if we don't move up by footSize by hitting a block above us, then overall we could be trying to move as much as footSize downwards,
 		// so we'd better include cubes under our feet in this list of things we might possibly collide with
-		aABBs = level->getCubes(shared_from_this(), bb->expand(xa, ya, za)->expand(0,-ya,0),false,true);
+		aABBs = level->getCubes(self, bb->expand(xa, ya, za)->expand(0,-ya,0),false,true);
 
 		if(!level->isClientSide || level->reallyHasChunk(xc, zc))
 		{
@@ -930,7 +932,7 @@ void Entity::move(double xa, double ya, double za, bool noEntityCubes)   // 4J -
 				playSound(eSoundType_LIQUID_SWIM, speed, 1 + (random->nextFloat() - random->nextFloat()) * 0.4f);
 			}
 			playStepSound(xt, yt, zt, t);
-			Tile::tiles[t]->stepOn(level, xt, yt, zt, shared_from_this());
+			Tile::tiles[t]->stepOn(level, xt, yt, zt, self);
 		}
 	}
 
@@ -973,6 +975,7 @@ void Entity::checkInsideTiles()
 
 	if (level->hasChunksAt(x0, y0, z0, x1, y1, z1))
 	{
+		auto self = shared_from_this();
 		for (int x = x0; x <= x1; x++)
 			for (int y = y0; y <= y1; y++)
 				for (int z = z0; z <= z1; z++)
@@ -980,7 +983,7 @@ void Entity::checkInsideTiles()
 					int t = level->getTile(x, y, z);
 					if (t > 0)
 					{
-						Tile::tiles[t]->entityInside(level, x, y, z, shared_from_this());
+						Tile::tiles[t]->entityInside(level, x, y, z, self);
 					}
 				}
 	}
@@ -1613,8 +1616,13 @@ void Entity::rideTick()
 
 	// jeb: This caused the crosshair to "drift" while riding horses. For now I've just disabled it,
 	//      because I can't figure out what it's needed for. Riding boats and minecarts seem unaffected...
-	// yRot += yra;
-	// xRot += xra;
+	// 
+	// 3UR: re-enabled this for TU20 but only for rideable minecarts
+	if (riding->instanceof(eTYPE_MINECART_RIDEABLE))
+	{
+		yRot += yra;
+		xRot += xra;
+	}
 }
 
 void Entity::positionRider()
@@ -2142,4 +2150,225 @@ unsigned int Entity::getAnimOverrideBitmask()
 	}
 
 	return m_uiAnimOverrideBitmask;
+}
+float Entity::getEyeHeight()
+{
+    return bbHeight * 0.85f;
+}
+bool Entity::ignoreExplosion()
+{
+    return false;
+}
+void Entity::kill()
+{
+    remove();
+}
+
+
+static const int DATA_CUSTOM_NAME_ID         = 2; 
+static const int DATA_CUSTOM_NAME_VISIBLE_ID = 3;  
+
+bool Entity::hasCustomName()
+{
+    if (!entityData) return false;
+    return !entityData->getString(DATA_CUSTOM_NAME_ID).empty();
+}
+
+wstring Entity::getCustomName()
+{
+    if (!entityData) return L"";
+    return entityData->getString(DATA_CUSTOM_NAME_ID);
+}
+
+void Entity::setCustomName(const wstring& name)
+{
+    if (entityData)
+        entityData->set(DATA_CUSTOM_NAME_ID, name);
+}
+
+bool Entity::isCustomNameVisible()
+{
+    if (!entityData) return false;
+    return entityData->getByte(DATA_CUSTOM_NAME_VISIBLE_ID) == 1;
+}
+
+void Entity::setCustomNameVisible(bool visible)
+{
+    if (entityData)
+        entityData->set(DATA_CUSTOM_NAME_VISIBLE_ID, static_cast<byte>(visible ? 1 : 0));
+}
+
+
+
+bool Entity::isOutsideWorldBorder()
+{
+    return m_outsideWorldBorder;
+}
+
+void Entity::setOutsideWorldBorder(bool outside)
+{
+    m_outsideWorldBorder = outside;
+}
+
+
+
+int Entity::getDirection()
+{
+    
+    int raw = (int)Mth::floor(yRot * 4.0f / 360.0f + 0.5f) & 3;
+    
+    switch (raw & 3)
+    {
+    case 0: return 2; // South
+    case 1: return 3; // West
+    case 2: return 0; // North
+    case 3: return 1; // East
+    default: return 0;
+    }
+}
+
+
+
+Vec3* Entity::getEyePosition(float partialTicks)
+{
+    if (partialTicks == 1.0f)
+    {
+        return Vec3::newTemp(x, y + getEyeHeight(), z);
+    }
+    double ix = xo + (x - xo) * partialTicks;
+    double iy = yo + (y - yo) * partialTicks;
+    double iz = zo + (z - zo) * partialTicks;
+    return Vec3::newTemp(ix, iy + getEyeHeight(), iz);
+}
+
+
+
+bool Entity::isInvulnerableTo(DamageSource* source)
+{
+    if (!entityData) return false;
+    
+    bool netInvuln = (entityData->getByte(DATA_SHARED_FLAGS_ID) >> 2 & 1) != 0;
+    if (!netInvuln) return false;
+    
+    if (source->isCreativePlayer()) return false;
+    return true;
+}
+
+void Entity::setInvulnerable(bool value)
+{
+    setSharedFlag(2, value);
+}
+
+
+
+wstring Entity::getName()
+{
+    if (hasCustomName())
+        return getCustomName();
+    return getAName();
+}
+
+
+
+void Entity::doSprintParticleEffect()
+{
+    int xt = Mth::floor(x);
+    int yt = Mth::floor(y - 0.2 - heightOffset);
+    int zt = Mth::floor(z);
+    int t  = level->getTile(xt, yt, zt);
+    int d  = level->getData(xt, yt, zt);
+    if (t > 0)
+    {
+        AABB* box = getBoundingBox();
+        level->addParticle(
+            PARTICLE_TILECRACK(t, d),
+            x + (random->nextFloat() - 0.5) * bbWidth,
+            box->y0 + 0.1,
+            z + (random->nextFloat() - 0.5) * bbWidth,
+            -(xd * 4.0),
+            1.5,
+            -(zd * 4.0));
+    }
+}
+
+
+
+bool Entity::shouldShowName()
+{
+    return isCustomNameVisible();
+}
+
+
+
+
+int Entity::getPortalEntranceOffset()
+{
+    
+    return portalTime;
+}
+
+int Entity::getPortalEntranceForwards()
+{
+    
+    return portalEntranceDir;
+}
+
+void Entity::getPortalEntranceBlock(int& ox, int& oy, int& oz)
+{
+   
+    ox = Mth::floor(x);
+    oy = Mth::floor(y);
+    oz = Mth::floor(z);
+}
+
+
+Vec3* Entity::getCommandSenderWorldPosition()
+{
+    return Vec3::newTemp(x, y, z);
+}
+
+Level* Entity::getCommandSenderWorld()
+{
+    return level;
+}
+
+shared_ptr<Entity> Entity::getCommandSenderEntity()
+{
+    return shared_from_this();
+}
+
+
+
+double Entity::distanceSqrToBlockPosCenter(int bx, int by, int bz)
+{
+    
+    double dx = x - (bx + 0.5);
+    double dy = y - (by + 0.5);
+    double dz = z - (bz + 0.5);
+    return dx*dx + dy*dy + dz*dz;
+}
+
+double Entity::distanceSqrToBlockPosCenter(BlockPos* pos)
+{
+    return distanceSqrToBlockPosCenter(pos->getX(), pos->getY(), pos->getZ());
+}
+
+void Entity::getSkinAdjustments(struct _SkinAdjustments* adj)
+{
+    
+    if (app.GetGameSettings((eGameSetting)0x18) || (this->m_skinAdjustments.data[17] & 0x1F1F810) != 0)
+    {
+        
+        *adj = this->m_skinAdjustments;
+    }
+    else
+    {
+        *adj = _SkinAdjustments();
+    }
+}
+
+void Entity::setSkinAdjustments(struct _SkinAdjustments* adj)
+{
+   
+    this->m_skinAdjustments = *adj;
 }

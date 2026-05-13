@@ -13,7 +13,7 @@
 
 // Ingredients etc should go here
 #define CRAFTING_INGREDIENTS_DESCRIPTION_START CRAFTING_HOTBAR_SLOT_END
-#define CRAFTING_INGREDEINTS_DESCRIPTION_END (CRAFTING_INGREDIENTS_DESCRIPTION_START + 4)
+#define CRAFTING_INGREDEINTS_DESCRIPTION_END (CRAFTING_INGREDIENTS_DESCRIPTION_START + 9)
 
 #define CRAFTING_OUTPUT_SLOT_START CRAFTING_INGREDEINTS_DESCRIPTION_END
 #define CRAFTING_OUTPUT_SLOT_END (CRAFTING_OUTPUT_SLOT_START + 1)
@@ -48,7 +48,7 @@ private:
 	SlotInfo m_vSlotsInfo[m_iMaxDisplayedVSlotC];
 	SlotInfo m_ingredientsSlotsInfo[m_iIngredients3x3SlotC];
 	SlotInfo m_craftingOutputSlotInfo;
-	SlotInfo m_ingredientsInfo[4];
+	SlotInfo m_ingredientsInfo[9];
 
 	AbstractContainerMenu *m_menu;
 
@@ -86,9 +86,9 @@ protected:
 	UIControl_SlotList m_slotListCraftingHSlots;
 	UIControl_SlotList m_slotListCrafting1VSlots, m_slotListCrafting2VSlots[2], m_slotListCrafting3VSlots[3];
 	UIControl_SlotList m_slotListIngredientsLayout, m_slotListCraftingOutput;
-	UIControl_SlotList m_slotListIngredients[4];
+	UIControl_SlotList m_slotListIngredients[9];
 	UIControl_SlotList m_slotListInventory, m_slotListHotBar;
-	UIControl_Label m_labelIngredientsDesc[4];
+	UIControl_Label m_labelIngredientsDesc[9];
 	UIControl_HTMLLabel m_labelDescription;
 	UIControl_Label m_labelGroupName, m_labelItemName, m_labelInventory, m_labelIngredients;
 
@@ -143,11 +143,21 @@ protected:
 			UI_MAP_ELEMENT( m_slotListIngredients[1], "Ingredient2")
 			UI_MAP_ELEMENT( m_slotListIngredients[2], "Ingredient3")
 			UI_MAP_ELEMENT( m_slotListIngredients[3], "Ingredient4")
+			UI_MAP_ELEMENT( m_slotListIngredients[4], "Ingredient5")
+			UI_MAP_ELEMENT( m_slotListIngredients[5], "Ingredient6")
+			UI_MAP_ELEMENT( m_slotListIngredients[6], "Ingredient7")
+			UI_MAP_ELEMENT( m_slotListIngredients[7], "Ingredient8")
+			UI_MAP_ELEMENT( m_slotListIngredients[8], "Ingredient9")
 
 			UI_MAP_ELEMENT( m_labelIngredientsDesc[0], "Ingredient1Desc")
 			UI_MAP_ELEMENT( m_labelIngredientsDesc[1], "Ingredient2Desc")
 			UI_MAP_ELEMENT( m_labelIngredientsDesc[2], "Ingredient3Desc")
 			UI_MAP_ELEMENT( m_labelIngredientsDesc[3], "Ingredient4Desc")
+			UI_MAP_ELEMENT( m_labelIngredientsDesc[4], "Ingredient5Desc")
+			UI_MAP_ELEMENT( m_labelIngredientsDesc[5], "Ingredient6Desc")
+			UI_MAP_ELEMENT( m_labelIngredientsDesc[6], "Ingredient7Desc")
+			UI_MAP_ELEMENT( m_labelIngredientsDesc[7], "Ingredient8Desc")
+			UI_MAP_ELEMENT( m_labelIngredientsDesc[8], "Ingredient9Desc")
 
 			UI_MAP_ELEMENT( m_labelIngredients, "IngredientsLabel")
 

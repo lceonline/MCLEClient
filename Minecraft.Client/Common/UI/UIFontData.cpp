@@ -335,6 +335,11 @@ bool CFontData::unicodeIsWhitespace(unsigned int unicode)
 	return false;
 }
 
+bool CFontData::hasGlyph(unsigned int unicodepoint)
+{
+	return m_unicodeMap.find(unicodepoint) != m_unicodeMap.end();
+}
+
 void CFontData::moveCursor(unsigned char *&cursor, unsigned int dx, unsigned int dy)
 {
 	cursor += (dy * m_sFontData->m_uiGlyphMapX) + dx;

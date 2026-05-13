@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "XUI_Ctrl_4JList.h"
+#include "../../../Minecraft.World/ArabicShaping.h"
 
 static bool TimeSortFn(const void *a, const void *b);
 
@@ -294,8 +295,16 @@ HRESULT CXuiCtrl4JList::OnGetSourceDataText(XUIMessageGetSourceText *pGetSourceT
 	if( ( 0 == pGetSourceTextData->iData ) && ( ( pGetSourceTextData->bItemData ) ) )
 	{
 		EnterCriticalSection(&m_AccessListData);
-		pGetSourceTextData->szText =
-			GetData(pGetSourceTextData->iItem).pwszText;
+		LPCWSTR rawText = GetData(pGetSourceTextData->iItem).pwszText;
+		if (rawText)
+		{
+			m_shapedTextCache = shapeArabicText(rawText);
+			pGetSourceTextData->szText = m_shapedTextCache.c_str();
+		}
+		else
+		{
+			pGetSourceTextData->szText = rawText;
+		}
 		LeaveCriticalSection(&m_AccessListData);
 		bHandled = TRUE;
 	}

@@ -10,6 +10,7 @@
 #include "StringTag.h"
 #include "ByteArrayTag.h"
 #include "IntArrayTag.h"
+#include "CompoundContainer.h"
 
 class CompoundTag : public Tag
 {
@@ -143,7 +144,29 @@ public:
 	{
 		return tags.find(name) != tags.end();
 	}
-
+	bool contains(const wstring& name, int typeId)
+{
+    auto it = tags.find(name);
+ 
+    if (it != tags.end())
+    {
+        int foundType = it->second->getId();
+        if (foundType == typeId)
+            return true;
+ 
+        
+        if (typeId == 99)
+            return (unsigned int)(foundType - 1) <= 5;
+ 
+        return false;
+    }
+    else
+    {
+        
+        return typeId == 0;
+    }
+}
+	
 	byte getByte(const wstring &name)
 	{
 		if (tags.find(name) == tags.end()) return (byte)0;
@@ -198,10 +221,13 @@ public:
 		return static_cast<IntArrayTag *>(tags[name])->data;
 	}
 
-	CompoundTag *getCompound(const wstring &name)
+	CompoundTag* getCompound(const wstring& name)
 	{
-		if (tags.find(name) == tags.end()) return new CompoundTag(name);
-		return static_cast<CompoundTag *>(tags[name]);
+    if (contains(name, Tag::TAG_Compound))
+    {
+        return static_cast<CompoundTag*>(get(name));
+    }
+    return new CompoundTag(name);
 	}
 
 	ListTag<Tag> *getList(const wstring &name)
@@ -297,4 +323,8 @@ public:
 		}
 		return false;
 	}
+
 };
+
+
+

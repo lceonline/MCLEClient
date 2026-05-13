@@ -2,6 +2,9 @@
 #include "UI.h"
 #include "UILayer.h"
 #include "UIScene.h"
+#include "IUIScene_WritingBookMenu.h"
+#include "UIScene_BookAndQuillMenu.h"
+#include "UIScene_AchievementsMenu.h"
 
 UILayer::UILayer(UIGroup *parent)
 {
@@ -243,6 +246,9 @@ bool UILayer::NavigateToScene(int iPad, EUIScene scene, void *initData)
 	case eUIScene_Crafting3x3Menu:
 		newScene = new UIScene_CraftingMenu(iPad, initData, this);
 		break;
+	case eUIScene_ClassicCraftingMenu:
+		newScene = new UIScene_ClassicCraftingMenu(iPad, initData, this);
+		break;
 	case eUIScene_TradingMenu:
 		newScene = new UIScene_TradingMenu(iPad, initData, this);
 		break;
@@ -265,6 +271,13 @@ bool UILayer::NavigateToScene(int iPad, EUIScene scene, void *initData)
 		// Help and Options
 	case eUIScene_HelpAndOptionsMenu:
 		newScene = new UIScene_HelpAndOptionsMenu(iPad, initData, this);
+		break;
+	case eUIScene_AchievementsMenu:
+		newScene = new UIScene_AchievementsMenu(iPad, initData, this);
+		break;
+		// Book
+	case eUIScene_BookMenu:
+		newScene = new UIScene_BookAndQuillMenu(iPad, initData, this);
 		break;
 	case eUIScene_SettingsMenu:
 		newScene = new UIScene_SettingsMenu(iPad, initData, this);
@@ -369,6 +382,9 @@ bool UILayer::NavigateToScene(int iPad, EUIScene scene, void *initData)
 		break;
 	case eUIScene_LoadOrJoinMenu:
 		newScene = new UIScene_LoadOrJoinMenu(iPad, initData, this);
+		break;
+	case eUIScene_LoadCreateJoinMenu:
+		newScene = new UIScene_LoadCreateJoinMenu(iPad, initData, this);
 		break;
 	case eUIScene_LoadMenu:
 		newScene = new UIScene_LoadMenu(iPad, initData, this);

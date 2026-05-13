@@ -5,7 +5,7 @@
 class FuzzyZoomLayer : public Layer
 {
 public:
-	FuzzyZoomLayer(int64_t seedMixup, shared_ptr<Layer>parent);
+	FuzzyZoomLayer(int64_t seed, shared_ptr<Layer> parent, int64_t seedMixup);
     intArray getArea(int xo, int yo, int w, int h);
 
 protected:

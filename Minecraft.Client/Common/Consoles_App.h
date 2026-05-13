@@ -22,6 +22,9 @@ using namespace std;
 #include "./GameRules/GameRuleManager.h"
 #include "../SkinBox.h"
 #include "../ArchiveFile.h"
+#include "lce_filesystem/FolderFile.h"
+
+
 
 typedef struct _JoinFromInviteData
 {
@@ -52,6 +55,7 @@ class Model;
 class ModelPart;
 class StringTable;
 class Merchant;
+struct _SkinAdjustments;
 
 class CMinecraftAudio;
 
@@ -63,7 +67,7 @@ class CMinecraftApp
 {
 private:
 	static int s_iHTMLFontSizesA[eHTMLSize_COUNT];
-
+	unordered_map<unsigned int, _SkinAdjustments> m_SkinAdjustmentsMap;
 public:
 
 	CMinecraftApp();
@@ -81,6 +85,8 @@ public:
 	// storing credits text from the DLC
 	std::vector <wstring > m_vCreditText; // hold the credit text lines so we can avoid duplicating them
 
+	void GetSkinAdjustments(_SkinAdjustments* out,unsigned int skinId);
+	void SetSkinAdjustments(unsigned int skinId, const _SkinAdjustments& adj);
 
 	// In builds prior to TU5, the size of the GAME_SETTINGS struct was 204 bytes. We added a few new values to the internal struct in TU5, and even though we
 	// changed the size of the ucUnused array to be decreased by the size of the values we added, the packing of the struct has introduced some extra
@@ -97,7 +103,7 @@ public:
 	*/
 	static const int GAME_DEFINED_PROFILE_DATA_BYTES = 2*972; // per user
 #else
-	static const int GAME_DEFINED_PROFILE_DATA_BYTES = 972; // per user
+	static const int GAME_DEFINED_PROFILE_DATA_BYTES = 3*972; // per user
 #endif
 	unsigned int uiGameDefinedDataChangedBitmask;
 
@@ -149,6 +155,7 @@ public:
 	bool			LoadHopperMenu(int iPad ,shared_ptr<Inventory> inventory, shared_ptr<MinecartHopper> hopper);
 	bool			LoadHorseMenu(int iPad ,shared_ptr<Inventory> inventory, shared_ptr<Container> container, shared_ptr<EntityHorse> horse);
 	bool			LoadBeaconMenu(int iPad ,shared_ptr<Inventory> inventory, shared_ptr<BeaconTileEntity> beacon);
+	bool			LoadWritingBookMenu(int iPad, shared_ptr<ItemInstance> instance, shared_ptr<Player> player, bool editable);
 
 	bool			GetTutorialMode()																									{ return m_bTutorialMode;}
 	void			SetTutorialMode(bool bSet)																							{m_bTutorialMode=bSet;}
@@ -156,6 +163,7 @@ public:
 	void			SetSpecialTutorialCompletionFlag(int iPad, int index);
 
 	static			LPCWSTR			GetString(int iID);
+	static			LPCWSTR			GetString(const wchar_t *id);
 
 	eGameMode		GetGameMode()																										{ return m_eGameMode;}
 	void			SetGameMode(eGameMode eMode)																						{ m_eGameMode=eMode;}
@@ -431,7 +439,7 @@ public:
 	void loadStringTable();
 
 protected:
-	ArchiveFile *m_mediaArchive;
+	FolderFile *m_mediaArchive;
 	StringTable *m_stringTable;
 
 public:
@@ -564,11 +572,11 @@ public:
 	int GetHTMLColour(eMinecraftColour colour);
 	int GetHTMLColor(eMinecraftColour colour) { return GetHTMLColour(colour); }
 	int GetHTMLFontSize(EHTMLFontSize size);
-	wstring FormatHTMLString(int iPad, const wstring& desc, int shadowColour = 0xFFFFFFFF);
+	wstring FormatHTMLString(int iPad, const wstring& desc, int shadowColour = 0xFFFFFFFF, bool override = false);
 	wstring EscapeHTMLString(const wstring &desc);
 	wstring FormatChatMessage(const wstring& desc, bool applyStyling = true);
 	wstring GetActionReplacement(int iPad, unsigned char ucAction);
-	wstring GetVKReplacement(unsigned int uiVKey);
+	wstring GetVKReplacement(unsigned int uiVKey, bool override = false);
 	wstring GetIconReplacement(unsigned int uiIcon);
 
 	float getAppTime() { return m_Time.fAppTime; }
@@ -708,6 +716,8 @@ private:
 	bool			m_bGameNewWorldSizeUseMoat;
 	unsigned int	m_GameNewHellScale;
 #endif
+	int64_t			m_seedOverride;
+	bool			m_hasSeedOverride;
 	unsigned int	FromBigEndian(unsigned int uiValue);
 
 public:
@@ -725,6 +735,10 @@ public:
 	void			SetGameNewHellScale(unsigned int newScale)				{ m_GameNewHellScale = newScale; }
 	unsigned int	GetGameNewHellScale()									{ return m_GameNewHellScale; }
 #endif
+	void			SetSeedOverride(int64_t seed)	{ m_seedOverride = seed; m_hasSeedOverride = true; }
+	bool			HasSeedOverride()				{ return m_hasSeedOverride; }
+	int64_t			GetSeedOverride()				{ return m_seedOverride; }
+
 	void			SetResetNether(bool bResetNether) {m_bResetNether=bResetNether;}
 	bool			GetResetNether() {return m_bResetNether;}
 	bool			CanRecordStatsAndAchievements();
@@ -749,10 +763,14 @@ public:
 private:
 	BYTE m_playerColours[MINECRAFT_NET_MAX_PLAYERS]; // An array of QNet small-id's
 	unsigned int m_playerGamePrivileges[MINECRAFT_NET_MAX_PLAYERS];
+	struct PlayerMapIconEntry { wchar_t name[32]; char icon; };
+	PlayerMapIconEntry m_playerMapIcons[MINECRAFT_NET_MAX_PLAYERS];
 
 public:
 	void UpdatePlayerInfo(BYTE networkSmallId, SHORT playerColourIndex, unsigned int playerGamePrivileges);
 	short GetPlayerColour(BYTE networkSmallId);
+	void SetPlayerMapIcon(const wchar_t* name, char icon);
+	char GetPlayerMapIconByName(const wchar_t* name);
 	unsigned int GetPlayerPrivileges(BYTE networkSmallId);
 
 	wstring getEntityName(eINSTANCEOF type);
@@ -807,6 +825,10 @@ public:
 	void SetCorruptSaveDeleted(bool bVal) {m_bCorruptSaveDeleted=bVal;}
 	bool GetCorruptSaveDeleted(void) {return m_bCorruptSaveDeleted;}
 
+	// 4J Added: Store save folder name for hardcore world deletion on Win64
+	void SetCurrentSaveFolderName(const wstring& name) { m_currentSaveFolderName = name; }
+	const wstring& GetCurrentSaveFolderName() const { return m_currentSaveFolderName; }
+
 	void EnterSaveNotificationSection();
 	void LeaveSaveNotificationSection();
 private:
@@ -828,6 +850,7 @@ private:
 	CRITICAL_SECTION csAdditionalSkinBoxes;
 	CRITICAL_SECTION csAnimOverrideBitmask;
 	bool m_bCorruptSaveDeleted;
+	wstring m_currentSaveFolderName; // 4J Added: for hardcore world deletion on Win64
 
 	DWORD m_dwAdditionalModelParts[XUSER_MAX_COUNT];
 

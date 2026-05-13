@@ -1,9 +1,9 @@
 #pragma once
-#include "StoneTile.h"
+#include "Tile.h"
 
 class Random;
 
-class ObsidianTile : public StoneTile
+class ObsidianTile : public Tile
 {
 public:
 	ObsidianTile(int id);

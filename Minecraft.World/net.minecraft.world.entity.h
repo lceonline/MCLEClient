@@ -32,3 +32,6 @@
 #include "OwnableEntity.h"
 #include "EntitySelector.h"
 #include "LivingEntity.h"
+
+//TU31
+#include "ArmorStand.h"

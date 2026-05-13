@@ -39,6 +39,7 @@ Material *Material::portal = nullptr;
 Material *Material::cake = nullptr;
 Material *Material::piston = nullptr;
 Material *Material::web = nullptr;
+Material* Material::packedIce = nullptr;
 
 void Material::staticCtor()
 {
@@ -76,6 +77,7 @@ void Material::staticCtor()
 	// 4J added WebMaterial, Java version just does a local alteration when instantiating the Material for webs to get the same thing
 	Material::web = (new WebMaterial(MaterialColor::cloth))->notAlwaysDestroyable()->destroyOnPush();
 	Material::piston  = (new Material(MaterialColor::stone))->notPushable();
+	Material::packedIce = (new Material(MaterialColor::ice))->neverBuildable();
 }
 
 Material::Material(MaterialColor *color)

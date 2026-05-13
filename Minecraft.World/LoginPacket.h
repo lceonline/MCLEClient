@@ -24,6 +24,7 @@ public:
 	unsigned int m_uiGamePrivileges;
 	int m_xzSize; // 4J Added
 	int m_hellScale; // 4J Added
+	bool m_isHardcore; // 4J Added - for hardcore mode
 
 	// 1.8.2
 	int gameType;
@@ -31,7 +32,7 @@ public:
 	BYTE maxPlayers;
 
 	LoginPacket();
-	LoginPacket(const wstring& userName, int clientVersion, LevelType *pLevelType, int64_t seed, int gameType, char dimension, BYTE mapHeight, BYTE maxPlayers, char difficulty, INT m_multiplayerInstanceId, BYTE playerIndex, bool newSeaLevel, unsigned int uiGamePrivileges, int xzSize, int hellScale); // Server -> Client
+	LoginPacket(const wstring& userName, int clientVersion, LevelType *pLevelType, int64_t seed, int gameType, char dimension, BYTE mapHeight, BYTE maxPlayers, char difficulty, INT m_multiplayerInstanceId, BYTE playerIndex, bool newSeaLevel, unsigned int uiGamePrivileges, int xzSize, int hellScale, bool isHardcore = false); // Server -> Client
 	LoginPacket(const wstring& userName, int clientVersion, PlayerUID offlineXuid, PlayerUID onlineXuid, bool friendsOnlyUGC, DWORD ugcPlayersVersion, DWORD skinId, DWORD capeId, bool isGuest); // Client -> Server
 
 	virtual void read(DataInputStream *dis);

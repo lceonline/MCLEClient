@@ -26,12 +26,6 @@ public:
 
 	static bool IsInOfflineMode();
 
-	static std::vector<std::wstring> GetBannedUsersList();
-	static void SaveBannedUsersList(std::vector<std::wstring> bannedUsers);
-
 	static const std::string& GetAuthenticationToken();
 	static const std::string& GetUsername();
-
-	static void CheckForUpdates();
-
 };

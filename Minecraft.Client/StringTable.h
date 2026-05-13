@@ -17,8 +17,10 @@ private:
 
 	unordered_map<wstring, wstring> m_stringsMap;
 	vector<wstring> m_stringsVec;
+	wstring m_missingKeyFallback;
 
 	byteArray src;
+	wstring m_xmlRootPath;
 
 public:
 
@@ -59,6 +61,7 @@ public:
 // 	};
 
 	StringTable(void);
+	StringTable(const wstring &xmlRootPath);
 	StringTable(PBYTE pbData, DWORD dwSize);
 	~StringTable(void);
 	void ReloadStringTable();
@@ -67,6 +70,8 @@ public:
 
 	LPCWSTR getString(const wstring &id);
 	LPCWSTR getString(int id);
+	void setStringValue(const wstring &id, const wstring &value);
+	bool hasStringKey(const wstring &id) const;
 
 	//static LPCWSTR m_wchLocaleCode[LOCALE_COUNT];
 
@@ -75,6 +80,10 @@ public:
 private:
 	//wstring getLangId(DWORD dwLanguage=0);
 	void ProcessStringTableData(void);
+	void ProcessXmlStringTableData(const wstring &xmlRootPath);
+	void ProcessXmlDirectory(const wstring &directoryPath);
+	void ProcessXmlFile(const wstring &filePath);
+	void ProcessXmlFileLoose(const wstring &filePath);
 
 };
 

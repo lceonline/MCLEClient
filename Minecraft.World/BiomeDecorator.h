@@ -14,7 +14,9 @@ class BiomeDecorator
 	friend class TaigaBiome;
 	friend class MushroomIslandBiome;
 	friend class BeachBiome;
+	friend class SavannaBiome;
 	friend class JungleBiome;
+	friend class FlowerForestBiome;
 protected:
 	Level *level;
 	Random *random;
@@ -27,7 +29,7 @@ public:
 
 	void decorate(Level *level, Random *random, int xo, int zo);
 
-protected:
+public:
 	Feature *clayFeature;
 	Feature *sandFeature;
 	Feature *gravelFeature;
@@ -39,6 +41,9 @@ protected:
 	Feature *redStoneOreFeature;
 	Feature *diamondOreFeature;
 	Feature *lapisOreFeature;
+	Feature *graniteOreFeature;
+	Feature *dioriteOreFeature;
+	Feature *andesiteOreFeature;
 	Feature *yellowFlowerFeature;
 	Feature *roseFlowerFeature;
 	Feature *brownMushroomFeature;
@@ -47,7 +52,17 @@ protected:
 	Feature *reedsFeature;
 	Feature *cactusFeature;
 	Feature *waterlilyFeature;
+	Feature *blueOrchidFeature;
+	Feature *alliumFeature;
+	Feature *azureBluetFeature;
+	Feature *oxeyeDaisyFeature;
+	Feature *tulipRedFeature;
+	Feature *tulipOrangeFeature;
+	Feature *tulipWhiteFeature;
+	Feature *tulipPinkFeature;
+	Feature *doublePlantFeature;
 
+	int doublePlantCount;
 	int waterlilyCount;
 	int treeCount;
 	int flowerCount;
@@ -61,6 +76,10 @@ protected:
 	int clayCount;
 	int hugeMushrooms;
 	bool liquids;
+	int blueOrchidCount;
+	int alliumCount;
+	int azureBluetCount;
+	int oxeyeDaisyCount;
 
 	void _init();
 

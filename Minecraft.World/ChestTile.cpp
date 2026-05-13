@@ -24,11 +24,6 @@ ChestTile::~ChestTile()
 	delete random;
 }
 
-void ChestTile::updateDefaultShape()
-{
-	setShape(1 / 16.0f, 0, 1 / 16.0f, 15 / 16.0f, 14 / 16.0f, 15 / 16.0f);
-}
-
 bool ChestTile::isSolidRender(bool isServerLevel)
 {
 	return false;

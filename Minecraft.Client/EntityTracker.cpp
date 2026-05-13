@@ -21,6 +21,10 @@
 #include "../Minecraft.World/net.minecraft.world.level.chunk.h"
 #include "PlayerConnection.h"
 
+#ifdef _WINDOWS64
+extern bool g_Win64DedicatedServer;
+#endif
+
 EntityTracker::EntityTracker(ServerLevel *level)
 {
     this->level = level;
@@ -67,6 +71,7 @@ void EntityTracker::addEntity(shared_ptr<Entity> e)
 	else if (e->instanceof(eTYPE_EXPERIENCEORB)) addEntity(e, 16 * 10, 20, true);
 	else if (e->instanceof(eTYPE_ENDER_CRYSTAL)) addEntity(e, 16 * 16, INT_MAX, false);
 	else if (e->instanceof(eTYPE_ITEM_FRAME)) addEntity(e, 16 * 10, INT_MAX, false);
+	else if (e->instanceof(eTYPE_ARMORSTAND)) addEntity(e, 16 * 4, 1, true);
 }
 
 void EntityTracker::addEntity(shared_ptr<Entity> e, int range, int updateInterval)
@@ -139,32 +144,40 @@ void EntityTracker::tick()
 	// 4J Stu - If one player on a system is updated, then make sure they all are as they all have their
 	// range extended to include entities visible by any other player on the system
 	// Fix for #11194 - Gameplay: Host player and their split-screen avatars can become invisible and invulnerable to client.
-	MinecraftServer *server = MinecraftServer::getInstance();
-	for( unsigned int i = 0; i < server->getPlayers()->players.size(); i++ )
+	// NOTE: On dedicated servers, IsSameSystem() always returns false for remote
+	// players (no split-screen), so this loop does nothing. Skip it entirely to
+	// avoid the O(players * movedPlayers) overhead.
+#ifdef _WINDOWS64
+	if (!g_Win64DedicatedServer)
+#endif
 	{
-		shared_ptr<ServerPlayer> ep = server->getPlayers()->players[i];			
-		if( ep->dimension != level->dimension->id ) continue;
-
-		if( ep->connection == nullptr ) continue;
-		INetworkPlayer *thisPlayer = ep->connection->getNetworkPlayer();
-		if( thisPlayer == nullptr ) continue;
-
-		bool addPlayer = false;
-		for (unsigned int j = 0; j < movedPlayers.size(); j++)
+		MinecraftServer *server = MinecraftServer::getInstance();
+		for( unsigned int i = 0; i < server->getPlayers()->players.size(); i++ )
 		{
-			shared_ptr<ServerPlayer> sp = movedPlayers[j];
+			shared_ptr<ServerPlayer> ep = server->getPlayers()->players[i];
+			if( ep->dimension != level->dimension->id ) continue;
 
-			if( sp == ep ) break;
+			if( ep->connection == nullptr ) continue;
+			INetworkPlayer *thisPlayer = ep->connection->getNetworkPlayer();
+			if( thisPlayer == nullptr ) continue;
 
-			if(sp->connection == nullptr) continue;
-			INetworkPlayer *otherPlayer = sp->connection->getNetworkPlayer();
-			if( otherPlayer != nullptr && thisPlayer->IsSameSystem(otherPlayer) )
+			bool addPlayer = false;
+			for (unsigned int j = 0; j < movedPlayers.size(); j++)
 			{
-				addPlayer = true;
-				break;
+				shared_ptr<ServerPlayer> sp = movedPlayers[j];
+
+				if( sp == ep ) break;
+
+				if(sp->connection == nullptr) continue;
+				INetworkPlayer *otherPlayer = sp->connection->getNetworkPlayer();
+				if( otherPlayer != nullptr && thisPlayer->IsSameSystem(otherPlayer) )
+				{
+					addPlayer = true;
+					break;
+				}
 			}
-		}		
-		if( addPlayer ) movedPlayers.push_back( ep );
+			if( addPlayer ) movedPlayers.push_back( ep );
+		}
 	}
 
     for (unsigned int i = 0; i < movedPlayers.size(); i++)

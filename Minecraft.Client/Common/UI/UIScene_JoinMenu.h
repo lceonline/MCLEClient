@@ -62,16 +62,6 @@ private:
 	bool m_friendInfoUpdatedOK;
 	bool m_friendInfoUpdatedERROR;
 
-#ifdef _WINDOWS64
-	int m_serverIndex; // Index in servers.db, -1 if not a saved server
-	enum eEditServerPhase { eEditServer_Idle, eEditServer_IP, eEditServer_Port, eEditServer_Name };
-	eEditServerPhase m_editServerPhase;
-	wstring m_editServerIP;
-	wstring m_editServerPort;
-	int m_editServerButtonIndex;
-	int m_deleteServerButtonIndex;
-#endif
-
 public:
 	UIScene_JoinMenu(int iPad, void *initData, UILayer *parentLayer);
 	void tick();

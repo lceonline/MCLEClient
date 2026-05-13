@@ -32,6 +32,11 @@ class Merchant;
 class PlayerEnderChestContainer;
 class GameType;
 class Scoreboard;
+struct EnchantmentEntry {
+	int level;
+	int id = -3;
+};
+
 
 class Player : public LivingEntity, public CommandSender, public ScoreHolder
 {
@@ -56,6 +61,8 @@ private:
 
 protected:
 	static const int FLAG_HIDE_CAPE = 1;
+	static const int FLAG_ELYTRA_FLYING = 2; // bit 2 of DATA_PLAYER_FLAGS_ID
+
 
 public:
 	shared_ptr<Inventory> inventory;
@@ -66,12 +73,28 @@ private:
 public:
 	AbstractContainerMenu *inventoryMenu;
 	AbstractContainerMenu *containerMenu;
+	int enchantmentSeed = 0;
+	vector<EnchantmentEntry> enchantmentEntries = vector<EnchantmentEntry>(3);
 
 protected:
 	FoodData foodData;
 	int jumpTriggerTime;
 
 public:
+	int ticksElytraFlying;
+	float rotateElytraX; 
+	float rotateElytraY;
+	float rotateElytraZ;
+	float m_elytraImpactYd;    
+	bool  m_wasElytraFlying;   
+	int   m_elytraFallProtectTicks; 
+	bool isElytraFlying();
+	virtual void setElytraFlying(bool flying);
+
+	virtual void onElytraKineticDamage(float damage);
+
+public:
+
 	BYTE userType;
 	float oBob, bob;
 
@@ -120,6 +143,13 @@ public:
 
 	int experienceLevel, totalExperience;
 	float experienceProgress;
+
+	bool fk_hasDeathState = false;
+	bool fk_deathKeepInventory = false;
+	bool fk_deathKeepLevel = false;
+	int fk_deathNewExp = 0;
+	int fk_deathNewLevel = 0;
+	bool fk_sleepingIgnored = false;
 
 	// 4J Stu - Made protected so that we can access it from MultiPlayerLocalPlayer
 protected:
@@ -252,7 +282,7 @@ public:
 	virtual bool openBrewingStand(shared_ptr<BrewingStandTileEntity> brewingStand); // 4J - added bool return
 	virtual bool openBeacon(shared_ptr<BeaconTileEntity> beacon);
 	virtual bool openTrading(shared_ptr<Merchant> traderTarget, const wstring &name); // 4J - added bool return
-	virtual void openItemInstanceGui(shared_ptr<ItemInstance> itemInstance);
+	virtual void openItemInstanceGui(shared_ptr<ItemInstance> itemInstance, shared_ptr<Player> player);
 	virtual bool interact(shared_ptr<Entity> entity);
 	virtual shared_ptr<ItemInstance> getSelectedItem();
 	void removeSelectedItem();
@@ -337,6 +367,7 @@ private:
 	bool m_bAwardedOnARail;
 
 protected:
+	virtual void checkFallDamage(double ya, bool onGround) override;
 	virtual void causeFallDamage(float distance);
 
 public:
@@ -489,6 +520,7 @@ private:
 
 	unsigned int getPlayerGamePrivilege(EPlayerGamePrivileges privilege);
 public:
+	static _SkinAdjustments getSkinAdjustmentsById(unsigned int skinId);
 	unsigned int getAllPlayerGamePrivileges() { return getPlayerGamePrivilege(ePlayerGamePrivilege_All); }
 
 	static unsigned int getPlayerGamePrivilege(unsigned int uiGamePrivileges, EPlayerGamePrivileges privilege);
@@ -508,6 +540,7 @@ public:
 	bool hasInvisiblePrivilege();
 	bool hasInvulnerablePrivilege();
 	bool isModerator();
+	bool isSpectator();
 
 	static void enableAllPlayerPrivileges(unsigned int &uigamePrivileges, bool enable);
 	void enableAllPlayerPrivileges(bool enable);

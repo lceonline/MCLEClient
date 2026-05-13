@@ -22,3 +22,8 @@ const int Facing::STEP_Z[6] =
 };
 
 const wstring Facing::NAMES[] = {L"DOWN", L"UP", L"NORTH", L"SOUTH", L"WEST", L"EAST"};
+
+int Facing::getOpposite(int facing)
+{
+	return OPPOSITE_FACING[facing];
+}

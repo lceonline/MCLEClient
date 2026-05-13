@@ -27,8 +27,15 @@ UIScene_InGameInfoMenu::UIScene_InGameInfoMenu(int iPad, void *initData, UILayer
 		{
 			PlayerInfo *info = BuildPlayerInfo(player);
 
+			// Skip the dedicated server's phantom host entry (slot 0, empty name)
+			if (info->m_smallId == 0 && info->m_name.empty())
+			{
+				delete info;
+				continue;
+			}
+
 			m_players.push_back(info);
-			m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus); 
+			m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus);
 		}
 	}
 
@@ -174,8 +181,15 @@ void UIScene_InGameInfoMenu::handleReload()
 		{
 			PlayerInfo *info = BuildPlayerInfo(player);
 
+			// Skip the dedicated server's phantom host entry (slot 0, empty name)
+			if (info->m_smallId == 0 && info->m_name.empty())
+			{
+				delete info;
+				continue;
+			}
+
 			m_players.push_back(info);
-			m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus); 
+			m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus);
 		}
 	}
 
@@ -202,23 +216,22 @@ void UIScene_InGameInfoMenu::tick()
 {
 	UIScene::tick();
 
-	// Update players by index
+	// Update players by their stored smallId (not sequential index, which can mismatch
+	// when entries like the dedicated server host are filtered from the UI list)
 	for(DWORD i = 0; i < m_players.size(); ++i)
 	{
-		INetworkPlayer *player = g_NetworkManager.GetPlayerByIndex( i );
+		INetworkPlayer *player = g_NetworkManager.GetPlayerBySmallId( m_players[i]->m_smallId );
 
 		if(player != nullptr)
 		{
 			PlayerInfo *info = BuildPlayerInfo(player);
-
-			m_players[i]->m_smallId = info->m_smallId;
 
 			if(info->m_voiceStatus != m_players[i]->m_voiceStatus)
 			{
 				m_players[i]->m_voiceStatus = info->m_voiceStatus;
 				m_playerList.setVOIPIcon(i, info->m_voiceStatus);
 			}
-			
+
 			if(info->m_colorState != m_players[i]->m_colorState)
 			{
 				m_players[i]->m_colorState = info->m_colorState;
@@ -424,11 +437,19 @@ void UIScene_InGameInfoMenu::OnPlayerChanged(void *callbackParam, INetworkPlayer
 	// If the player is joining
 	if(!leaving)
 	{
+		PlayerInfo *info = scene->BuildPlayerInfo(pPlayer);
+
+		// Skip the dedicated server's phantom host entry (slot 0, empty name)
+		if (pPlayer->GetSmallId() == 0 && info->m_name.empty())
+		{
+			delete info;
+			return;
+		}
+
 		app.DebugPrintf("<UIScene_InGameInfoMenu::OnPlayerChanged> Player \"%ls\" not found, adding\n", pPlayer->GetOnlineName());
 
-		PlayerInfo *info = scene->BuildPlayerInfo(pPlayer);
 		scene->m_players.push_back(info);
-		
+
 		// Note that the tick updates buttons every tick so it's only really important that we
 		// add the button (not the order or content)
 		scene->m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus);
@@ -491,7 +512,7 @@ UIScene_InGameInfoMenu::PlayerInfo *UIScene_InGameInfoMenu::BuildPlayerInfo(INet
 	}
 
 	info->m_voiceStatus = voiceStatus;
-	info->m_colorState = app.GetPlayerColour(info->m_smallId);
+	info->m_colorState = app.GetPlayerMapIconByName(player->GetOnlineName());
 	info->m_name = playerName;
 
 	return info;

@@ -1,28 +1,40 @@
 #pragma once
-
-#include "Tile.h"
 #include "HalfSlabTile.h"
 
 class Player;
 
-class WoodSlabTile : HalfSlabTile
-{	
-
-	friend class Tile;
+class WoodSlabTile : public HalfSlabTile
+{
+    friend class Tile;
 public:
-	static const int TYPE_MASK = 7;
-	static const int TOP_SLOT_BIT = 8;
-	static const int SLAB_NAMES_LENGTH = 4;
-	static const unsigned int SLAB_NAMES[SLAB_NAMES_LENGTH];
+    static const int SLAB_NAMES_LENGTH = 6;
+    static const unsigned int SLAB_NAMES[SLAB_NAMES_LENGTH];
 
-	WoodSlabTile(int id, bool fullSize);
-	virtual Icon *getTexture(int face, int data);
-	virtual int getResource(int data, Random *random, int playerBonusLevel);
-	virtual int getAuxName(int auxValue); 
+public:
+    WoodSlabTile(int id); 
 
-	virtual shared_ptr<ItemInstance> getSilkTouchItemInstance(int data);
-	void registerIcons(IconRegister *iconRegister);
-	
-	// 4J added
-	virtual unsigned int getDescriptionId(int iData = -1);
+    virtual int isFullSize() = 0;
+
+    virtual Icon        *getTexture(int face, int data) override;
+    virtual int          getResource(int data, Random *random, int playerBonusLevel) override;
+    virtual int          getAuxName(int auxValue) override;
+    virtual void         registerIcons(IconRegister *iconRegister) override;
+
+protected:
+    virtual shared_ptr<ItemInstance> getSilkTouchItemInstance(int data) override;
+};
+
+
+class HalfWoodSlabTile : public WoodSlabTile
+{
+public:
+    HalfWoodSlabTile(int id) : WoodSlabTile(id) { DerivedInit(); }
+    virtual int isFullSize() override { return 0; }
+};
+
+class FullWoodSlabTile : public WoodSlabTile
+{
+public:
+    FullWoodSlabTile(int id) : WoodSlabTile(id) { DerivedInit(); }
+    virtual int isFullSize() override { return 1; }
 };

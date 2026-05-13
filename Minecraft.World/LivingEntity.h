@@ -24,12 +24,12 @@ protected:
 	// 4J - added for common ctor code
 	void _init();
 public:
-	// 4J-PB - added to replace (e instanceof Type), avoiding dynamic casts
-	eINSTANCEOF GetType()						{ return eTYPE_LIVINGENTITY;}
-	static Entity *create(Level *level) { return nullptr; }
+	
+	eINSTANCEOF GetType() { return eTYPE_LIVINGENTITY; }
+	static Entity* create(Level* level) { return nullptr; }
 
 private:
-	static AttributeModifier *SPEED_MODIFIER_SPRINTING;
+	static AttributeModifier* SPEED_MODIFIER_SPRINTING;
 
 public:
 	static const int SLOT_WEAPON = 0;
@@ -51,9 +51,9 @@ public:
 	static const int DATA_ARROW_COUNT_ID = 9;
 
 private:
-	BaseAttributeMap *attributes;
-	CombatTracker *combatTracker;
-	unordered_map<int, MobEffectInstance *> activeEffects;
+	BaseAttributeMap* attributes;
+	CombatTracker* combatTracker;
+	unordered_map<int, MobEffectInstance*> activeEffects;
 	ItemInstanceArray lastEquipment;
 
 public:
@@ -80,8 +80,6 @@ public:
 	float yHeadRot, yHeadRotO;
 	float flyingSpeed;
 
-	int nametagColor;
-
 protected:
 	shared_ptr<Player> lastHurtByPlayer;
 	int lastHurtByPlayerTime;
@@ -93,6 +91,11 @@ protected:
 	int deathScore;
 	float lastHurt;
 	bool jumping;
+
+	// DO NOT ADD IFDEF HERE!!
+	// causes memroy layout disagreement. Not good
+	int fourKitDeathExp;
+	bool fourKitDeathExpSet;
 
 public:
 	float xxa;
@@ -140,7 +143,7 @@ protected:
 	virtual bool isAlwaysExperienceDropper();
 
 public:
-	virtual Random *getRandom();
+	virtual Random* getRandom();
 	virtual shared_ptr<LivingEntity> getLastHurtByMob();
 	virtual int getLastHurtByMobTimestamp();
 	virtual void setLastHurtByMob(shared_ptr<LivingEntity> hurtBy);
@@ -148,37 +151,37 @@ public:
 	virtual int getLastHurtMobTimestamp();
 	virtual void setLastHurtMob(shared_ptr<Entity> target);
 	virtual int getNoActionTime();
-	virtual void addAdditonalSaveData(CompoundTag *entityTag);
-	virtual void readAdditionalSaveData(CompoundTag *tag);
+	virtual void addAdditonalSaveData(CompoundTag* entityTag);
+	virtual void readAdditionalSaveData(CompoundTag* tag);
 
 protected:
 	virtual void tickEffects();
 
 public:
 	virtual void removeAllEffects();
-	virtual vector<MobEffectInstance *> *getActiveEffects();
+	virtual vector<MobEffectInstance*>* getActiveEffects();
 	virtual bool hasEffect(int id);
-	virtual bool hasEffect(MobEffect *effect);
-	virtual MobEffectInstance *getEffect(MobEffect *effect);
-	virtual void addEffect(MobEffectInstance *newEffect);
-	virtual void addEffectNoUpdate(MobEffectInstance *newEffect); // 4J added
-	virtual bool canBeAffected(MobEffectInstance *newEffect);
+	virtual bool hasEffect(MobEffect* effect);
+	virtual MobEffectInstance* getEffect(MobEffect* effect);
+	virtual void addEffect(MobEffectInstance* newEffect);
+	virtual void addEffectNoUpdate(MobEffectInstance* newEffect); // 4J added
+	virtual bool canBeAffected(MobEffectInstance* newEffect);
 	virtual bool isInvertedHealAndHarm();
 	virtual  void removeEffectNoUpdate(int effectId);
 	virtual void removeEffect(int effectId);
 
 protected:
-	virtual void onEffectAdded(MobEffectInstance *effect);
-	virtual void onEffectUpdated(MobEffectInstance *effect, bool doRefreshAttributes);
-	virtual void onEffectRemoved(MobEffectInstance *effect);
+	virtual void onEffectAdded(MobEffectInstance* effect);
+	virtual void onEffectUpdated(MobEffectInstance* effect, bool doRefreshAttributes);
+	virtual void onEffectRemoved(MobEffectInstance* effect);
 
 public:
 	virtual void heal(float heal);
 	virtual float getHealth();
 	virtual void setHealth(float health);
-	virtual bool hurt(DamageSource *source, float dmg);
+	virtual bool hurt(DamageSource* source, float dmg);
 	virtual void breakItem(shared_ptr<ItemInstance> itemInstance);
-	virtual void die(DamageSource *source);
+	virtual void die(DamageSource* source);
 
 protected:
 	virtual void dropEquipment(bool byPlayer, int playerBonusLevel);
@@ -205,12 +208,12 @@ public:
 
 protected:
 	virtual void hurtArmor(float damage);
-	virtual float getDamageAfterArmorAbsorb(DamageSource *damageSource, float damage);
-	virtual float getDamageAfterMagicAbsorb(DamageSource *damageSource, float damage);
-	virtual void actuallyHurt(DamageSource *source, float dmg);
+	virtual float getDamageAfterArmorAbsorb(DamageSource* damageSource, float damage);
+	virtual float getDamageAfterMagicAbsorb(DamageSource* damageSource, float damage);
+	virtual void actuallyHurt(DamageSource* source, float dmg);
 
 public:
-	virtual CombatTracker *getCombatTracker();
+	virtual CombatTracker* getCombatTracker();
 	virtual shared_ptr<LivingEntity> getKillCredit();
 	virtual float getMaxHealth();
 	virtual int getArrowCount();
@@ -228,8 +231,8 @@ protected:
 	virtual void updateSwingTime();
 
 public:
-	virtual AttributeInstance *getAttribute(Attribute *attribute);
-	virtual BaseAttributeMap *getAttributes();
+	virtual AttributeInstance* getAttribute(Attribute* attribute);
+	virtual BaseAttributeMap* getAttributes();
 	virtual MobType getMobType();
 
 	virtual shared_ptr<ItemInstance> getCarriedItem() = 0;
@@ -240,7 +243,7 @@ public:
 
 	virtual ItemInstanceArray getEquipmentSlots() = 0;
 
-	virtual Icon *getItemInHandIcon(shared_ptr<ItemInstance> item, int layer);
+	virtual Icon* getItemInHandIcon(shared_ptr<ItemInstance> item, int layer);
 
 protected:
 	virtual float getSoundVolume();
@@ -252,7 +255,7 @@ public:
 
 protected:
 	virtual void findStandUpPosition(shared_ptr<Entity> vehicle);
-	
+
 public:
 	virtual bool shouldShowName();
 
@@ -300,12 +303,12 @@ public:
 
 
 public:
-	virtual Vec3 *getLookAngle();
-	virtual Vec3 *getViewVector(float a);
+	virtual Vec3* getLookAngle();
+	virtual Vec3* getViewVector(float a);
 	virtual float getAttackAnim(float a);
-	virtual Vec3 *getPos(float a);
-	virtual HitResult *pick(double range, float a);
-	virtual bool isEffectiveAi();
+	virtual Vec3* getPos(float a);
+	virtual HitResult* pick(double range, float a);
+	virtual bool isEffectiveAi()const;
 
 	virtual bool isPickable();
 	virtual bool isPushable();
@@ -320,7 +323,13 @@ public:
 
 	virtual float getAbsorptionAmount();
 	virtual void setAbsorptionAmount(float absorptionAmount);
-	virtual Team *getTeam();
+	virtual Team* getTeam();
 	virtual bool isAlliedTo(shared_ptr<LivingEntity> other);
-	virtual bool isAlliedTo(Team *other);
+	virtual bool isAlliedTo(Team* other);
+
+public:
+	virtual float getEyeHeight();
+	virtual Vec3* getPositionEyes(float partialTicks);
+	virtual HitResult* rayTrace(double blockReachDistance, float partialTicks);
+	
 };

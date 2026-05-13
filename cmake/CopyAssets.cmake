@@ -7,8 +7,8 @@ function(setup_asset_folder_copy TARGET_NAME ASSET_FOLDER_PAIRS)
     "*.xml" "*.lang" 
     "*.bat" "*.cmd"
     "*.msscmp" "*.binka" # Old audio formats
-    "*.swf" # These are built into the .arc
-    "*.resx" "*.loc"
+    #"*.swf"
+    "*.resx" #"*.loc"
     "*.wav" # Unsupported audio format
     "*.xui" "*.xgs"
     "*.xwb" "*.xsb"
@@ -17,24 +17,24 @@ function(setup_asset_folder_copy TARGET_NAME ASSET_FOLDER_PAIRS)
 
   # Global folder exclusions applied to every folder copy
   set(ASSET_EXCLUDE_FOLDERS
-    "Graphics"
+    #"Graphics"
     "Gamerules"
   )
 
-  # Exclude platform-specific arc media files
-  set(PLATFORM_MEDIA_FILES
-    "MediaWindows64.arc"
-    "MediaDurango.arc"
-    "MediaOrbis.arc"
-    "MediaPS3.arc"
-    "MediaPSVita.arc"
-    "MediaXbox.arc" # Seems to be missing?
+  # Exclude platform-specific media folders
+  set(PLATFORM_MEDIA_FOLDERS
+    "MediaWindows64"
+    "MediaDurango"
+    "MediaOrbis"
+    "MediaPS3"
+    "MediaPSVita"
+    "MediaXbox" # Seems to be missing?
   )
 
-  # Exclude all platform media files except the one for the current platform
-  foreach(media_file IN LISTS PLATFORM_MEDIA_FILES)
-    if(NOT media_file MATCHES "Media${PLATFORM_NAME}\\.arc")
-      list(APPEND ASSET_EXCLUDE_FILES "${media_file}")
+  # Exclude all platform media folders except the one for the current platform
+  foreach(media_folder IN LISTS PLATFORM_MEDIA_FOLDERS)
+    if(NOT media_folder MATCHES "Media${PLATFORM_NAME}")
+      list(APPEND ASSET_EXCLUDE_FOLDERS "${media_folder}")
     endif()
   endforeach()
 

@@ -38,7 +38,7 @@ public:
 	CXuiControl m_pHSlotsCraftingTableCursors[m_iMaxHSlotC];
 	CXuiControl *m_pCursors;
 	CXuiControl m_hCraftIngredientA[m_iIngredients3x3SlotC];
-	CXuiControl m_hCraftIngredientDescA[4]; // Max ingredients is 4 for bread
+	CXuiControl m_hCraftIngredientDescA[9]; // Max ingredients is 9
 	CXuiControl m_hCraftOutput;
 	CXuiControl m_sceneGroup;
 
@@ -134,6 +134,11 @@ public:
 				MAP_CONTROL(IDC_Ingredient2,m_hCraftIngredientDescA[1])
 				MAP_CONTROL(IDC_Ingredient3,m_hCraftIngredientDescA[2])
 				MAP_CONTROL(IDC_Ingredient4,m_hCraftIngredientDescA[3])
+				MAP_CONTROL(L"Ingredient5",m_hCraftIngredientDescA[4])
+				MAP_CONTROL(L"Ingredient6",m_hCraftIngredientDescA[5])
+				MAP_CONTROL(L"Ingredient7",m_hCraftIngredientDescA[6])
+				MAP_CONTROL(L"Ingredient8",m_hCraftIngredientDescA[7])
+				MAP_CONTROL(L"Ingredient9",m_hCraftIngredientDescA[8])
 
 				MAP_CONTROL(IDC_CraftingOutputRed,m_hCraftOutput)
 			END_MAP_CHILD_CONTROLS()
@@ -168,7 +173,7 @@ private:
 
 	CXuiCtrlCraftIngredientSlot *m_pCraftingOutput;
 	CXuiCtrlCraftIngredientSlot *m_pCraftingIngredientA[m_iIngredients3x3SlotC];
-	CXuiCtrlCraftIngredientSlot *m_pCraftIngredientDescA[4];
+	CXuiCtrlCraftIngredientSlot *m_pCraftIngredientDescA[9];
 	CXuiCtrlMinecraftSlot *m_pHSlotsBrushImageControl[m_iMaxHSlotC];
 	CXuiCtrlMinecraftSlot *m_pVSlotsBrushImageControl[m_iMaxDisplayedVSlotC];
 	CXuiControl *GroupTypeIconA[Recipy::eGroupType_Max];

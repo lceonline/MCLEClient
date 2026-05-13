@@ -22,16 +22,16 @@ public:
 	static const int C_LOWER_DATA_MASK = 7;
 	static const int C_IS_UPPER_MASK = 8;
 	static const int C_RIGHT_HINGE_MASK = 16;
+	wstring doorType;
 
 private:
 	static const int DOOR_TILE_TEXTURE_COUNT = 4;
-	static const wstring TEXTURES[];
 	int texBase;
 	Icon *iconTop[2];
 	Icon *iconBottom[2];
 
 protected:
-	DoorTile(int id, Material *material);
+	DoorTile(int id, Material *material, const wstring& doorType);
 public:
 	virtual Icon *getTexture(int face, int data);
 	virtual Icon *getTexture(LevelSource *level, int x, int y, int z, int face);

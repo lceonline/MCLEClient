@@ -16,9 +16,9 @@ bool HalfTransparentTile::isSolidRender(bool isServerLevel)
 
 bool HalfTransparentTile::shouldRenderFace(LevelSource *level, int x, int y, int z, int face)
 {
-    int id = level->getTile(x, y, z);
-    if (!allowSame && id == this->id) return false;
-    return Tile::shouldRenderFace(level, x, y, z, face);
+	int id = level->getTile(x, y, z);
+	if (!allowSame && id == this->id) return false;
+	return Tile::shouldRenderFace(level, x, y, z, face);
 }
 
 bool HalfTransparentTile::blocksLight()

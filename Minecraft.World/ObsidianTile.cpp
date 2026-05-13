@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "ObsidianTile.h"
 
-ObsidianTile::ObsidianTile(int id) : StoneTile(id)
+ObsidianTile::ObsidianTile(int id) : Tile(id, Material::stone)
 {
 }
 

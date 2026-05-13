@@ -2,6 +2,10 @@
 #include "net.minecraft.world.level.h"
 #include "LiquidTileDynamic.h"
 #include "net.minecraft.world.level.dimension.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 LiquidTileDynamic::LiquidTileDynamic(int id, Material *material) : LiquidTile(id, material)
 {
@@ -156,8 +160,8 @@ void LiquidTileDynamic::mainTick(Level *level, int x, int y, int z, Random *rand
 			}
 		}
 
-		if (depth >= 8) trySpreadTo(level, x, y - 1, z, depth);
-		else trySpreadTo(level, x, y - 1, z, depth + 8);
+		if (depth >= 8) trySpreadTo(level, x, y - 1, z, x, y, z, depth);
+		else trySpreadTo(level, x, y - 1, z, x, y, z, depth + 8);
 	}
 	else if (depth >= 0 && (depth == 0 || isWaterBlocking(level, x, y - 1, z)))
 	{
@@ -168,17 +172,31 @@ void LiquidTileDynamic::mainTick(Level *level, int x, int y, int z, Random *rand
 			neighbor = 1;
 		}
 		if (neighbor >= 8) return;
-		if (spreads[0]) trySpreadTo(level, x - 1, y, z, neighbor);
-		if (spreads[1]) trySpreadTo(level, x + 1, y, z, neighbor);
-		if (spreads[2]) trySpreadTo(level, x, y, z - 1, neighbor);
-		if (spreads[3]) trySpreadTo(level, x, y, z + 1, neighbor);
+		if (spreads[0]) trySpreadTo(level, x - 1, y, z, x, y, z, neighbor);
+		if (spreads[1]) trySpreadTo(level, x + 1, y, z, x, y, z, neighbor);
+		if (spreads[2]) trySpreadTo(level, x, y, z - 1, x, y, z, neighbor);
+		if (spreads[3]) trySpreadTo(level, x, y, z + 1, x, y, z, neighbor);
 	}
 }
 
-void LiquidTileDynamic::trySpreadTo(Level *level, int x, int y, int z, int neighbor)
+void LiquidTileDynamic::trySpreadTo(Level *level, int x, int y, int z, int fromX, int fromY, int fromZ, int neighbor)
 {
 	if (canSpreadTo(level, x, y, z))
 	{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		{
+			int face = 6; // SELF
+			int dx = x - fromX, dy = y - fromY, dz = z - fromZ;
+			if (dy < 0)      face = 0; // DOWN
+			else if (dy > 0) face = 1; // UP
+			else if (dz < 0) face = 2; // NORTH
+			else if (dz > 0) face = 3; // SOUTH
+			else if (dx < 0) face = 4; // WEST
+			else if (dx > 0) face = 5; // EAST
+			if (FourKitBridge::FireBlockFromTo(level->dimension->id, fromX, fromY, fromZ, x, y, z, face))
+				return;
+		}
+#endif
 		{
 			int old = level->getTile(x, y, z);
 			if (old > 0)

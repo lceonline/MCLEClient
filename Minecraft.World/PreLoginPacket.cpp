@@ -6,7 +6,7 @@
 
 
 
-PreLoginPacket::PreLoginPacket() 
+PreLoginPacket::PreLoginPacket()
 {
 	loginKey = L"";
 	m_playerXuids = nullptr;
@@ -20,7 +20,7 @@ PreLoginPacket::PreLoginPacket()
 	m_netcodeVersion = 0;
 }
 
-PreLoginPacket::PreLoginPacket(wstring userName) 
+PreLoginPacket::PreLoginPacket(wstring userName)
 {
 	this->loginKey = userName;
 	m_playerXuids = nullptr;
@@ -34,7 +34,7 @@ PreLoginPacket::PreLoginPacket(wstring userName)
 	m_netcodeVersion = 0;
 }
 
-PreLoginPacket::PreLoginPacket(wstring userName, PlayerUID *playerXuids, DWORD playerCount, BYTE friendsOnlyBits, DWORD ugcPlayersVersion,char *pszUniqueSaveName, DWORD serverSettings, BYTE hostIndex, DWORD texturePackId) 
+PreLoginPacket::PreLoginPacket(wstring userName, PlayerUID *playerXuids, DWORD playerCount, BYTE friendsOnlyBits, DWORD ugcPlayersVersion,char *pszUniqueSaveName, DWORD serverSettings, BYTE hostIndex, DWORD texturePackId)
 {
 	this->loginKey = userName;
 	m_playerXuids = playerXuids;

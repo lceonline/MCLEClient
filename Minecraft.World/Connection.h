@@ -54,6 +54,7 @@ private:
 
 	queue<shared_ptr<Packet> > incoming;			// 4J - was using synchronizedList...
 	CRITICAL_SECTION incoming_cs;		// ... now has this critical section
+	queue<std::pair<unsigned char*, int>> outgoingRaw;			            // 4J - was using synchronizedList - but don't think it is required as usage is wrapped in writeLock critical section
 	queue<shared_ptr<Packet> > outgoing;			// 4J - was using synchronizedList - but don't think it is required as usage is wrapped in writeLock critical section
 	queue<shared_ptr<Packet> > outgoing_slow;		// 4J - was using synchronizedList - but don't think it is required as usage is wrapped in writeLock critical section
 	
@@ -76,6 +77,7 @@ private:
 
 	int noInputTicks;
 	int estimatedRemaining;
+	int estimatedRemainingRaw;
 
 	int tickCount; // 4J Added
 
@@ -99,6 +101,7 @@ public:
 
 	void setListener(PacketListener *packetListener);
 	void send(shared_ptr<Packet> packet);
+	void send(unsigned char *buffer, int size);
 
 public:
 	void queueSend(shared_ptr<Packet> packet);

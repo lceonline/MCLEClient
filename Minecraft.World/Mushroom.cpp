@@ -2,7 +2,12 @@
 #include "net.minecraft.world.level.h"
 #include "net.minecraft.world.level.levelgen.feature.h"
 #include "net.minecraft.world.h"
+#include "Dimension.h"
 #include "Mushroom.h"
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 Mushroom::Mushroom(int id) : Bush(id)
 {
@@ -48,6 +53,9 @@ void Mushroom::tick(Level *level, int x, int y, int z, Random *random)
 
 				if (level->isEmptyTile(x2, y2, z2) && canSurvive(level, x2, y2, z2))
 				{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+					if (!FourKitBridge::FireBlockSpread(level->dimension->id, x2, y2, z2, x, y, z, id, 0))
+#endif
 					level->setTileAndData(x2, y2, z2, id, 0, UPDATE_CLIENTS);
 				}
 	}
@@ -71,8 +79,7 @@ bool Mushroom::canSurvive(Level *level, int x, int y, int z)
 
 	return below == Tile::mycel_Id || (level->getDaytimeRawBrightness(x, y, z) < 13 && mayPlaceOn(below));
 }
-
-bool Mushroom::growTree(Level *level, int x, int y, int z, Random *random)
+bool Mushroom::growTree(Level *level, int x, int y, int z, Random *random, bool naturalGrowth, int entityId)
 {
 	int data = level->getData(x, y, z);
 
@@ -87,6 +94,13 @@ bool Mushroom::growTree(Level *level, int x, int y, int z, Random *random)
 	{
 		f = new HugeMushroomFeature(1);
 	}
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	if (FourKitBridge::FireStructureGrow(level->dimension->id, x, y, z, (id == Tile::mushroom_brown_Id ? 6 : 7), !naturalGrowth, entityId)) {
+		if (f != nullptr) delete f;
+		f = nullptr;
+	}
+#endif
 
 	if (f == nullptr || !f->place(level, random, x, y, z))
 	{

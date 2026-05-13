@@ -27,7 +27,7 @@ void LadderTile::updateShape(LevelSource *level, int x, int y, int z, int forceD
 void LadderTile::setShape(int data)
 {
 	int dir = data;
-	float r = 2 / 16.0f;
+	float r = 3 / 16.0f;
 
 	if (dir == 2) setShape(0, 0, 1 - r, 1, 1, 1);
 	if (dir == 3) setShape(0, 0, 0, 1, 1, r);

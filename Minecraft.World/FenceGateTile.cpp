@@ -2,6 +2,7 @@
 #include "FenceGateTile.h"
 #include "AABB.h"
 #include "net.minecraft.world.level.h"
+#include "net.minecraft.world.h"
 #include "net.minecraft.h"
 #include "LevelEvent.h"
 
@@ -11,7 +12,7 @@ FenceGateTile::FenceGateTile(int id) : DirectionalTile(id, Material::wood, isSol
 
 Icon *FenceGateTile::getTexture(int face, int data)
 {
-	return Tile::wood->getTexture(face);
+	return icon;
 }
 
 bool FenceGateTile::mayPlace(Level *level, int x, int y, int z)
@@ -19,6 +20,8 @@ bool FenceGateTile::mayPlace(Level *level, int x, int y, int z)
 	if (!level->getMaterial(x, y - 1, z)->isSolid()) return false;
 	return Tile::mayPlace(level, x, y, z);
 }
+
+
 
 AABB *FenceGateTile::getAABB(Level *level, int x, int y, int z)
 {
@@ -139,7 +142,7 @@ bool FenceGateTile::isOpen(int data)
 
 void FenceGateTile::registerIcons(IconRegister *iconRegister)
 {
-	// None
+	icon = iconRegister->registerIcon(getIconName());
 }
 
 bool FenceGateTile::shouldRenderFace(LevelSource *level, int x, int y, int z, int face)

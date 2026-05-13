@@ -25,12 +25,12 @@ void VillagerZombieModel::_init(float g, float yOffset, bool isArmor)
 	head->compile(1.0f/16.0f);
 }
 
-VillagerZombieModel::VillagerZombieModel() : HumanoidModel(0, 0, 64, 64)
+VillagerZombieModel::VillagerZombieModel() : HumanoidModel(0, 0, 64, 64, false, true, true)
 {
 	_init(0, 0, false);
 }
 
-VillagerZombieModel::VillagerZombieModel(float g, float yOffset, bool isArmor) : HumanoidModel(g, 0, 64, isArmor ? 32 : 64)
+VillagerZombieModel::VillagerZombieModel(float g, float yOffset, bool isArmor) : HumanoidModel(g, 0, 64, isArmor ? 32 : 64 , false, true, isArmor ? true : false)
 {
 	_init(g, yOffset, isArmor);
 }

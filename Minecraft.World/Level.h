@@ -64,7 +64,7 @@ public:
 
 public:
 	static const int MAX_XBOX_BOATS = 60;										// Max number of boats
-	static const int MAX_CONSOLE_MINECARTS = 60;
+	static const int MAX_CONSOLE_MINECARTS = 250;
 	static const int MAX_DISPENSABLE_FIREBALLS = 300;
 	static const int MAX_DISPENSABLE_PROJECTILES = 400;
 
@@ -209,7 +209,7 @@ public:
 	bool reallyHasChunkAt(int x, int y, int z);									// 4J added
 	bool reallyHasChunksAt(int x, int y, int z, int r);							// 4J added
 	bool reallyHasChunksAt(int x0, int y0, int z0, int x1, int y1, int z1);		// 4J added
-
+	BlockPos getHeightmapPos(int x, int z);
 public:
 	bool hasChunk(int x, int z);
 	bool reallyHasChunk(int x, int z );	// 4J added

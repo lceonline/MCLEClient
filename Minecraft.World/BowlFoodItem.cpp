@@ -6,6 +6,7 @@
 BowlFoodItem::BowlFoodItem(int id, int nutrition) : FoodItem( id, nutrition, false )
 {
 	setMaxStackSize(1);
+	setBaseItemTypeAndMaterial(Item::eBaseItemType_bowl,Item::eMaterial_wood);
 }
 
 shared_ptr<ItemInstance> BowlFoodItem::useTimeDepleted(shared_ptr<ItemInstance> instance, Level *level, shared_ptr<Player> player)

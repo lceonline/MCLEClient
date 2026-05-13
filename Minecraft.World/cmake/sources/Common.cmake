@@ -11,6 +11,8 @@ set(_MINECRAFT_WORLD_COMMON_CONSOLEHELPERS
   "${CMAKE_CURRENT_SOURCE_DIR}/HashExtension.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/PerformanceTimer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/PerformanceTimer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArabicShaping.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArabicShaping.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/StringHelpers.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/StringHelpers.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ThreadName.cpp"
@@ -144,6 +146,8 @@ set(_MINECRAFT_WORLD_COMMON_COM_MOJANG_NBT
   "${CMAKE_CURRENT_SOURCE_DIR}/Tag.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Tag.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/com.mojang.nbt.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Rotations.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Rotations.cpp"
 )
 source_group("com/mojang/nbt" FILES ${_MINECRAFT_WORLD_COMMON_COM_MOJANG_NBT})
 
@@ -429,7 +433,9 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_NETWORK_PACKET
   "${CMAKE_CURRENT_SOURCE_DIR}/UseItemPacket.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/XZPacket.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/XZPacket.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.network.packet.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.network.packet.h" 
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Minecraft.Client/ParticleType.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Minecraft.Client/ParticleType.cpp"
 )
 source_group("net/minecraft/network/packet" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_NETWORK_PACKET})
 
@@ -470,6 +476,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_UTIL
   "${CMAKE_CURRENT_SOURCE_DIR}/WeighedRandom.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/WeighedTreasure.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WeighedTreasure.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/FishingHelper.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/FishingHelper.cpp"
 )
 source_group("net/minecraft/util" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_UTIL})
 
@@ -780,6 +788,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ENTITY_ANIMAL
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterAnimal.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/Wolf.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Wolf.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Rabbit.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Rabbit.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.entity.animal.h"
 )
 source_group("net/minecraft/world/entity/animal" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ENTITY_ANIMAL})
@@ -843,7 +853,9 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ENTITY_ITEM
   "${CMAKE_CURRENT_SOURCE_DIR}/MinecartTNT.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/MinecartTNT.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/PrimedTnt.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/PrimedTnt.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/PrimedTnt.h" 
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStand.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStand.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.entity.item.h"
 )
 source_group("net/minecraft/world/entity/item" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ENTITY_ITEM})
@@ -884,6 +896,12 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ENTITY_MONSTER
   "${CMAKE_CURRENT_SOURCE_DIR}/Witch.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/Zombie.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Zombie.h"
+ 
+  "${CMAKE_CURRENT_SOURCE_DIR}/Endermite.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Endermite.h"
+ 
+  "${CMAKE_CURRENT_SOURCE_DIR}/Guardian.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Guardian.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.entity.monster.h"
 )
 source_group("net/minecraft/world/entity/monster" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ENTITY_MONSTER})
@@ -1059,6 +1077,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ITEM
   "${CMAKE_CURRENT_SOURCE_DIR}/DyePowderItem.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/EggItem.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/EggItem.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ElytraItem.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ElytraItem.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/EmptyMapItem.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/EmptyMapItem.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/EnchantedBookItem.cpp"
@@ -1095,6 +1115,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ITEM
   "${CMAKE_CURRENT_SOURCE_DIR}/ItemInstance.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/LeafTileItem.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/LeafTileItem.h"
+   "${CMAKE_CURRENT_SOURCE_DIR}/LeafTileItem2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LeafTileItem2.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/LeashItem.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/LeashItem.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/MapItem.cpp"
@@ -1205,6 +1227,10 @@ source_group("net/minecraft/world/item/crafting" FILES ${_MINECRAFT_WORLD_COMMON
 set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ITEM_ENCHANTMENT
   "${CMAKE_CURRENT_SOURCE_DIR}/ArrowDamageEnchantment.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ArrowDamageEnchantment.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LureEnchantment.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LureEnchantment.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LuckOfTheSeaEnchantment.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LuckOfTheSeaEnchantment.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ArrowFireEnchantment.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ArrowFireEnchantment.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ArrowInfiniteEnchantment.cpp"
@@ -1241,6 +1267,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ITEM_ENCHANTMENT
   "${CMAKE_CURRENT_SOURCE_DIR}/UntouchingEnchantment.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterWorkerEnchantment.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterWorkerEnchantment.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WaterWalkerEnchantment.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WaterWalkerEnchantment.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.item.enchantment.h"
 )
 source_group("net/minecraft/world/item/enchantment" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_ITEM_ENCHANTMENT})
@@ -1345,6 +1373,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_BIOME
   "${CMAKE_CURRENT_SOURCE_DIR}/TheEndBiomeDecorator.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterlilyFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterlilyFeature.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MesaBiome.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/MesaBiome.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.level.biome.h"
 )
 source_group("net/minecraft/world/level/biome" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_BIOME})
@@ -1367,6 +1397,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_CHUNK
   "${CMAKE_CURRENT_SOURCE_DIR}/SparseLightStorage.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterLevelChunk.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WaterLevelChunk.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ChunkPrimer.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/ChunkPrimer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.level.chunk.h"
 )
 source_group("net/minecraft/world/level/chunk" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_CHUNK})
@@ -1429,6 +1461,7 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN
   "${CMAKE_CURRENT_SOURCE_DIR}/TheEndLevelRandomLevelSource.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/TownFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.level.levelgen.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SuperflatConfig.h"
 )
 source_group("net/minecraft/world/level/levelgen" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN})
 
@@ -1437,6 +1470,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN_FEATURE
   "${CMAKE_CURRENT_SOURCE_DIR}/BasicTree.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BirchFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/BirchFeature.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BlockBlobFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BlockBlobFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BonusChestFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/BonusChestFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/CactusFeature.cpp"
@@ -1467,12 +1502,16 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN_FEATURE
   "${CMAKE_CURRENT_SOURCE_DIR}/HouseFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/HugeMushroomFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/HugeMushroomFeature.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/IceSpikeFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/IceSpikeFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/LakeFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/LakeFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/LightGemFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/LightGemFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/MegaTreeFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/MegaTreeFeature.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MegaPineTreeFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MegaPineTreeFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/MonsterRoomFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/MonsterRoomFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/OreFeature.cpp"
@@ -1481,6 +1520,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN_FEATURE
   "${CMAKE_CURRENT_SOURCE_DIR}/PineFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/PumpkinFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/PumpkinFeature.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MelonFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MelonFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ReedsFeature.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ReedsFeature.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/SandFeature.cpp"
@@ -1550,6 +1591,10 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN_STRUCTURE
   "${CMAKE_CURRENT_SOURCE_DIR}/VillagePieces.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/VillagePieces.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.level.levelgen.structure.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/OceanMonumentFeature.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/OceanMonumentFeature.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/OceanMonumentPieces.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/OceanMonumentPieces.h"
 )
 source_group("net/minecraft/world/level/levelgen/structure" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_LEVELGEN_STRUCTURE})
 
@@ -1595,6 +1640,8 @@ source_group("net/minecraft/world/level/material" FILES ${_MINECRAFT_WORLD_COMMO
 set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_NEWBIOME_LAYER
   "${CMAKE_CURRENT_SOURCE_DIR}/AddIslandLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/AddIslandLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AddEdgeLayer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AddEdgeLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/AddMushroomIslandLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/AddMushroomIslandLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/AddSnowLayer.cpp"
@@ -1603,6 +1650,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_NEWBIOME_LAYER
   "${CMAKE_CURRENT_SOURCE_DIR}/BiomeInitLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BiomeOverrideLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/BiomeOverrideLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BiomeEdgeLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BiomeEdgeLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/DownfallLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/DownfallLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/DownfallMixerLayer.cpp"
@@ -1619,8 +1668,12 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_NEWBIOME_LAYER
   "${CMAKE_CURRENT_SOURCE_DIR}/IslandLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/Layer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Layer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ImposeContinentsLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ImposeContinentsLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/RegionHillsLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/RegionHillsLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RareBiomeSpotLayer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RareBiomeSpotLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/RiverInitLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/RiverInitLayer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/RiverLayer.cpp"
@@ -1643,6 +1696,14 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_NEWBIOME_LAYER
   "${CMAKE_CURRENT_SOURCE_DIR}/VoronoiZoom.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/ZoomLayer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/ZoomLayer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/DeepOceanLayer.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/DeepOceanLayer.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/RemoveTooMuchOceanLayer.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/RemoveTooMuchOceanLayer.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/RareBiomeLayer.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/RareBiomeLayer.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/CustomizableSourceSettings.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/CustomizableSourceSettings.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.level.newbiome.layer.h"
 )
 source_group("net/minecraft/world/level/newbiome/layer" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_NEWBIOME_LAYER})
@@ -1712,6 +1773,10 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_TILE
   "${CMAKE_CURRENT_SOURCE_DIR}/AirTile.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/AnvilTile.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/AnvilTile.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Minecraft.Client/BarrierParticle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Minecraft.Client/BarrierParticle.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BarrierTile.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BarrierTile.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BaseEntityTile.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/BaseEntityTile.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BasePressurePlateTile.cpp"
@@ -1910,6 +1975,8 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_TILE
   "${CMAKE_CURRENT_SOURCE_DIR}/StoneMonsterTile.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/StoneSlabTile.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/StoneSlabTile.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/StoneSlabTile2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/StoneSlabTile2.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/StoneTile.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/StoneTile.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/TallGrass.cpp"
@@ -1959,6 +2026,30 @@ set(_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_TILE
   "${CMAKE_CURRENT_SOURCE_DIR}/WorkbenchTile.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/WorkbenchTile.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/net.minecraft.world.level.tile.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SandTile.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LeafTile2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Rose.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/TreeTile2.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/PackedIceTile.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RedSandStoneTile.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SeaLanternTile.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/PrismarineTile.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/TallGrass2.cpp"
+  
+  "${CMAKE_CURRENT_SOURCE_DIR}/FishFoodItem.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ArmorStandItem.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SavannaTreeFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RoofTreeFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SavannaBiome.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BlockPos.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/DoublePlantFeature.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MutatedBiome.cpp"
+
+  "${CMAKE_CURRENT_SOURCE_DIR}/WritingBookItem.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WritingBookItem.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WrittenBookItem.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/WrittenBook.h"
+
 )
 source_group("net/minecraft/world/level/tile" FILES ${_MINECRAFT_WORLD_COMMON_NET_MINECRAFT_WORLD_LEVEL_TILE})
 

@@ -7,6 +7,7 @@ GameType *GameType::NOT_SET = nullptr;
 GameType *GameType::SURVIVAL= nullptr;
 GameType *GameType::CREATIVE = nullptr;
 GameType *GameType::ADVENTURE = nullptr;
+GameType* GameType::SPECTATOR = nullptr;
 
 void GameType::staticCtor()
 {
@@ -14,6 +15,7 @@ void GameType::staticCtor()
 	SURVIVAL = new GameType(0, L"survival");
 	CREATIVE = new GameType(1, L"creative");
 	ADVENTURE = new GameType(2, L"adventure");
+	SPECTATOR = new GameType(3, L"spectator");
 }
 
 GameType::GameType(int id, const wstring &name)
@@ -58,6 +60,10 @@ bool GameType::isAdventureRestricted()
 bool GameType::isCreative()
 {
 	return this == CREATIVE;
+}
+bool GameType::isSpectator()
+{
+	return this == SPECTATOR;
 }
 
 bool GameType::isSurvival()

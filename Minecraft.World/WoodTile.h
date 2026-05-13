@@ -7,7 +7,7 @@ class WoodTile : public Tile
 {
 friend class ChunkRebuildData;
 public:
-	static const int WOOD_NAMES_LENGTH = 4;
+	static const int WOOD_NAMES_LENGTH = 6;
 
 
 	static const unsigned int WOOD_NAMES[WOOD_NAMES_LENGTH];

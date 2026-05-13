@@ -7,6 +7,7 @@ using namespace std;
 
 class UIAbstractBitmapFont;
 class UIBitmapFont;
+class UIUnicodeBitmapFont;
 class UITTFFont;
 class UIComponent_DebugUIConsole;
 class UIComponent_DebugUIMarketingGuide;
@@ -17,7 +18,7 @@ class UIController : public IUIController
 {
 public:
 	static int64_t iggyAllocCount;
-
+	bool toastOn = false;
 	// MGH - added to prevent crash loading Iggy movies while the skins were being reloaded
 	static CRITICAL_SECTION ms_reloadSkinCS;
 	static bool ms_bReloadSkinCSInitialised;
@@ -63,6 +64,7 @@ private:
 	UIAbstractBitmapFont *m_mcBitmapFont;
 	UITTFFont *m_mcTTFFont;
 	UIBitmapFont *m_moj7, *m_moj11;
+	UIUnicodeBitmapFont *m_unicodeBitmapFont;
 
 	std::mt19937 m_randomGenerator;
 	std::uniform_real_distribution<float> m_randomDistribution;
@@ -101,6 +103,9 @@ private:
 		eLibrary_Tooltips,
 		eLibrary_Default,
 
+		eLibrary_LCDefault,
+		eLibrary_LCInGame,
+
 #if defined(_WINDOWS64)
 		// Non-HD skin libraries needed by 720p/480p scene SWFs.
 		eLibraryFallback_Platform,
@@ -114,6 +119,13 @@ private:
 		eLibraryFallback_HUD,
 		eLibraryFallback_Tooltips,
 		eLibraryFallback_Default,
+
+		// Optional DR-specific HD libraries used by some 1080p menu SWFs.
+		// Keep these after the normal HD and fallback sets so they don't disturb
+		// existing references and can be loaded only when the files exist.
+		eLibraryDR_GraphicsDefault,
+		eLibraryDR_Labels,
+		eLibraryDR_Default,
 #endif
 
 		eLibrary_Count,
@@ -199,6 +211,9 @@ protected:
 	UIGroup *m_groups[eUIGroup_COUNT];
 
 public:
+
+	auto& getGroups() { return m_groups; }
+
 	void showComponent(int iPad, EUIScene scene, EUILayer layer, EUIGroup group, bool show)
 	{
 		m_groups[group]->showComponent(iPad, scene, layer, show);
@@ -379,6 +394,7 @@ public:
 	virtual bool PressStartPlaying(unsigned int iPad);
 	virtual void ShowPressStart(unsigned int iPad);
 	virtual void HidePressStart();
+	void ShowAchievementToast(string achievementName, string achievementDescription, byteArray b, string achT = "");
 	void ClearPressStart();
 
 	virtual C4JStorage::EMessageResult RequestAlertMessage(UINT uiTitle, UINT uiText, UINT *uiOptionA,UINT uiOptionC, DWORD dwPad=XUSER_INDEX_ANY, int( *Func)(LPVOID,int,const C4JStorage::EMessageResult)=nullptr,LPVOID lpParam=nullptr, WCHAR *pwchFormatString=nullptr);

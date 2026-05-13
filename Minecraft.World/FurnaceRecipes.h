@@ -22,8 +22,9 @@ public:
 
 public:
 	void addFurnaceRecipy(int itemId, ItemInstance *result, float value);
-	bool isFurnaceItem(int itemId);
-	ItemInstance *getResult(int itemId);
+	void addFurnaceRecipy(ItemInstance* input, ItemInstance* result, float value);
+	bool isFurnaceItem(int itemId, int data);
+	ItemInstance* getResult(int itemId, int data = 0);
 	unordered_map<int, ItemInstance *> *getRecipies();
 	float getRecipeValue(int itemId);
 

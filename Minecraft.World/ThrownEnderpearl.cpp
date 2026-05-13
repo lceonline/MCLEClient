@@ -6,6 +6,10 @@
 #include "../Minecraft.Client/ServerPlayer.h"
 #include "../Minecraft.Client/PlayerConnection.h"
 #include "ThrownEnderpearl.h"
+#include "Endermite.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#endif
 
 
 
@@ -34,13 +38,22 @@ void ThrownEnderpearl::onHit(HitResult *res)
 {
 	if (res->entity != nullptr)
 	{
-		DamageSource *damageSource = DamageSource::thrown(shared_from_this(), getOwner() );
+		DamageSource *damageSource = DamageSource::thrown(shared_from_this(), getOwner());
 		res->entity->hurt(damageSource, 0);
 		delete damageSource;
 	}
+
 	for (int i = 0; i < 32; i++)
 	{
-		level->addParticle(eParticleType_ender, x, y + random->nextDouble() * 2, z, random->nextGaussian(), 0, random->nextGaussian());
+		level->addParticle(
+			eParticleType_ender,
+			x,
+			y + random->nextDouble() * 2,
+			z,
+			random->nextGaussian(),
+			0,
+			random->nextGaussian()
+		);
 	}
 
 	if (!level->isClientSide)
@@ -49,23 +62,71 @@ void ThrownEnderpearl::onHit(HitResult *res)
 		// If the owner has been removed, then ignore
 
 		// 4J-JEV: Cheap type check first.
-		if ( (getOwner() != nullptr) && getOwner()->instanceof(eTYPE_SERVERPLAYER) )
+		if ((getOwner() != nullptr) && getOwner()->instanceof(eTYPE_SERVERPLAYER))
 		{
-			shared_ptr<ServerPlayer> serverPlayer = dynamic_pointer_cast<ServerPlayer>(getOwner() );
+			shared_ptr<ServerPlayer> serverPlayer =
+				dynamic_pointer_cast<ServerPlayer>(getOwner());
+
 			if (!serverPlayer->removed)
 			{
-				if(!serverPlayer->connection->done && serverPlayer->level == this->level)
+				if (!serverPlayer->connection->done && serverPlayer->level == this->level)
 				{
+					// Custom: chance to spawn an Endermite
+					if (random->nextFloat() < 0.05f /* && level->getGameRules()->getBoolean("doMobSpawning") */)
+					{
+						Endermite* endermite = new Endermite(level);
+						endermite->setSpawnedByPlayer(true);
+
+						endermite->moveTo(
+							serverPlayer->x,
+							serverPlayer->y,
+							serverPlayer->z,
+							serverPlayer->yRot,
+							serverPlayer->xRot
+						);
+
+						level->addEntity(shared_ptr<Entity>(endermite));
+					}
+				    
 					if (getOwner()->isRiding())
 					{
 						getOwner()->ride(nullptr);
 					}
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+
+					{
+						double outX, outY, outZ;
+
+						bool cancelled = FourKitBridge::FirePlayerTeleport(
+							serverPlayer->entityId,
+							serverPlayer->x, serverPlayer->y, serverPlayer->z,
+							serverPlayer->dimension,
+							x, y, z,
+							serverPlayer->dimension,
+							0 /* ENDER_PEARL */,
+							&outX, &outY, &outZ
+						);
+
+						if (!cancelled)
+						{
+							getOwner()->teleportTo(outX, outY, outZ);
+							getOwner()->fallDistance = 0;
+							getOwner()->hurt(DamageSource::fall, 5);
+						}
+					}
+
+#else
+
 					getOwner()->teleportTo(x, y, z);
 					getOwner()->fallDistance = 0;
 					getOwner()->hurt(DamageSource::fall, 5);
+
+#endif
 				}
 			}
 		}
+
 		remove();
 	}
 }

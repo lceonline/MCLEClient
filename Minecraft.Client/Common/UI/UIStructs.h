@@ -91,6 +91,16 @@ typedef struct _FurnaceScreenInput
 	bool bSplitscreen;
 } FurnaceScreenInput;
 
+// Book and Quill
+typedef struct _WritingBookMenuParams
+{
+	shared_ptr<ItemInstance> itemInstance;
+	shared_ptr<Player> player;
+	int iPad;
+	bool isEditable;
+}
+WritingBookMenuParams;
+
 // Crafting
 typedef struct _CraftingPanelScreenInput
 {
@@ -247,11 +257,14 @@ typedef struct _SaveListDetails
 #endif
 #endif
 
+	bool isHardcore;
+
 	_SaveListDetails()
 	{
 		saveId = 0;
 		pbThumbnailData = nullptr;
 		dwThumbnailSize = 0;
+		isHardcore = false;
 #ifdef _DURANGO
 		ZeroMemory(UTF16SaveName,sizeof(wchar_t)*128);
 		ZeroMemory(UTF16SaveFilename,sizeof(wchar_t)*MAX_SAVEFILENAME_LENGTH);

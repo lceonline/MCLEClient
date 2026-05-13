@@ -30,7 +30,7 @@ UIScene_CraftingMenu::UIScene_CraftingMenu(int iPad, void *_initData, UILayer *p
 	// Setup all the Iggy references we need for this scene
 	initialiseMovie();
 
-	for(unsigned int i = 0; i < 4; ++i)	m_labelIngredientsDesc[i].init(L"");
+	for(unsigned int i = 0; i < 9; ++i)	m_labelIngredientsDesc[i].init(L"");
 	m_labelDescription.init(L"");
 	m_labelGroupName.init(L"");
 	m_labelItemName.init(L"");
@@ -135,7 +135,7 @@ UIScene_CraftingMenu::UIScene_CraftingMenu(int iPad, void *_initData, UILayer *p
 	XuiSetTimer(m_hObj,IGNORE_KEYPRESS_TIMERID,IGNORE_KEYPRESS_TIME);
 #endif
 
-	for(unsigned int i = 0; i < 4; ++i)
+	for(unsigned int i = 0; i < 9; ++i)
 	{
 		m_slotListIngredients[i].addSlot(CRAFTING_INGREDIENTS_DESCRIPTION_START + i);
 	}
@@ -477,7 +477,7 @@ void UIScene_CraftingMenu::handleReload()
 	m_slotListInventory.addSlots(CRAFTING_INVENTORY_SLOT_START,CRAFTING_INVENTORY_SLOT_END - CRAFTING_INVENTORY_SLOT_START);
 	m_slotListHotBar.addSlots(CRAFTING_HOTBAR_SLOT_START, CRAFTING_HOTBAR_SLOT_END - CRAFTING_HOTBAR_SLOT_START);
 
-	for(unsigned int i = 0; i < 4; ++i)
+	for(unsigned int i = 0; i < 9; ++i)
 	{
 		m_slotListIngredients[i].addSlot(CRAFTING_INGREDIENTS_DESCRIPTION_START + i);
 	}
@@ -608,7 +608,7 @@ void UIScene_CraftingMenu::customDraw(IggyCustomDrawCallbackRegion *region)
 			alpha = static_cast<float>(m_ingredientsSlotsInfo[iIndex].alpha)/31.0f;
 		}
 	}
-	else if(slotId >= CRAFTING_INGREDIENTS_DESCRIPTION_START && slotId < (CRAFTING_INGREDIENTS_DESCRIPTION_START + 4) )
+	else if(slotId >= CRAFTING_INGREDIENTS_DESCRIPTION_START && slotId < (CRAFTING_INGREDIENTS_DESCRIPTION_START + 9) )
 	{
 		int iIndex = slotId - CRAFTING_INGREDIENTS_DESCRIPTION_START;
 		if(m_ingredientsInfo[iIndex].show)

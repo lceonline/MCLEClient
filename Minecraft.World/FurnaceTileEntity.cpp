@@ -250,7 +250,7 @@ void FurnaceTileEntity::tick()
 bool FurnaceTileEntity::canBurn()
 {
 	if (items[SLOT_INPUT] == nullptr) return false;
-	const ItemInstance *burnResult = FurnaceRecipes::getInstance()->getResult(items[SLOT_INPUT]->getItem()->id);
+	const ItemInstance* burnResult = FurnaceRecipes::getInstance()->getResult(items[SLOT_INPUT]->getItem()->id, items[SLOT_INPUT]->getAuxValue());
 	if (burnResult == nullptr) return false;
 	if (items[SLOT_RESULT] == nullptr) return true;
 	if (!items[SLOT_RESULT]->sameItem_not_shared(burnResult)) return false;
@@ -264,7 +264,7 @@ void FurnaceTileEntity::burn()
 {
 	if (!canBurn()) return;
 
-	const ItemInstance *result = FurnaceRecipes::getInstance()->getResult(items[SLOT_INPUT]->getItem()->id);
+	const ItemInstance* result = FurnaceRecipes::getInstance()->getResult(items[SLOT_INPUT]->getItem()->id, items[SLOT_INPUT]->getAuxValue());
 	if (items[SLOT_RESULT] == nullptr) items[SLOT_RESULT] = result->copy();
 	else if (items[SLOT_RESULT]->id == result->id) items[SLOT_RESULT]->count++;
 

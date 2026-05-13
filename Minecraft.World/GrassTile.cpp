@@ -5,6 +5,10 @@
 #include "net.minecraft.world.level.biome.h"
 #include "net.minecraft.h"
 #include "net.minecraft.world.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "Dimension.h"
+#endif
 
 // AP - included for PSVita Alpha cut out optimisation
 #include "IntBuffer.h"
@@ -22,7 +26,7 @@ GrassTile::GrassTile(int id) : Tile(id, Material::grass)
 Icon *GrassTile::getTexture(int face, int data)
 {
 	if (face == Facing::UP) return iconTop;
-	if (face == Facing::DOWN) return Tile::dirt->getTexture(face);
+	if (face == Facing::DOWN) return Tile::dirt->getTexture(face, 0);
 	return icon;
 }
 
@@ -106,13 +110,19 @@ void GrassTile::tick(Level *level, int x, int y, int z, Random *random)
 				int yt = y + random->nextInt(5) - 3;
 				int zt = z + random->nextInt(3) - 1;
 				int above = level->getTile(xt, yt + 1, zt);
-				if (level->getTile(xt, yt, zt) == Tile::dirt_Id && level->getRawBrightness(xt, yt + 1, zt) >= MIN_BRIGHTNESS && Tile::lightBlock[above] <= 2)
+				if (level->getTile(xt, yt, zt) == Tile::dirt_Id && level->getData(xt, yt, zt) == 0 && level->getRawBrightness(xt, yt + 1, zt) >= MIN_BRIGHTNESS && Tile::lightBlock[above] <= 2)
 				{
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+					if (!FourKitBridge::FireBlockSpread(level->dimension->id, xt, yt, zt, x, y, z, Tile::grass_Id, 0))
+#endif
 					level->setTileAndUpdate(xt, yt, zt, Tile::grass_Id);
 				}
 			}
 		}
 	}
+
+  Material* above = level->getMaterial(x, y + 1, z);
+	if (above->isSolid() || above->isLiquid()) level->setTileAndUpdate(x, y, z, Tile::dirt_Id);
 }
 
 int GrassTile::getResource(int data, Random *random, int playerBonusLevel)

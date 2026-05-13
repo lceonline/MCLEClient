@@ -10,9 +10,12 @@ class TreeTile : public RotatedPillarTile
 	friend class Tile;
 	friend class ChunkRebuildData;
 public:
-	static const int DARK_TRUNK = 1;
+	static const int OAK_TRUNK = 0;
+	static const int SPRUCE_TRUNK = 1; // this needs to be changed to spruce...
 	static const int BIRCH_TRUNK = 2;
 	static const int JUNGLE_TRUNK = 3;
+	static const int ACACIA_TRUNK = 4;
+	static const int DARK_TRUNK = 5;
 
 	static const int MASK_TYPE = 0x3;
 	static const int MASK_FACING = 0xC;

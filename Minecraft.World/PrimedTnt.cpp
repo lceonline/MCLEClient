@@ -63,36 +63,37 @@ bool PrimedTnt::isPickable()
 
 void PrimedTnt::tick()
 {
-	xo = x;
-	yo = y;
-	zo = z;
+    xo = x;
+    yo = y;
+    zo = z;
 
-	yd -= 0.04f;
-	move(xd, yd, zd);
-	xd *= 0.98f;
-	yd *= 0.98f;
-	zd *= 0.98f;
+    yd -= 0.04f; 
 
-	if (onGround)
-	{
-		xd *= 0.7f;
-		zd *= 0.7f;
-		yd *= -0.5f;
-	}
+    move(xd, yd, zd);
 
-	if (life-- <= 0)
-	{
-		remove();
-		if (!level->isClientSide)
-		{
-			explode();
-		}
-	}
-	else
-	{
-		level->addParticle(eParticleType_smoke, x, y + 0.5f, z, 0, 0, 0);
-	}
+    xd *= 0.98f;
+    yd *= 0.98f;
+    zd *= 0.98f;
 
+    if (onGround)
+    {
+        xd *= 0.7f;
+        zd *= 0.7f;
+        yd *= -0.5f;
+    }
+
+    this->updateInWaterState(); 
+
+    if (life-- <= 0)
+    {
+        remove();
+        if (!level->isClientSide)
+            explode();
+    }
+    else
+    {
+        level->addParticle(eParticleType_smoke, x, y + 0.5f, z, 0, 0, 0);
+    }
 }
 
 

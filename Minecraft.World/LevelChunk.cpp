@@ -817,8 +817,9 @@ void LevelChunk::recalcHeight(int x, int yStart, int z)
 	{
 		minHeight = y;
 	}
-	else
+	else if (yOld == minHeight)
 	{
+		// Only rescan when the column that was at the minimum changed height
 		int min = Level::maxBuildHeight - 1;
 		for (int _x = 0; _x < 16; _x++)
 			for (int _z = 0; _z < 16; _z++)
@@ -1643,10 +1644,7 @@ void LevelChunk::getEntities(shared_ptr<Entity> except, AABB *bb, vector<shared_
 	if (yc0 < 0) yc0 = 0;
 	if (yc1 >= ENTITY_BLOCKS_LENGTH) yc1 = ENTITY_BLOCKS_LENGTH - 1;
 
-#ifndef __PSVITA__
-	// AP - RW critical sections are expensive so enter once in Level::getEntities
-	EnterCriticalSection(&m_csEntities);
-#endif
+	// Lock is now always held by Level::getEntities()
 	for (int yc = yc0; yc <= yc1; yc++)
 	{
 		vector<shared_ptr<Entity> > *entities = entityBlocks[yc];
@@ -1671,9 +1669,6 @@ void LevelChunk::getEntities(shared_ptr<Entity> except, AABB *bb, vector<shared_
 			}
 		}
 	}
-#ifndef __PSVITA__
-	LeaveCriticalSection(&m_csEntities);
-#endif
 }
 
 void LevelChunk::getEntitiesOfClass(const type_info& ec, AABB *bb, vector<shared_ptr<Entity> > &es, const EntitySelector *selector)
@@ -1698,10 +1693,7 @@ void LevelChunk::getEntitiesOfClass(const type_info& ec, AABB *bb, vector<shared
 		yc1 = 0;
 	}
 
-#ifndef __PSVITA__
-	// AP - RW critical sections are expensive so enter once in Level::getEntitiesOfClass
-	EnterCriticalSection(&m_csEntities);
-#endif
+	// Lock is now always held by Level::getEntitiesOfClass()
 	for (int yc = yc0; yc <= yc1; yc++)
 	{
 		vector<shared_ptr<Entity> > *entities = entityBlocks[yc];
@@ -1729,9 +1721,6 @@ void LevelChunk::getEntitiesOfClass(const type_info& ec, AABB *bb, vector<shared
 			// 4J - note needs to be equivalent to baseClass.isAssignableFrom(e.getClass())
 		}
 	}
-#ifndef __PSVITA__
-	LeaveCriticalSection(&m_csEntities);
-#endif
 }
 
 int LevelChunk::countEntities()

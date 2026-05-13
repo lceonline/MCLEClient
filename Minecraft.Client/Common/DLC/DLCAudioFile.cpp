@@ -26,10 +26,12 @@ PBYTE DLCAudioFile::getData(DWORD &dwBytes)
 	return m_pbData;
 }
 
+// @3UR: thanks https://github.com/LCERD/PCK-Studio/blob/500fc74395ce99fe20cbd7598999bfab3b606745/PckStudio.Core/IO/PckAudio/PckAudioFileWriter.cs#L15
 const WCHAR *DLCAudioFile::wchTypeNamesA[]=
 {
-	L"CUENAME",
-	L"CREDIT",
+    L"CUENAME",
+    L"CREDIT",
+    L"CREDITID",
 };
 
 DLCAudioFile::EAudioParameterType DLCAudioFile::getParameterType(const wstring &paramName)
@@ -76,7 +78,7 @@ void DLCAudioFile::addParameter(EAudioType type, EAudioParameterType ptype, cons
 				case XC_LANGUAGE_JAPANESE:
 				case XC_LANGUAGE_TCHINESE:
 				case XC_LANGUAGE_KOREAN:
-					maximumChars = 35;
+				    maximumChars = 55; // @3UR: this is 55 in TU30
 					break;
 				}
 				wstring creditValue = value;
@@ -88,23 +90,6 @@ void DLCAudioFile::addParameter(EAudioType type, EAudioParameterType ptype, cons
 						i++;
 					}
 					size_t iLast=creditValue.find_last_of(L" ", i);
-					switch(XGetLanguage())
-					{
-					case XC_LANGUAGE_JAPANESE:
-					case XC_LANGUAGE_TCHINESE:
-					case XC_LANGUAGE_KOREAN:
-						iLast = maximumChars;
-						break;
-					default:
-						iLast=creditValue.find_last_of(L" ", i);
-						break;
-					}
-
-					// if a space was found, include the space on this line
-					if(iLast!=i)
-					{
-						iLast++;
-					}
 
 					app.AddCreditText((creditValue.substr(0, iLast)).c_str());
 					creditValue = creditValue.substr(iLast);
@@ -117,6 +102,9 @@ void DLCAudioFile::addParameter(EAudioType type, EAudioParameterType ptype, cons
 			m_parameters[type].push_back(value);
 			//m_parameters[(int)type] = value;
 			break;
+	    // @3UR: in IDA for TU30 this is literally just empty...
+	    case e_AudioParamType_CreditId:
+	        break;
 	}
 }
 
@@ -170,6 +158,14 @@ bool DLCAudioFile::processDLCDataFile(PBYTE pbData, DWORD dwLength)
 	for(unsigned int i=0;i<uiFileCount;i++)
 	{
 		EAudioType type = static_cast<EAudioType>(pFile->dwType);
+
+		//Bounds Checking
+		if (type < 0 || type >= e_AudioType_Max) 
+		{
+			app.DebugPrintf("Error parser: EAudioType (%d) out of bounds!\n", type);
+			
+			continue; 
+		}
 		// Params
 		unsigned int uiParameterCount=*(unsigned int *)pbTemp;
 		pbTemp+=sizeof(int);
@@ -182,7 +178,8 @@ bool DLCAudioFile::processDLCDataFile(PBYTE pbData, DWORD dwLength)
 
 			if(it != parameterMapping.end() )
 			{
- 				addParameter(type,static_cast<EAudioParameterType>(pParams->dwType),(WCHAR *)pParams->wchData);
+ 				//addParameter(type,static_cast<EAudioParameterType>(pParams->dwType),(WCHAR *)pParams->wchData);
+				addParameter(type, it->second, (WCHAR *)pParams->wchData);
 			}
 			pbTemp+=sizeof(C4JStorage::DLC_FILE_PARAM)+(sizeof(WCHAR)*pParams->dwWchCount);
 			pParams = (C4JStorage::DLC_FILE_PARAM *)pbTemp;

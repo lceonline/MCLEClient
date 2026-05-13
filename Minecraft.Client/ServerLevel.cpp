@@ -39,6 +39,10 @@
 #include "../Minecraft.World/ProgressListener.h"
 #include "PS3/PS3Extras/ShutdownManager.h"
 #include "PlayerChunkMap.h"
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+#include "../Minecraft.Server/FourKitBridge.h"
+#include "../Minecraft.Server/ServerLogger.h"
+#endif
 
 WeighedTreasureArray ServerLevel::RANDOM_BONUS_ITEMS;
 
@@ -194,6 +198,14 @@ ServerLevel::~ServerLevel()
 
 void ServerLevel::tick()
 {
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	// ts[N] = wall-clock at substep N. Logged when level total exceeds
+	// LEVEL_SLOW_THRESHOLD_MS to pinpoint the dominant substep.
+	const int64_t LEVEL_SLOW_THRESHOLD_MS = 50;
+	int64_t ts[13];
+	ts[0] = System::currentTimeMillis();
+#endif
+
 	Level::tick();
 	if (getLevelData()->isHardcore() && difficulty < 3)
 	{
@@ -215,6 +227,9 @@ void ServerLevel::tick()
 		}
 		awakenAllPlayers();
 	}
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[1] = System::currentTimeMillis();
+#endif
 
 	PIXBeginNamedEvent(0,"Mob spawner tick");
 	// for Minecraft 1.8, spawn friendlies really rarely	- 4J - altered from once every 400 ticks to 40 ticks as we depend on this a more than the original since we don't have chunk post-process spawning
@@ -230,6 +245,9 @@ void ServerLevel::tick()
 		mobSpawner->tick(this, finalSpawnEnemies, finalSpawnFriendlies, finalSpawnPersistent);
 	}
 	PIXEndNamedEvent();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[2] = System::currentTimeMillis();
+#endif
 	PIXBeginNamedEvent(0,"Chunk source tick");
 	chunkSource->tick();
 	PIXEndNamedEvent();
@@ -245,6 +263,9 @@ void ServerLevel::tick()
 			}
 		}
 	}
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[3] = System::currentTimeMillis();
+#endif
 
 	//4J - temporarily disabling saves as they are causing gameplay to generally stutter quite a lot
 
@@ -260,6 +281,9 @@ void ServerLevel::tick()
 		save(false, nullptr);
 		PIXEndNamedEvent();
 	}
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[4] = System::currentTimeMillis();
+#endif
 
 	// 4J : WESTY : Changed so that time update goes through stats tracking update code.
 	//levelData->setTime(time);
@@ -275,19 +299,31 @@ void ServerLevel::tick()
 			setDayTime(levelData->getDayTime() + 1);
 		}
 	}
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[5] = System::currentTimeMillis();
+#endif
 
 	PIXBeginNamedEvent(0,"Tick pending ticks");
 	// if (tickCount % 5 == 0) {
 	tickPendingTicks(false);
 	PIXEndNamedEvent();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[6] = System::currentTimeMillis();
+#endif
 
 	PIXBeginNamedEvent(0,"Tick tiles");
 	MemSect(18);
 	tickTiles();
 	MemSect(0);
 	PIXEndNamedEvent();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[7] = System::currentTimeMillis();
+#endif
 
 	chunkMap->tick();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[8] = System::currentTimeMillis();
+#endif
 
 	PIXBeginNamedEvent(0,"Tick villages");
 	//MemSect(18);
@@ -295,18 +331,50 @@ void ServerLevel::tick()
 	villageSiege->tick();
 	//MemSect(0);
 	PIXEndNamedEvent();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[9] = System::currentTimeMillis();
+#endif
 
 	PIXBeginNamedEvent(0,"Tick portal forcer");
 	portalForcer->tick(getGameTime());
 	PIXEndNamedEvent();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[10] = System::currentTimeMillis();
+#endif
 
 	// repeat after tile ticks
 	PIXBeginNamedEvent(0,"runTileEvents");
 	runTileEvents();
 	PIXEndNamedEvent();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[11] = System::currentTimeMillis();
+#endif
 
 	// 4J Added
 	runQueuedSendTileUpdates();
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	ts[12] = System::currentTimeMillis();
+	int64_t levelTotal = ts[12] - ts[0];
+	if (levelTotal > LEVEL_SLOW_THRESHOLD_MS)
+	{
+		ServerRuntime::LogInfof("perf",
+			"L%d substep total=%lldms base=%lld spawn=%lld chunkSrc=%lld save=%lld time=%lld pending=%lld tiles=%lld chunkMap=%lld villages=%lld portal=%lld evt=%lld sendTU=%lld",
+			dimension->id,
+			(long long)levelTotal,
+			(long long)(ts[1]  - ts[0]),
+			(long long)(ts[2]  - ts[1]),
+			(long long)(ts[3]  - ts[2]),
+			(long long)(ts[4]  - ts[3]),
+			(long long)(ts[5]  - ts[4]),
+			(long long)(ts[6]  - ts[5]),
+			(long long)(ts[7]  - ts[6]),
+			(long long)(ts[8]  - ts[7]),
+			(long long)(ts[9]  - ts[8]),
+			(long long)(ts[10] - ts[9]),
+			(long long)(ts[11] - ts[10]),
+			(long long)(ts[12] - ts[11]));
+	}
+#endif
 }
 
 Biome::MobSpawnerData *ServerLevel::getRandomMobSpawnAt(MobCategory *mobCategory, int x, int y, int z)
@@ -324,6 +392,8 @@ void ServerLevel::updateSleepingPlayerList()
 
 	for (auto& player : players)
 	{
+		if (player->fk_sleepingIgnored)
+			continue;
 		if (!player->isSleeping())
 		{
 			allPlayersSleeping = false;
@@ -368,6 +438,8 @@ bool ServerLevel::allPlayersAreSleeping()
 		// all players are sleeping, but have they slept long enough?
 		for (auto& player : players)
 		{
+			if (player->fk_sleepingIgnored)
+				continue;
 			//                System.out.println(player->entityId + ": " + player->getSleepTimer());
 			if (!player->isSleepingLongEnough())
 			{
@@ -507,15 +579,21 @@ void ServerLevel::tickTiles()
 			int val = (randValue >> 2);
 			int x = (val & 15);
 			int z = ((val >> 8) & 15);
-			int yy = getTopRainBlock(x + xo, z + zo);
-			if (shouldFreeze(x + xo, yy - 1, z + zo))
-			{
-				setTileAndUpdate(x + xo, yy - 1, z + zo, Tile::ice_Id);
-			}
-			if (isRaining() && shouldSnow(x + xo, yy, z + zo))
-			{
-				setTileAndUpdate(x + xo, yy, z + zo, Tile::topSnow_Id);
-			}
+					int yy = getTopRainBlock(x + xo, z + zo);
+						if (shouldFreeze(x + xo, yy - 1, z + zo))
+						{
+			#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+							if (!FourKitBridge::FireBlockForm(dimension->id, x + xo, yy - 1, z + zo, Tile::ice_Id, 0))
+			#endif
+							setTileAndUpdate(x + xo, yy - 1, z + zo, Tile::ice_Id);
+						}
+						if (isRaining() && shouldSnow(x + xo, yy, z + zo))
+						{
+			#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+							if (!FourKitBridge::FireBlockForm(dimension->id, x + xo, yy, z + zo, Tile::topSnow_Id, 0))
+			#endif
+							setTileAndUpdate(x + xo, yy, z + zo, Tile::topSnow_Id);
+						}
 			if (isRaining())
 			{
 				Biome *b = getBiome(x + xo, z + zo);
@@ -1052,9 +1130,14 @@ void ServerLevel::entityAdded(shared_ptr<Entity> e)
 	vector<shared_ptr<Entity> > *es = e->getSubEntities();
 	if (es)
 	{
+		// Reassign sub-entity IDs to be sequential from the parent's ID.
+		// The client assumes this layout when it applies an offset in handleAddMob.
+		int offset = 1;
 		for(auto& i : *es)
 		{
+			i->entityId = e->entityId + offset;
 			entitiesById.emplace(i->entityId, i);
+			offset++;
 		}
 	}
 	entityAddedExtra(e);	// 4J added
@@ -1263,22 +1346,6 @@ PlayerChunkMap *ServerLevel::getChunkMap()
 PortalForcer *ServerLevel::getPortalForcer()
 {
 	return portalForcer;
-}
-
-void ServerLevel::sendParticles(const wstring &name, double x, double y, double z, int count)
-{
-	sendParticles(name, x + 0.5f, y + 0.5f, z + 0.5f, count, 0.5f, 0.5f, 0.5f, 0.02f);
-}
-
-void ServerLevel::sendParticles(const wstring &name, double x, double y, double z, int count, double xDist, double yDist, double zDist, double speed)
-{
-	shared_ptr<Packet> packet = std::make_shared<LevelParticlesPacket>( name, static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), static_cast<float>(xDist), static_cast<float>(yDist), static_cast<float>(zDist), static_cast<float>(speed), count );
-
-	for(auto& it : players)
-	{
-		shared_ptr<ServerPlayer> player = dynamic_pointer_cast<ServerPlayer>(it);
-		player->connection->send(packet);
-	}
 }
 
 // 4J Stu - Sometimes we want to update tiles on the server from the main thread (eg SignTileEntity when string verify returns)
@@ -1614,3 +1681,34 @@ void ServerLevel::flagEntitiesToBeRemoved(unsigned int *flags, bool *removedFoun
 		chunkMap->flagEntitiesToBeRemoved(flags, removedFound);
 	}
 }
+void ServerLevel::sendParticles(const ParticleType* type, bool longDistance, double x, double y, double z, int count, double dx, double dy, double dz, double speed, arrayWithLength<int> data)
+{
+    auto packet = make_shared<LevelParticlesPacket>(
+        type,
+        longDistance,
+        (float)x, (float)y, (float)z,
+        (float)dx, (float)dy, (float)dz,
+        (float)speed,
+        count,
+        data
+    );
+
+    for (auto const& p : players)
+    {
+        shared_ptr<ServerPlayer> player = dynamic_pointer_cast<ServerPlayer>(p);
+        if (player != nullptr && player->connection != nullptr)
+        {
+            double distSqr = player->distanceToSqr(x, y, z);
+            if (distSqr <= 256.0 || (longDistance && distSqr <= 65536.0))
+            {
+                player->connection->send(packet);
+            }
+        }
+    }
+}
+
+void ServerLevel::sendParticles(const ParticleType* type, double x, double y, double z, int count, double dx, double dy, double dz, double speed, arrayWithLength<int> data)
+{
+    this->sendParticles(type, false, x, y, z, count, dx, dy, dz, speed, data);
+}
+

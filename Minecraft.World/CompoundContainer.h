@@ -31,4 +31,7 @@ public:
 	virtual void startOpen();
 	virtual void stopOpen();
 	virtual bool canPlaceItem(int slot, shared_ptr<ItemInstance> item);
+
+	shared_ptr<Container> getFirstContainer() const { return c1; }
+	shared_ptr<Container> getSecondContainer() const { return c2; }
 };

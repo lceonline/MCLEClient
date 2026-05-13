@@ -20,6 +20,7 @@ private:
 	int connectionCounter;
 private:
 	CRITICAL_SECTION pending_cs;	// 4J added
+	CRITICAL_SECTION players_cs;	// Protects players vector for concurrent access
 	vector< shared_ptr<PendingConnection> > pending;
     vector< shared_ptr<PlayerConnection> > players;
 
@@ -47,4 +48,6 @@ public:
 	void handleTextureAndGeometryReceived(const wstring &textureName);
 	void handleServerSettingsChanged(shared_ptr<ServerSettingsChangedPacket> packet);
 	vector< shared_ptr<PlayerConnection> >  *getPlayers();
+	vector< shared_ptr<PlayerConnection> > getPlayersSnapshot();
+	void sortPlayersByChunkPriority();
 };

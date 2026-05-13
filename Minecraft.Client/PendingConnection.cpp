@@ -17,7 +17,10 @@
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
 #include "../Minecraft.Server/ServerLogManager.h"
 #include "../Minecraft.Server/Access/Access.h"
+#include "../Minecraft.Server/Security/SecurityConfig.h"
 #include "../Minecraft.World/Socket.h"
+#include <FourKitBridge.h>
+#include <Windows64/Network/WinsockNetLayer.h>
 #endif
 // #ifdef __PS3__
 // #include "PS3/Network/NetworkPlayerSony.h"
@@ -111,6 +114,54 @@ void PendingConnection::handlePreLogin(shared_ptr<PreLoginPacket> packet)
 		}
 		return;
 	}
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	{
+		std::string connectionIp = "";
+		int connectionPort = 0;
+
+		if (connection && connection->getSocket()) {
+			unsigned char smallId = connection->getSocket()->getSmallId();
+			if (smallId != 0) {
+				if (!ServerRuntime::ServerLogManager::TryGetConnectionRemoteIp(smallId, &connectionIp))
+				{
+					SOCKET sock = WinsockNetLayer::GetSocketForSmallId(smallId);
+					if (sock != INVALID_SOCKET)
+					{
+						sockaddr_in addr;
+						int addrLen = sizeof(addr);
+						if (getpeername(sock, (sockaddr*)&addr, &addrLen) == 0)
+						{
+							char ipBuf[64] = {};
+							if (inet_ntop(AF_INET, &addr.sin_addr, ipBuf, sizeof(ipBuf)))
+							{
+								connectionIp = ipBuf;
+								connectionPort = (int)ntohs(addr.sin_port);
+							}
+						}
+					}
+				} else {
+					SOCKET sock = WinsockNetLayer::GetSocketForSmallId(smallId);
+					if (sock != INVALID_SOCKET)
+					{
+						sockaddr_in addr;
+						int addrLen = sizeof(addr);
+						if (getpeername(sock, (sockaddr*)&addr, &addrLen) == 0)
+							connectionPort = (int)ntohs(addr.sin_port);
+					}
+				}
+
+				if (!connectionIp.empty()) {
+					if (FourKitBridge::FirePlayerPreLogin(packet->loginKey, connectionIp, connectionPort)) {
+						disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+						return;
+					}
+				}
+			}
+		}
+	}
+#endif
+
 	//	printf("Server: handlePreLogin\n");
 	name = packet->loginKey; // 4J Stu - Change from the login packet as we know better on client end during the pre-login packet
 	sendPreLoginResponse();
@@ -150,6 +201,20 @@ void PendingConnection::sendPreLoginResponse()
 		}
 	}
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	// Security: strip real XUIDs from pre-login response to prevent unauthenticated enumeration.
+	// The client receives the correct player count but cannot identify who is connected.
+	// Real XUID data is sent post-login via PlayerInfoPacket broadcasts.
+	if (ServerRuntime::Security::GetSettings().hidePlayerListPreLogin)
+	{
+		for (DWORD i = 0; i < ugcXuidCount; ++i)
+		{
+			ugcXuids[i] = INVALID_XUID;
+		}
+		ugcFriendsOnlyBits = 0;
+	}
+#endif
+
 #if 0
 	if (false)//	server->onlineMode) // 4J - removed
 	{
@@ -186,6 +251,62 @@ void PendingConnection::handleLogin(shared_ptr<LoginPacket> packet)
 	//if (true)// 4J removed !server->onlineMode)
 	bool sentDisconnect = false;
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	{
+		std::string connectionIp = "";
+		int connectionPort = 0;
+
+		if (!connection || !connection->getSocket()) {
+			disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+			return;
+		}
+
+		unsigned char smallId = connection->getSocket()->getSmallId();
+		if (smallId == 0) {
+			disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+			return;
+		}
+
+		if (!ServerRuntime::ServerLogManager::TryGetConnectionRemoteIp(smallId, &connectionIp))
+		{
+			SOCKET sock = WinsockNetLayer::GetSocketForSmallId(smallId);
+			if (sock != INVALID_SOCKET)
+			{
+				sockaddr_in addr;
+				int addrLen = sizeof(addr);
+				if (getpeername(sock, (sockaddr*)&addr, &addrLen) == 0)
+				{
+					char ipBuf[64] = {};
+					if (inet_ntop(AF_INET, &addr.sin_addr, ipBuf, sizeof(ipBuf)))
+					{
+						connectionIp = ipBuf;
+						connectionPort = (int)ntohs(addr.sin_port);
+					}
+				}
+			}
+			if (connectionIp.empty()) {
+				disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+				return;
+			}
+		}
+		else {
+			SOCKET sock = WinsockNetLayer::GetSocketForSmallId(smallId);
+			if (sock != INVALID_SOCKET)
+			{
+				sockaddr_in addr;
+				int addrLen = sizeof(addr);
+				if (getpeername(sock, (sockaddr*)&addr, &addrLen) == 0)
+					connectionPort = (int)ntohs(addr.sin_port);
+			}
+		}
+
+		if (FourKitBridge::FirePlayerLogin(packet->userName, connectionIp, connectionPort, 1, &packet->m_onlineXuid, &packet->m_offlineXuid)) {
+			disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+			return;
+		}
+	}
+#endif
+
 	// Use the same Xuid choice as handleAcceptedLogin (offline first, online fallback).
 	// 
 	PlayerUID loginXuid = packet->m_offlineXuid;
@@ -202,6 +323,56 @@ void PendingConnection::handleLogin(shared_ptr<LoginPacket> packet)
 	{
 		duplicateXuid = true;
 	}
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	// Cross-reference: if someone claims the same XUID as an existing player from a different IP,
+	// log and reject as a potential spoofing attempt.
+	// Note: this runs on the main tick thread (via PendingConnection::tick -> Connection::tick ->
+	// handleLogin), same thread that mutates the player list, so no lock is needed.
+	if (!duplicateXuid && loginXuid != INVALID_XUID)
+	{
+		std::string newIp;
+		unsigned char newSmallId = GetPendingConnectionSmallId(connection);
+		bool hasNewIp = ServerRuntime::ServerLogManager::TryGetConnectionRemoteIp(newSmallId, &newIp);
+
+		for (auto &existingPlayer : server->getPlayers()->players)
+		{
+			if (existingPlayer == nullptr) continue;
+			PlayerUID existingXuid = existingPlayer->connection->m_offlineXUID;
+			if (existingXuid == INVALID_XUID) existingXuid = existingPlayer->connection->m_onlineXUID;
+			if (existingXuid == loginXuid)
+			{
+				if (hasNewIp)
+				{
+					std::string existingIp;
+					INetworkPlayer *np = existingPlayer->connection->getNetworkPlayer();
+					if (np != nullptr)
+					{
+						unsigned char existingSmallId = np->GetSmallId();
+						if (ServerRuntime::ServerLogManager::TryGetConnectionRemoteIp(existingSmallId, &existingIp))
+						{
+							if (existingIp != newIp)
+							{
+								app.DebugPrintf("SECURITY: XUID spoofing suspected - XUID 0x%016llx claimed from IP %s while already connected from IP %s\n",
+									(unsigned long long)loginXuid, newIp.c_str(), existingIp.c_str());
+								ServerRuntime::ServerLogManager::OnXuidSpoofDetected(newSmallId, name, newIp.c_str(), existingIp.c_str());
+								duplicateXuid = true;
+							}
+						}
+					}
+				}
+				else
+				{
+					// Cannot verify IP -- treat same-XUID connection as suspicious
+					app.DebugPrintf("SECURITY: XUID 0x%016llx claimed but could not verify source IP\n",
+						(unsigned long long)loginXuid);
+					duplicateXuid = true;
+				}
+				break;
+			}
+		}
+	}
+#endif
 
 	bool bannedXuid = false;
 	if (loginXuid != INVALID_XUID)
@@ -243,7 +414,11 @@ void PendingConnection::handleLogin(shared_ptr<LoginPacket> packet)
 	else if (!whitelistSatisfied)
 	{
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+		// Cache name->XUID so `whitelist add <name>` can resolve the XUID
+		ServerRuntime::ServerLogManager::CachePlayerXuid(name, loginXuid);
 		ServerRuntime::ServerLogManager::OnRejectedPlayerLogin(GetPendingConnectionSmallId(connection), name, ServerRuntime::ServerLogManager::eLoginRejectReason_NotWhitelisted);
+		app.DebugPrintf("WHITELIST: Rejected %ls (XUID: 0x%016llx) - use 'whitelist add %ls' to allow\n",
+			name.c_str(), (unsigned long long)loginXuid, name.c_str());
 #endif
 		disconnect(DisconnectPacket::eDisconnect_Banned);
 	}
@@ -326,15 +501,77 @@ void PendingConnection::handleAcceptedLogin(shared_ptr<LoginPacket> packet)
 		return;
 	}
 
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	{
+		std::string connectionIp = "";
+		int connectionPort = 0;
+
+		if (!connection || !connection->getSocket()) {
+			disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+			return;
+		}
+
+		unsigned char smallId = connection->getSocket()->getSmallId();
+		if (smallId == 0) {
+			disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+			return;
+		}
+
+		if (!ServerRuntime::ServerLogManager::TryGetConnectionRemoteIp(smallId, &connectionIp))
+		{
+			SOCKET sock = WinsockNetLayer::GetSocketForSmallId(smallId);
+			if (sock != INVALID_SOCKET)
+			{
+				sockaddr_in addr;
+				int addrLen = sizeof(addr);
+				if (getpeername(sock, (sockaddr*)&addr, &addrLen) == 0)
+				{
+					char ipBuf[64] = {};
+					if (inet_ntop(AF_INET, &addr.sin_addr, ipBuf, sizeof(ipBuf)))
+					{
+						connectionIp = ipBuf;
+						connectionPort = (int)ntohs(addr.sin_port);
+					}
+				}
+			}
+			if (connectionIp.empty()) {
+				disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+				return;
+			}
+		}
+		else {
+			SOCKET sock = WinsockNetLayer::GetSocketForSmallId(smallId);
+			if (sock != INVALID_SOCKET)
+			{
+				sockaddr_in addr;
+				int addrLen = sizeof(addr);
+				if (getpeername(sock, (sockaddr*)&addr, &addrLen) == 0)
+					connectionPort = (int)ntohs(addr.sin_port);
+			}
+		}
+
+		if (FourKitBridge::FirePlayerLogin(packet->userName, connectionIp, connectionPort, 2, &packet->m_onlineXuid, &packet->m_offlineXuid)) {
+			disconnect(DisconnectPacket::eDisconnect_EndOfStream);
+			return;
+		}
+	}
+#endif
+
 	// Guests use the online xuid, everyone else uses the offline one
 	PlayerUID playerXuid = packet->m_offlineXuid;
 	if(playerXuid == INVALID_XUID) playerXuid = packet->m_onlineXuid;
+
+#if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
+	// Cache name->XUID for console commands (whitelist add, revoketoken, etc.)
+	ServerRuntime::ServerLogManager::CachePlayerXuid(name, playerXuid);
+#endif
 
 	shared_ptr<ServerPlayer> playerEntity = server->getPlayers()->getPlayerForLogin(this, name, playerXuid,packet->m_onlineXuid);
 	if (playerEntity != nullptr)
 	{
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
-		ServerRuntime::ServerLogManager::OnAcceptedPlayerLogin(GetPendingConnectionSmallId(connection), name);
+		ServerRuntime::ServerLogManager::OnAcceptedPlayerLogin(GetPendingConnectionSmallId(connection), name,
+			packet->m_offlineXuid, packet->m_onlineXuid, packet->m_isGuest);
 #endif
 		server->getPlayers()->placeNewPlayer(connection, playerEntity, packet);
 		connection = nullptr;	// We've moved responsibility for this over to the new PlayerConnection, nullptr so we don't delete our reference to it here in our dtor

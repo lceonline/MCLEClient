@@ -22,3 +22,9 @@
 #include "ArrowKnockbackEnchantment.h"
 
 #include "ThornsEnchantment.h"
+
+// Fishing
+
+#include "LuckOfTheSeaEnchantment.h"
+
+#include "LureEnchantment.h"

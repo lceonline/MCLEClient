@@ -8,10 +8,62 @@
 #include "../../ModelPart.h"
 #include "../../Options.h"
 #include "../../../Minecraft.World/net.minecraft.world.entity.player.h"
+#include "Skins.h"
 #include "UIControl_PlayerSkinPreview.h"
+#include <string>
 
 //#define SKIN_PREVIEW_BOB_ANIM
 #define SKIN_PREVIEW_WALKING_ANIM
+
+#ifdef _WINDOWS64
+// Frame-rate-independent animation scaling.
+// The skin preview animations were designed for ~60fps (VSync on).
+// With uncapped FPS, each frame's contribution must be scaled down.
+// The scale is computed once per frame (keyed by frame counter) so
+// that multiple skin previews rendered in the same frame all use the
+// same value instead of measuring near-zero deltas between each other.
+static float s_skinAnimCachedScale = 1.0f;
+static double s_skinAnimLastTime = 0.0;
+static double s_skinAnimFreqInv = 0.0;
+
+static float GetSkinAnimDeltaScale()
+{
+	// Use the main loop's frame counter to detect a new frame.
+	// GetTickCount changes every ~16ms, but we need per-frame detection.
+	// Use a simple time threshold: if <0.1ms since last call, same frame.
+	if (s_skinAnimFreqInv == 0.0)
+	{
+		LARGE_INTEGER freq;
+		QueryPerformanceFrequency(&freq);
+		s_skinAnimFreqInv = 1.0 / (double)freq.QuadPart;
+	}
+	LARGE_INTEGER now;
+	QueryPerformanceCounter(&now);
+	double currentTime = (double)now.QuadPart * s_skinAnimFreqInv;
+
+	// If less than 0.5ms since last call, assume same frame -- reuse cached scale
+	double elapsed = currentTime - s_skinAnimLastTime;
+	if (s_skinAnimLastTime != 0.0 && elapsed < 0.0005)
+	{
+		return s_skinAnimCachedScale;
+	}
+
+	if (s_skinAnimLastTime == 0.0)
+	{
+		s_skinAnimLastTime = currentTime;
+		s_skinAnimCachedScale = 1.0f;
+		return 1.0f;
+	}
+
+	s_skinAnimLastTime = currentTime;
+
+	const double kBaselineFrameTime = 1.0 / 60.0;
+	float scale = static_cast<float>(elapsed / kBaselineFrameTime);
+	if (scale > 3.0f) scale = 3.0f;
+	s_skinAnimCachedScale = scale;
+	return scale;
+}
+#endif
 
 UIControl_PlayerSkinPreview::UIControl_PlayerSkinPreview()
 {
@@ -258,6 +310,23 @@ void UIControl_PlayerSkinPreview::render(EntityRenderer *renderer, double x, dou
 	glDisable(GL_CULL_FACE);
 
 	HumanoidModel *model = static_cast<HumanoidModel *>(renderer->getModel());
+	Textures *textures = Minecraft::GetInstance()->textures;
+	int skinId = textures->loadMemTexture(m_customTextureUrl, m_backupTexture) - 37;
+
+	if (slim[skinId] == true)
+	{
+		if (textures->getHeight(m_customTextureUrl, m_backupTexture) == 64)
+			model = static_cast<HumanoidModel *>(renderer->getNewModelSlim());
+		else
+			model = static_cast<HumanoidModel *>(renderer->getModelSlim());
+	}
+	else
+	{
+		if (textures->getHeight(m_customTextureUrl, m_backupTexture) == 64)
+			model = static_cast<HumanoidModel *>(renderer->getNewModel());
+		else
+			model = static_cast<HumanoidModel *>(renderer->getModel());
+	}
 
 	//getAttackAnim(mob, a);
 	//if (armor != nullptr) armor->attackTime = model->attackTime;
@@ -287,7 +356,11 @@ void UIControl_PlayerSkinPreview::render(EntityRenderer *renderer, double x, dou
 			break;
 		case e_SkinPreviewAnimation_Attacking:
 			model->holdingRightHand = true;
+#ifdef _WINDOWS64
+			m_swingTime += GetSkinAnimDeltaScale();
+#else
 			m_swingTime++;
+#endif
 			if (m_swingTime >= (Player::SWING_DURATION * 3) )
 			{
 				m_swingTime = 0;
@@ -340,8 +413,16 @@ void UIControl_PlayerSkinPreview::render(EntityRenderer *renderer, double x, dou
 
 #ifdef SKIN_PREVIEW_WALKING_ANIM
 	m_walkAnimSpeedO = m_walkAnimSpeed;
+#ifdef _WINDOWS64
+	{
+		float animScale = GetSkinAnimDeltaScale();
+		m_walkAnimSpeed += (0.1f - m_walkAnimSpeed) * 0.4f * animScale;
+		m_walkAnimPos += m_walkAnimSpeed * animScale;
+	}
+#else
 	m_walkAnimSpeed += (0.1f - m_walkAnimSpeed) * 0.4f;
 	m_walkAnimPos += m_walkAnimSpeed;
+#endif
 	float ws = m_walkAnimSpeedO + (m_walkAnimSpeed - m_walkAnimSpeedO) * a;
 	float wp = m_walkAnimPos - m_walkAnimSpeed * (1 - a);
 #else
