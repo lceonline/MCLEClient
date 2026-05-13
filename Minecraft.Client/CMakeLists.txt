@@ -85,4 +85,5 @@ add_copyredist_target(Minecraft.Client)
 # Make sure GameHDD exists on Windows
 if(PLATFORM_NAME STREQUAL "Windows64")
   add_gamehdd_target(Minecraft.Client)
+  add_settings_target(Minecraft.Client)
 endif()
