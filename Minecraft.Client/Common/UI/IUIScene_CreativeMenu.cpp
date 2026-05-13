@@ -210,40 +210,6 @@ void IUIScene_CreativeMenu::staticCtor()
 		ITEM_AUX(Tile::woolCarpet_Id,13)	// Green
 		ITEM_AUX(Tile::woolCarpet_Id,12)	// Brown
 
-		ITEM_AUX(Tile::stained_glass_Id,14)	// Red
-		ITEM_AUX(Tile::stained_glass_Id,1)	// Orange
-		ITEM_AUX(Tile::stained_glass_Id,4)	// Yellow
-		ITEM_AUX(Tile::stained_glass_Id,5)	// Lime
-		ITEM_AUX(Tile::stained_glass_Id,3)	// Light Blue
-		ITEM_AUX(Tile::stained_glass_Id,9)	// Cyan
-		ITEM_AUX(Tile::stained_glass_Id,11)	// Blue
-		ITEM_AUX(Tile::stained_glass_Id,10)	// Purple
-		ITEM_AUX(Tile::stained_glass_Id,2)	// Magenta
-		ITEM_AUX(Tile::stained_glass_Id,6)	// Pink
-		ITEM_AUX(Tile::stained_glass_Id,0)	// White
-		ITEM_AUX(Tile::stained_glass_Id,8)	// Light Gray
-		ITEM_AUX(Tile::stained_glass_Id,7)	// Gray
-		ITEM_AUX(Tile::stained_glass_Id,15)	// Black
-		ITEM_AUX(Tile::stained_glass_Id,13)	// Green
-		ITEM_AUX(Tile::stained_glass_Id,12)	// Brown
-
-		ITEM_AUX(Tile::stained_glass_pane_Id,14)	// Red
-		ITEM_AUX(Tile::stained_glass_pane_Id,1)	// Orange
-		ITEM_AUX(Tile::stained_glass_pane_Id,4)	// Yellow
-		ITEM_AUX(Tile::stained_glass_pane_Id,5)	// Lime
-		ITEM_AUX(Tile::stained_glass_pane_Id,3)	// Light Blue
-		ITEM_AUX(Tile::stained_glass_pane_Id,9)	// Cyan
-		ITEM_AUX(Tile::stained_glass_pane_Id,11)	// Blue
-		ITEM_AUX(Tile::stained_glass_pane_Id,10)	// Purple
-		ITEM_AUX(Tile::stained_glass_pane_Id,2)	// Magenta
-		ITEM_AUX(Tile::stained_glass_pane_Id,6)	// Pink
-		ITEM_AUX(Tile::stained_glass_pane_Id,0)	// White
-		ITEM_AUX(Tile::stained_glass_pane_Id,8)	// Light Gray
-		ITEM_AUX(Tile::stained_glass_pane_Id,7)	// Gray
-		ITEM_AUX(Tile::stained_glass_pane_Id,15)	// Black
-		ITEM_AUX(Tile::stained_glass_pane_Id,13)	// Green
-		ITEM_AUX(Tile::stained_glass_pane_Id,12)	// Brown
-
 #ifndef _CONTENT_PACKAGE
 	DEF(eCreativeInventory_ArtToolsDecorations)
 		if(app.DebugSettingsOn())
@@ -491,16 +457,6 @@ void IUIScene_CreativeMenu::staticCtor()
 			if (enchantment == nullptr || enchantment->category == nullptr) continue;
 			list->push_back(Item::enchantedBook->createForEnchantment(new EnchantmentInstance(enchantment, enchantment->getMaxLevel())));
 		}
-
-#ifndef _CONTENT_PACKAGE
-		if(app.DebugSettingsOn())
-		{
-			shared_ptr<ItemInstance> debugSword = std::make_shared<ItemInstance>(Item::sword_diamond_Id, 1, 0);
-			debugSword->enchant( Enchantment::damageBonus, 50 );
-			debugSword->setHoverName(L"Sword of Debug");
-			list->push_back(debugSword);
-		}
-#endif
 
 	// Materials
 	DEF(eCreativeInventory_Materials)

@@ -3241,7 +3241,6 @@ bool TileRenderer::tesselateThinPaneInWorld(Tile *tt, int x, int y, int z)
 	Icon *tex;
 	Icon *edgeTex;
 
-	bool stained = dynamic_cast<StainedGlassPaneBlock *>(tt) != nullptr;
 	if (hasFixedTexture())
 	{
 		tex = fixedTexture;
@@ -3251,7 +3250,7 @@ bool TileRenderer::tesselateThinPaneInWorld(Tile *tt, int x, int y, int z)
 	{
 		int data = level->getData(x, y, z);
 		tex = getTexture(tt, 0, data);
-		edgeTex = (stained) ? static_cast<StainedGlassPaneBlock *>(tt)->getEdgeTexture(data) : static_cast<ThinFenceTile *>(tt)->getEdgeTexture();
+		edgeTex = static_cast<ThinFenceTile *>(tt)->getEdgeTexture();
 	}
 
 	double u0 = tex->getU0();
@@ -3277,10 +3276,10 @@ bool TileRenderer::tesselateThinPaneInWorld(Tile *tt, int x, int y, int z)
 	double iz0 = z + .5 - 1.0 / 16.0;
 	double iz1 = z + .5 + 1.0 / 16.0;
 
-	bool n = (stained) ? static_cast<StainedGlassPaneBlock *>(tt)->attachsTo(level->getTile(x, y, z - 1)) : static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x, y, z - 1));
-	bool s = (stained) ? static_cast<StainedGlassPaneBlock *>(tt)->attachsTo(level->getTile(x, y, z + 1)) : static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x, y, z + 1));
-	bool w = (stained) ? static_cast<StainedGlassPaneBlock *>(tt)->attachsTo(level->getTile(x - 1, y, z)) : static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x - 1, y, z));
-	bool e = (stained) ? static_cast<StainedGlassPaneBlock *>(tt)->attachsTo(level->getTile(x + 1, y, z)) : static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x + 1, y, z));
+	bool n = static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x, y, z - 1));
+	bool s = static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x, y, z + 1));
+	bool w = static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x - 1, y, z));
+	bool e = static_cast<ThinFenceTile *>(tt)->attachsTo(level->getTile(x + 1, y, z));
 
 	double noZFightingOffset = 0.001;
 	double yt = 1.0 - noZFightingOffset;

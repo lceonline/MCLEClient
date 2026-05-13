@@ -12,4 +12,22 @@ If you provide a visual bugfix that fixes a distinctive quirk of the LCE rendere
 If your visual bugfix is a fix added in a future version of LCE than the one we're targeting, it should also be put behind a toggle or equivalent system for keeping it off by default.
 
 # Targeted Version
-We are targeting to keep this on TU19 with the exclusion of neoLegacy for Higher TU's, If there are any features for versions maintained by [neoLegacy](https://github.com/neoStudiosLCE/neoLegacy) that are missing make a PR to there repository and it will be brought to this, we also allow PR's that Downport to get older TU's.
+We are targeting to keep this on TU19 to TU24 with the exclusion of neoLegacy for Higher TU's, If there are any features for versions maintained by [neoLegacy](https://github.com/neoStudiosLCE/neoLegacy) that are missing make a PR to there repository and it will be brought to this, we also allow PR's that Downport to get older TU's.
+
+# Versions we are trying to add
+[TU2 (Jun 2012)](https://minecraft.wiki/w/Xbox_360_Edition_TU2)
+[TU4 (Aug 2012)](https://minecraft.wiki/w/Xbox_360_Edition_TU4)
+[TU6 (Nov 2012)](https://minecraft.wiki/w/Xbox_360_Edition_TU6)
+[TU8 (Nov 2013)](https://minecraft.wiki/w/Xbox_360_Edition_TU8)
+[TU11 (May 2013)](https://minecraft.wiki/w/Xbox_360_Edition_TU11)
+[TU13 (Oct 2013)](https://minecraft.wiki/w/Xbox_360_Edition_TU13)
+[TU18 (Oct 2014)](https://minecraft.wiki/w/Xbox_360_Edition_TU18)
+[TU24 (Apr 2015)](https://minecraft.wiki/w/Xbox_360_Edition_TU24)
+[TU30 (Oct 2015)](https://minecraft.wiki/w/Xbox_360_Edition_TU30)
+[TU42 (Sep 2016)](https://minecraft.wiki/w/Xbox_360_Edition_TU42)
+[TU45 (Oct 2016)](https://minecraft.wiki/w/Xbox_360_Edition_TU45)
+[TU52 (Apr 2017)](https://minecraft.wiki/w/Xbox_360_Edition_TU62)
+[TU53 (May 2017)](https://minecraft.wiki/w/Xbox_360_Edition_TU53)
+[TU59 (Nov 2017)](https://minecraft.wiki/w/Xbox_360_Edition_TU59)
+[TU68 (Aug 2018)](https://minecraft.wiki/w/Xbox_360_Edition_TU68)
+[TU75 (Apr 2019)](https://minecraft.wiki/w/Xbox_360_Edition_TU75)

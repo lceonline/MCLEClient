@@ -98,8 +98,6 @@
 #include "SnowTile.h"
 #include "SoulSandTile.h"
 #include "Sponge.h"
-#include "StainedGlassBlock.h"
-#include "StainedGlassPaneBlock.h"
 #include "StairTile.h"
 #include "StemTile.h"
 #include "StoneButtonTile.h"
