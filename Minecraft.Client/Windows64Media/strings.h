@@ -463,7 +463,6 @@
 #define IDS_DESC_ACTIVATOR_RAIL                                457
 #define IDS_DESC_DROPPER                                       458
 #define IDS_DESC_STAINED_CLAY                                  459
-#define IDS_DESC_HAY                                           460
 #define IDS_DESC_HARDENED_CLAY                                 461
 #define IDS_DESC_STAINED_GLASS                                 462
 #define IDS_DESC_STAINED_GLASS_PANE                            463
@@ -954,7 +953,6 @@
 #define IDS_TILE_ACTIVATOR_RAIL                                948
 #define IDS_TILE_DROPPER                                       949
 #define IDS_TILE_STAINED_CLAY                                  950
-#define IDS_TILE_HAY                                           951
 #define IDS_TILE_HARDENED_CLAY                                 952
 #define IDS_TILE_COAL                                          953
 #define IDS_TILE_STAINED_CLAY_BLACK                            954

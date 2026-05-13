@@ -29,7 +29,6 @@ void OreRecipies::_init()
 	ADD_OBJECT(map[6],Tile::coalBlock);
 	ADD_OBJECT(map[6],new ItemInstance(Item::coal, 9, CoalItem::STONE_COAL));
 
-	ADD_OBJECT(map[7],Tile::hayBlock);
 	ADD_OBJECT(map[7],new ItemInstance(Item::wheat, 9));
 }
 void OreRecipies::addRecipes(Recipes *r) 

@@ -157,7 +157,6 @@ void IUIScene_CreativeMenu::staticCtor()
 		ITEM(Item::sign_Id)
 		ITEM(Tile::bookshelf_Id)
 		ITEM(Item::flowerPot_Id)
-		ITEM(Tile::hayBlock_Id)
 		ITEM_AUX(Tile::wool_Id,14)	// Red
 		ITEM_AUX(Tile::wool_Id,1)	// Orange
 		ITEM_AUX(Tile::wool_Id,4)	// Yellow

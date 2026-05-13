@@ -359,7 +359,6 @@ public:
 	static const int dropper_Id = 158;
 	static const int stained_glass_pane_Id = 160;
 
-	static const int hayBlock_Id = 170;
 	static const int woolCarpet_Id = 171;
 	static const int coalBlock_Id = 173;
 
@@ -533,7 +532,6 @@ public:
 	static Tile *dropper;
 	static Tile *stained_glass_pane;
 
-	static Tile *hayBlock;
 	static Tile *woolCarpet;
 	static Tile *coalBlock;
 

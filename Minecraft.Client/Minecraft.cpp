@@ -3404,7 +3404,6 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 								case Item::wheat_Id:
 								case Item::sugar_Id:
 								case Item::bread_Id:
-								case Tile::hayBlock_Id:
 								case Item::apple_Id:
 									heldItemIsFood = true;
 									break;

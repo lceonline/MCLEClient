@@ -897,11 +897,6 @@ bool EntityHorse::mobInteract(shared_ptr<Player> player)
 				_ageUp = 180;
 				temper = 3;
 			}
-			else if (itemstack->id == Tile::hayBlock_Id)
-			{
-				_heal = 20;
-				_ageUp = 180;
-			}
 			else if (itemstack->id == Item::apple_Id)
 			{
 				_heal = 3;

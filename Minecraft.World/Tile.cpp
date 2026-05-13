@@ -212,7 +212,6 @@ Tile *Tile::stairs_quartz = nullptr;
 Tile *Tile::activatorRail = nullptr;
 Tile *Tile::dropper = nullptr;
 
-Tile *Tile::hayBlock = nullptr;
 Tile *Tile::woolCarpet = nullptr;
 Tile *Tile::coalBlock = nullptr;
 
@@ -435,7 +434,7 @@ void Tile::staticCtor()
 	Tile::activatorRail = (new PoweredRailTile(157))						->setDestroyTime(0.7f)->setSoundType(SOUND_METAL)->setIconName(L"rail_activator")->setDescriptionId(IDS_TILE_ACTIVATOR_RAIL)->setUseDescriptionId(IDS_DESC_ACTIVATOR_RAIL);
 	Tile::dropper = (new DropperTile(158))									->setBaseItemTypeAndMaterial(Item::eBaseItemType_redstoneContainer,	Item::eMaterial_undefined)->setDestroyTime(3.5f)->setSoundType(SOUND_STONE)->setIconName(L"dropper")->setDescriptionId(IDS_TILE_DROPPER)->setUseDescriptionId(IDS_DESC_DROPPER);
 
-	Tile::hayBlock = (new HayBlockTile(170))						->setBaseItemTypeAndMaterial(Item::eBaseItemType_block,	Item::eMaterial_wheat)->setDestroyTime(0.5f)->setSoundType(SOUND_GRASS)->setIconName(L"hay_block")->setDescriptionId(IDS_TILE_HAY)->setUseDescriptionId(IDS_DESC_HAY);
+	(new Tile(170, Material::stone))->setDestroyTime(0.0f)->setNotCollectStatistics();
 	Tile::woolCarpet =		(new WoolCarpetTile(171))				->setBaseItemTypeAndMaterial(Item::eBaseItemType_carpet,	Item::eMaterial_cloth)->setDestroyTime(0.1f)->setSoundType(SOUND_CLOTH)->setIconName(L"woolCarpet")->setLightBlock(0)->setDescriptionId(IDS_TILE_CARPET)->setUseDescriptionId(IDS_DESC_CARPET);
 	Tile::coalBlock = (new Tile(173, Material::stone))				->setBaseItemTypeAndMaterial(Item::eBaseItemType_block,	Item::eMaterial_coal)->setDestroyTime(5.0f)->setExplodeable(10)->setSoundType(SOUND_STONE)->setIconName(L"coal_block")->setDescriptionId(IDS_TILE_COAL)->setUseDescriptionId(IDS_DESC_COAL_BLOCK);
 
@@ -1506,6 +1505,9 @@ Tile::SoundType::SoundType(eMATERIALSOUND_TYPE eMaterialSound, float volume, flo
 		break;
 	case eMaterialSoundType_LADDER:
 		this->iStepSound=eSoundType_STEP_LADDER;
+		break;
+	case eMaterialSoundType_ANVIL:
+		this->iStepSound = eSoundType_STEP_STONE;
 		break;
 	default:
 		app.DebugPrintf("NO STEP SOUND!\n");

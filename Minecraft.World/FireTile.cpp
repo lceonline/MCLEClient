@@ -53,7 +53,6 @@ void FireTile::init()
 	setFlammable(Tile::wool_Id, FLAME_EASY, BURN_EASY);
 	setFlammable(Tile::vine_Id, FLAME_MEDIUM, BURN_INSTANT);
 	setFlammable(Tile::coalBlock_Id, FLAME_HARD, BURN_HARD);
-	setFlammable(Tile::hayBlock_Id, FLAME_INSTANT, BURN_MEDIUM);
 }
 
 void FireTile::setFlammable(int id, int flame, int burn)

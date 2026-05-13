@@ -309,7 +309,6 @@ enum eTutorial_Hint
 	e_Tutorial_Hint_Hopper,
 	e_Tutorial_Hint_Comparator,
 	e_Tutorial_Hint_ChestTrap,
-	e_Tutorial_Hint_HayBlock,
 	e_Tutorial_Hint_ClayHardened,
 	e_Tutorial_Hint_ClayHardenedColored,
 	e_Tutorial_Hint_CoalBlock,

@@ -49,7 +49,6 @@
 #include "GravelTile.h"
 #include "HalfSlabTile.h"
 #include "HalfTransparentTile.h"
-#include "HayBlockTile.h"
 #include "HeavyTile.h"
 #include "HopperTile.h"
 #include "HugeMushroomTile.h"

@@ -332,7 +332,6 @@ void Tutorial::staticCtor()
 	s_completableTasks.push_back( e_Tutorial_Hint_Hopper );
 	s_completableTasks.push_back( e_Tutorial_Hint_Comparator );
 	s_completableTasks.push_back( e_Tutorial_Hint_ChestTrap );
-	s_completableTasks.push_back( e_Tutorial_Hint_HayBlock );
 	s_completableTasks.push_back( e_Tutorial_Hint_ClayHardened );
 	s_completableTasks.push_back( e_Tutorial_Hint_ClayHardenedColored );
 	s_completableTasks.push_back( e_Tutorial_Hint_CoalBlock );
@@ -784,9 +783,6 @@ Tutorial::Tutorial(int iPad, bool isFullTutorial /*= false*/) : m_iPad( iPad )
 
 	int trappedChestItems[] = {Tile::chest_trap_Id};
 	if(!isHintCompleted(e_Tutorial_Hint_ChestTrap)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_ChestTrap, this, trappedChestItems, 1 ) );
-
-	int hayBlockItems[] = {Tile::hayBlock_Id};
-	if(!isHintCompleted(e_Tutorial_Hint_HayBlock)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_HayBlock, this, hayBlockItems, 1 ) );
 
 	int coalBlockItems[] = {Tile::coalBlock_Id};
 	if(!isHintCompleted(e_Tutorial_Hint_CoalBlock)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_CoalBlock, this, coalBlockItems, 1 ) );
