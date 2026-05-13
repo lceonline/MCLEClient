@@ -10,6 +10,18 @@ function(add_gamehdd_target TARGET_NAME)
   set_property(TARGET EnsureGameHDD_${TARGET_NAME} PROPERTY FOLDER "Build")
 endfunction()
 
+# Make sure the Settings directory exists
+function(add_settings_target TARGET_NAME)
+  add_custom_target(EnsureSettings_${TARGET_NAME} ALL
+    COMMAND ${CMAKE_COMMAND}
+      -E make_directory "$<TARGET_FILE_DIR:${TARGET_NAME}>/Windows64/Settings"
+    COMMENT "Ensuring Settings directory exists..."
+    VERBATIM
+  )
+  add_dependencies(${TARGET_NAME} EnsureSettings_${TARGET_NAME})
+  set_property(TARGET EnsureSettings_${TARGET_NAME} PROPERTY FOLDER "Build")
+endfunction()
+
 # Copy any needed redist files to the output directory
 function(add_copyredist_target TARGET_NAME)
   set(COPY_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/CopyFolderScript.cmake")
@@ -22,7 +34,6 @@ function(add_copyredist_target TARGET_NAME)
     COMMENT "Copying redist files..."
     VERBATIM
   )
-
   add_dependencies(${TARGET_NAME} CopyRedist_${TARGET_NAME})
   set_property(TARGET CopyRedist_${TARGET_NAME} PROPERTY FOLDER "Build")
 endfunction()

@@ -148,7 +148,8 @@ endif()
 # Copy redist files
 add_copyredist_target(Minecraft.Client)
 
-# Make sure GameHDD exists on Windows
+# Make sure GameHDD & Settings exists in Windows64
 if(PLATFORM_NAME STREQUAL "Windows64")
   add_gamehdd_target(Minecraft.Client)
+  add_settings_target(Minecraft.Client)
 endif()
