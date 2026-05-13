@@ -1,4 +1,4 @@
-name: Nightly Release
+name: TU31 Release
 
 on:
   workflow_dispatch: 
