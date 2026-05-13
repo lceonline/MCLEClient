@@ -33,7 +33,6 @@ However, we would accept changes that...
 
 
 ## Current Goals
-- Being a robust Desktop version of LCE
 - Having proper controller support across all types, brands on Desktop or Desktop-like platforms (Steam Deck)
 - Improving stability as much as possible
 - Fixing as many bugs as possible
