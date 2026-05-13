@@ -213,8 +213,6 @@ enum eSOUND_TYPE
 
 	eSoundType_FIRE_NEWIGNITE,
 
-	eSoundType_DAMAGE_CRITICAL,
-
 	eSoundType_MAX
 };
 

@@ -124,7 +124,6 @@ DamageSource::DamageSource(ChatPacket::EChatPacketMessage msgId, ChatPacket::ECh
 	_isProjectile = false;
 	_isMagic = false;
 	_isExplosion = false;
-	_isCritical = false;
 
 	//this->msgId = msgId;
 	m_msgId = msgId;
@@ -154,15 +153,7 @@ DamageSource *DamageSource::bypassInvul()
 	_bypassInvul = true;
 	return this;
 }
-bool DamageSource::isCritical()
-{
-	return _isCritical;
-}
-DamageSource *DamageSource::setIsCritical()
-{
-	_isCritical = true;
-	return this;
-}
+
 DamageSource *DamageSource::setIsFire()
 {
 	isFireSource = true;
