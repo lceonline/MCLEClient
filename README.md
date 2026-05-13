@@ -9,7 +9,7 @@ This project is based on [MCLCE/MinecraftConsoles](https://github.com/MCLCE/Mine
 ### Client
 Windows users can Look at our [Release Tags](https://github.com/mclemp/MCLEClient/tags) And choose what version to download.
 ### Server
-If you're looking for Dedicated Server software, Look at its [Release Tags](https://github.com/mclemp/MCLEClient/tags) And choose what version to download.
+If you're looking for Dedicated Server software, Look at its [Release Tags](https://github.com/mclemp/MCLEServer/tags) And choose what version to download.
 
 ## Platform Support
 
