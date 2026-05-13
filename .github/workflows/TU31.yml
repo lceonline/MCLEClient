@@ -86,8 +86,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: TU31
-        name: Nightly Client Release
+        tag_name: TU31 Nightly
+        name: TU31 Nightly Client Release
         body: |
           Requires at least Windows 7 and DirectX 11 compatible GPU to run.
           
