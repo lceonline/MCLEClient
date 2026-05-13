@@ -70,8 +70,8 @@ Multiplayer is relayed to allow anyone to easily host!
 - Split-screen players can join in, even in Multiplayer!
 
 ## Credits
-Special thanks to [neoLegacy](https://github.com/neoStudiosLCE/neoLegacy) for allowing us to use there version for Higher TU's
-Special thanks to [DrPerky](https://github.com/DrPerkyLegit) for making the Backend used for Authentication, Leaderboards, & Relaying, And the original Networking.
+Special thanks to [neoLegacy](https://github.com/neoStudiosLCE/neoLegacy) for allowing us to use there version for Higher TU's.  
+Special thanks to [DrPerky](https://github.com/DrPerkyLegit) for making the backend used for authentication, leaderboards, and relaying, and for the original networking.
 
 ## Build & Run
 
