@@ -1,3 +1,4 @@
+![Legacy Edition Banner](.github/banner.png)
 # MCLEClient (Minecraft Legacy Edition)
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white)](https://discord.gg/u9f67jaWyP)
