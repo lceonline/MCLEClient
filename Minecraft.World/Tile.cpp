@@ -211,11 +211,9 @@ Tile *Tile::quartzBlock = nullptr;
 Tile *Tile::stairs_quartz = nullptr;
 Tile *Tile::activatorRail = nullptr;
 Tile *Tile::dropper = nullptr;
-Tile *Tile::clayHardened_colored = nullptr;
 
 Tile *Tile::hayBlock = nullptr;
 Tile *Tile::woolCarpet = nullptr;
-Tile *Tile::clayHardened = nullptr;
 Tile *Tile::coalBlock = nullptr;
 
 DWORD Tile::tlsIdxShape = TlsAlloc();
@@ -436,17 +434,14 @@ void Tile::staticCtor()
 	Tile::stairs_quartz =	(new StairTile(156, Tile::quartzBlock, QuartzBlockTile::TYPE_DEFAULT))	->setBaseItemTypeAndMaterial(Item::eBaseItemType_stairs,	Item::eMaterial_quartz)->setIconName(L"stairsQuartz")->setDescriptionId(IDS_TILE_STAIRS_QUARTZ)->setUseDescriptionId(IDS_DESC_STAIRS);
 	Tile::activatorRail = (new PoweredRailTile(157))						->setDestroyTime(0.7f)->setSoundType(SOUND_METAL)->setIconName(L"rail_activator")->setDescriptionId(IDS_TILE_ACTIVATOR_RAIL)->setUseDescriptionId(IDS_DESC_ACTIVATOR_RAIL);
 	Tile::dropper = (new DropperTile(158))									->setBaseItemTypeAndMaterial(Item::eBaseItemType_redstoneContainer,	Item::eMaterial_undefined)->setDestroyTime(3.5f)->setSoundType(SOUND_STONE)->setIconName(L"dropper")->setDescriptionId(IDS_TILE_DROPPER)->setUseDescriptionId(IDS_DESC_DROPPER);
-	Tile::clayHardened_colored = (new ColoredTile(159, Material::stone))	->setBaseItemTypeAndMaterial(Item::eBaseItemType_clay,	Item::eMaterial_clay)->setDestroyTime(1.25f)->setExplodeable(7)->setSoundType(SOUND_STONE)->setIconName(L"hardened_clay_stained")->setDescriptionId(IDS_TILE_STAINED_CLAY)->setUseDescriptionId(IDS_DESC_STAINED_CLAY);
 
 	Tile::hayBlock = (new HayBlockTile(170))						->setBaseItemTypeAndMaterial(Item::eBaseItemType_block,	Item::eMaterial_wheat)->setDestroyTime(0.5f)->setSoundType(SOUND_GRASS)->setIconName(L"hay_block")->setDescriptionId(IDS_TILE_HAY)->setUseDescriptionId(IDS_DESC_HAY);
 	Tile::woolCarpet =		(new WoolCarpetTile(171))				->setBaseItemTypeAndMaterial(Item::eBaseItemType_carpet,	Item::eMaterial_cloth)->setDestroyTime(0.1f)->setSoundType(SOUND_CLOTH)->setIconName(L"woolCarpet")->setLightBlock(0)->setDescriptionId(IDS_TILE_CARPET)->setUseDescriptionId(IDS_DESC_CARPET);
-	Tile::clayHardened = (new Tile(172, Material::stone))			->setBaseItemTypeAndMaterial(Item::eBaseItemType_clay,	Item::eMaterial_clay)->setDestroyTime(1.25f)->setExplodeable(7)->setSoundType(SOUND_STONE)->setIconName(L"hardened_clay")->setDescriptionId(IDS_TILE_HARDENED_CLAY)->setUseDescriptionId(IDS_DESC_HARDENED_CLAY);
 	Tile::coalBlock = (new Tile(173, Material::stone))				->setBaseItemTypeAndMaterial(Item::eBaseItemType_block,	Item::eMaterial_coal)->setDestroyTime(5.0f)->setExplodeable(10)->setSoundType(SOUND_STONE)->setIconName(L"coal_block")->setDescriptionId(IDS_TILE_COAL)->setUseDescriptionId(IDS_DESC_COAL_BLOCK);
 
 
 	// Special cases for certain items since they can have different icons
 	Item::items[wool_Id]				= ( new WoolTileItem(Tile::wool_Id- 256) )->setIconName(L"cloth")->setDescriptionId(IDS_TILE_CLOTH)->setUseDescriptionId(IDS_DESC_WOOL);
-	Item::items[clayHardened_colored_Id]= ( new WoolTileItem(Tile::clayHardened_colored_Id - 256))->setIconName(L"clayHardenedStained")->setDescriptionId(IDS_TILE_STAINED_CLAY)->setUseDescriptionId(IDS_DESC_STAINED_CLAY);
 	Item::items[woolCarpet_Id]			= ( new WoolTileItem(Tile::woolCarpet_Id - 256))->setIconName(L"woolCarpet")->setDescriptionId(IDS_TILE_CARPET)->setUseDescriptionId(IDS_DESC_CARPET);
 	Item::items[treeTrunk_Id]			= ( new MultiTextureTileItem(Tile::treeTrunk_Id - 256, treeTrunk, (int *)TreeTile::TREE_NAMES, 4) )->setIconName(L"log")->setDescriptionId(IDS_TILE_LOG)->setUseDescriptionId(IDS_DESC_LOG);
 	Item::items[wood_Id]				= ( new MultiTextureTileItem(Tile::wood_Id - 256, Tile::wood, (int *)WoodTile::WOOD_NAMES, 4, IDS_TILE_PLANKS))->setIconName(L"wood")->setDescriptionId(IDS_TILE_OAKWOOD_PLANKS)->setUseDescriptionId(IDS_DESC_LOG); //  <- TODO

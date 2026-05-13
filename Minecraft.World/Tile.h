@@ -357,12 +357,10 @@ public:
 	static const int stairs_quartz_Id = 156;
 	static const int activatorRail_Id = 157;
 	static const int dropper_Id = 158;
-	static const int clayHardened_colored_Id = 159;
 	static const int stained_glass_pane_Id = 160;
 
 	static const int hayBlock_Id = 170;
 	static const int woolCarpet_Id = 171;
-	static const int clayHardened_Id = 172;
 	static const int coalBlock_Id = 173;
 
 
@@ -533,12 +531,10 @@ public:
 	static Tile *stairs_quartz;
 	static Tile *activatorRail;
 	static Tile *dropper;
-	static Tile *clayHardened_colored;
 	static Tile *stained_glass_pane;
 
 	static Tile *hayBlock;
 	static Tile *woolCarpet;
-	static Tile *clayHardened;
 	static Tile *coalBlock;
 
 	static void staticCtor();

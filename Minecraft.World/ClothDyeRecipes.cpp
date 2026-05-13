@@ -7,35 +7,6 @@
 
 void ClothDyeRecipes::addRecipes(Recipes *r) 
 {
-	// recipes for converting cloth to colored cloth using dye
-	for (int i = 0; i < 16; i++) 
-	{
-		r->addShapelessRecipy(new ItemInstance(Tile::wool, 1, ColoredTile::getItemAuxValueForTileData(i)), //
-			L"zzg",
-			new ItemInstance(Item::dye_powder, 1, i), new ItemInstance(Item::items[Tile::wool_Id], 1, 0),L'D');
-		r->addShapedRecipy(new ItemInstance(Tile::clayHardened_colored, 8, ColoredTile::getItemAuxValueForTileData(i)), //
-			L"sssczczg",
-			L"###",
-			L"#X#",
-			L"###",
-			L'#', new ItemInstance(Tile::clayHardened),
-			L'X', new ItemInstance(Item::dye_powder, 1, i),L'D');
-
-//#if 0
-//		r->addShapedRecipy(new ItemInstance(Tile::stained_glass, 8, ColoredTile::getItemAuxValueForTileData(i)), //
-//			L"sssczczg",
-//			L"###",
-//			L"#X#",
-//			L"###",
-//			L'#', new ItemInstance(Tile::glass),
-//			L'X', new ItemInstance(Item::dye_powder, 1, i), L'D');
-//		r->addShapedRecipy(new ItemInstance(Tile::stained_glass_pane, 16, i), //
-//			L"ssczg",
-//			L"###",
-//			L"###",
-//			L'#', new ItemInstance(Tile::stained_glass, 1, i), L'D');
-//#endif
-	}
 
 	// some dye recipes
 	r->addShapelessRecipy(new ItemInstance(Item::dye_powder, 2, DyePowderItem::YELLOW),

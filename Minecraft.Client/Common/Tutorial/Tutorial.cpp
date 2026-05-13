@@ -788,12 +788,6 @@ Tutorial::Tutorial(int iPad, bool isFullTutorial /*= false*/) : m_iPad( iPad )
 	int hayBlockItems[] = {Tile::hayBlock_Id};
 	if(!isHintCompleted(e_Tutorial_Hint_HayBlock)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_HayBlock, this, hayBlockItems, 1 ) );
 
-	int clayHardenedItems[] = {Tile::clayHardened_Id};
-	if(!isHintCompleted(e_Tutorial_Hint_ClayHardened)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_ClayHardened, this, clayHardenedItems, 1 ) );
-
-	int clayHardenedColoredItems[] = {Tile::clayHardened_colored_Id};
-	if(!isHintCompleted(e_Tutorial_Hint_ClayHardenedColored)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_ClayHardenedColored, this, clayHardenedColoredItems, 1 ) );
-
 	int coalBlockItems[] = {Tile::coalBlock_Id};
 	if(!isHintCompleted(e_Tutorial_Hint_CoalBlock)) addHint(e_Tutorial_State_Gameplay, new LookAtTileHint(e_Tutorial_Hint_CoalBlock, this, coalBlockItems, 1 ) );
 
