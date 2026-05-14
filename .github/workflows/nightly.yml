@@ -246,7 +246,7 @@ jobs:
       shell: bash
       run: |
         owner="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
-        echo "image=ghcr.io/$owner/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+        echo "image=git.huckle.dev/$owner/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
 
     - name: Extract Docker metadata
       id: meta
@@ -256,10 +256,10 @@ jobs:
         tags: |
           type=raw,value=nightly
 
-    - name: Login to GHCR
+    - name: Login to Forgejo registry
       uses: https://github.com/docker/login-action@v3
       with:
-        registry: ghcr.io
+        registry: git.huckle.dev
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -289,26 +289,26 @@ jobs:
         name: server-build
         path: artifacts
 
-    - name: Attest artifacts
-      uses: https://github.com/actions/attest-build-provenance@v2
-      with:
-        subject-path: |
-          artifacts/LCE-Revelations-Server-Win64.zip
-          artifacts/LCE-Revelations-Server-Win64-FourKit.zip
+    - name: Install jq
+      run: apt-get update && apt-get install -y --no-install-recommends jq
 
     - name: Get short SHA
       id: sha
       run: echo "short=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
-    - name: Delete old release
+    - name: Delete old release and tag
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release delete Nightly-Dedicated-Server --yes || true
-
-    - name: Delete old tag
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh api repos/${{ github.repository }}/git/refs/tags/Nightly-Dedicated-Server --method DELETE || true
+        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        TAG="Nightly-Dedicated-Server"
+        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
+        AUTH="Authorization: token $FORGEJO_TOKEN"
+        EXISTING_ID=$(curl -sf -H "$AUTH" "$API/releases/tags/$TAG" 2>/dev/null | jq -r '.id // empty' || true)
+        if [ -n "$EXISTING_ID" ]; then
+          curl -sf -X DELETE -H "$AUTH" "$API/releases/$EXISTING_ID"
+        fi
+        curl -s -X DELETE -H "$AUTH" "$API/tags/$TAG" > /dev/null || true
 
     - name: Import GPG key
       uses: https://github.com/crazy-max/ghaction-import-gpg@v6
@@ -323,20 +323,46 @@ jobs:
         git tag -s -f Nightly-Dedicated-Server -m "Nightly server release ${{ steps.sha.outputs.short }}"
         git push origin Nightly-Dedicated-Server --force
 
-    - name: Create release
+    - name: Create release on Forgejo
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create Nightly-Dedicated-Server artifacts/* \
-          --title "Server: ${{ steps.sha.outputs.short }}" \
-          --notes "Dedicated Server runtime for Windows64.
+        set -euo pipefail
+        TAG="Nightly-Dedicated-Server"
+        TITLE="Server: ${{ steps.sha.outputs.short }}"
+        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
+        AUTH="Authorization: token $FORGEJO_TOKEN"
+
+        NOTES=$(cat <<'EOF'
+        Dedicated Server runtime for Windows64.
 
         Two flavours are attached:
-        - \`LCE-Revelations-Server-Win64.zip\`: vanilla server, no plugin support, smallest download.
-        - \`LCE-Revelations-Server-Win64-FourKit.zip\`: server with the FourKit plugin host, bundled .NET 10 runtime, and an empty \`plugins/\` folder ready for plugin authors to drop DLLs into.
+        - `LCE-Revelations-Server-Win64.zip`: vanilla server, no plugin support, smallest download.
+        - `LCE-Revelations-Server-Win64-FourKit.zip`: server with the FourKit plugin host, bundled .NET 10 runtime, and an empty `plugins/` folder ready for plugin authors to drop DLLs into.
 
-        Pick the flavour you want and extract it to a folder where you'd like to keep the server runtime." \
-          --latest=false
+        Pick the flavour you want and extract it to a folder where you'd like to keep the server runtime.
+        EOF
+        )
+
+        PAYLOAD=$(jq -nc --arg tag "$TAG" --arg name "$TITLE" --arg body "$NOTES" \
+          '{tag_name:$tag, name:$name, body:$body, draft:false, prerelease:false}')
+
+        RID=$(curl -sf -X POST -H "$AUTH" -H "Content-Type: application/json" \
+          -d "$PAYLOAD" "$API/releases" | jq -r '.id')
+
+        if [ -z "$RID" ] || [ "$RID" = "null" ]; then
+          echo "Failed to create release" >&2
+          exit 1
+        fi
+        echo "Created release id=$RID"
+
+        for asset in artifacts/*; do
+          name=$(basename "$asset")
+          echo "Uploading $name"
+          curl -sf -X POST -H "$AUTH" \
+            -F "attachment=@$asset" \
+            "$API/releases/$RID/assets?name=$name"
+        done
 
   release-client:
     name: Release Client
@@ -353,27 +379,26 @@ jobs:
         name: client-build
         path: artifacts
 
-    - name: Attest artifacts
-      uses: https://github.com/actions/attest-build-provenance@v2
-      with:
-        subject-path: |
-          artifacts/LCE-Revelations-Client-Win64.zip
-          artifacts/Minecraft.Client.exe
-          artifacts/Minecraft.Client.pdb
+    - name: Install jq
+      run: apt-get update && apt-get install -y --no-install-recommends jq
 
     - name: Get short SHA
       id: sha
       run: echo "short=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
-    - name: Delete old release
+    - name: Delete old release and tag
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release delete Nightly --yes || true
-
-    - name: Delete old tag
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh api repos/${{ github.repository }}/git/refs/tags/Nightly --method DELETE || true
+        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        TAG="Nightly"
+        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
+        AUTH="Authorization: token $FORGEJO_TOKEN"
+        EXISTING_ID=$(curl -sf -H "$AUTH" "$API/releases/tags/$TAG" 2>/dev/null | jq -r '.id // empty' || true)
+        if [ -n "$EXISTING_ID" ]; then
+          curl -sf -X DELETE -H "$AUTH" "$API/releases/$EXISTING_ID"
+        fi
+        curl -s -X DELETE -H "$AUTH" "$API/tags/$TAG" > /dev/null || true
 
     - name: Import GPG key
       uses: https://github.com/crazy-max/ghaction-import-gpg@v6
@@ -423,22 +448,33 @@ jobs:
         - After creating your tunnel, navigate to the "Tunnels" main page. You'll see the IP address and port for your tunnel. This is what your friends will input when adding your server in order to join your online game!
         NOTES
 
-    - name: Create release
+    - name: Create release on Forgejo
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create Nightly artifacts/* \
-          --title "Client: ${{ steps.sha.outputs.short }}" \
-          --notes-file notes.md
+        set -euo pipefail
+        TAG="Nightly"
+        TITLE="Client: ${{ steps.sha.outputs.short }}"
+        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
+        AUTH="Authorization: token $FORGEJO_TOKEN"
 
-  cleanup:
-    needs: [release-client, release-server, docker]
-    if: always()
-    runs-on: [self-hosted, linux]
-    steps:
-    - name: Cleanup artifacts
-      uses: https://github.com/geekyeggo/delete-artifact@v5
-      with:
-        name: |
-          client-build
-          server-build
+        BODY=$(cat notes.md)
+        PAYLOAD=$(jq -nc --arg tag "$TAG" --arg name "$TITLE" --arg body "$BODY" \
+          '{tag_name:$tag, name:$name, body:$body, draft:false, prerelease:false}')
+
+        RID=$(curl -sf -X POST -H "$AUTH" -H "Content-Type: application/json" \
+          -d "$PAYLOAD" "$API/releases" | jq -r '.id')
+
+        if [ -z "$RID" ] || [ "$RID" = "null" ]; then
+          echo "Failed to create release" >&2
+          exit 1
+        fi
+        echo "Created release id=$RID"
+
+        for asset in artifacts/*; do
+          name=$(basename "$asset")
+          echo "Uploading $name"
+          curl -sf -X POST -H "$AUTH" \
+            -F "attachment=@$asset" \
+            "$API/releases/$RID/assets?name=$name"
+        done
