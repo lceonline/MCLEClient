@@ -20,18 +20,18 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: https://github.com/actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Setup MSVC
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: https://github.com/ilammy/msvc-dev-cmd@v1
 
     - name: Setup CMake
-      uses: lukka/get-cmake@latest
+      uses: https://github.com/lukka/get-cmake@latest
 
     - name: Run CMake
-      uses: lukka/run-cmake@v10
+      uses: https://github.com/lukka/run-cmake@v10
       env:
         VCPKG_ROOT: ""
       with:
@@ -86,7 +86,7 @@ jobs:
         Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.pdb staging/
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: https://github.com/actions/upload-artifact@v6
       with:
         name: client-build
         path: staging/*
@@ -97,23 +97,23 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: https://github.com/actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Setup MSVC
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: https://github.com/ilammy/msvc-dev-cmd@v1
 
     - name: Setup CMake
-      uses: lukka/get-cmake@latest
+      uses: https://github.com/lukka/get-cmake@latest
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: https://github.com/actions/setup-dotnet@v4
       with:
         global-json-file: global.json
 
     - name: Run CMake
-      uses: lukka/run-cmake@v10
+      uses: https://github.com/lukka/run-cmake@v10
       env:
         VCPKG_ROOT: ""
       with:
@@ -199,7 +199,7 @@ jobs:
         Copy-Item LCE-Revelations-Server-Win64-FourKit.zip staging/
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: https://github.com/actions/upload-artifact@v6
       with:
         name: server-build
         path: staging/*
@@ -223,10 +223,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: https://github.com/actions/checkout@v6
 
     - name: Download server artifacts
-      uses: actions/download-artifact@v7
+      uses: https://github.com/actions/download-artifact@v7
       with:
         name: server-build
         path: .artifacts/
@@ -250,21 +250,21 @@ jobs:
 
     - name: Extract Docker metadata
       id: meta
-      uses: docker/metadata-action@v5
+      uses: https://github.com/docker/metadata-action@v5
       with:
         images: ${{ steps.image.outputs.image }}
         tags: |
           type=raw,value=nightly
 
     - name: Login to GHCR
-      uses: docker/login-action@v3
+      uses: https://github.com/docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and push image
-      uses: docker/build-push-action@v6
+      uses: https://github.com/docker/build-push-action@v6
       with:
         context: .
         file: docker/dedicated-server/Dockerfile
@@ -281,16 +281,16 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: https://github.com/actions/checkout@v6
 
     - name: Download server artifacts
-      uses: actions/download-artifact@v7
+      uses: https://github.com/actions/download-artifact@v7
       with:
         name: server-build
         path: artifacts
 
     - name: Attest artifacts
-      uses: actions/attest-build-provenance@v2
+      uses: https://github.com/actions/attest-build-provenance@v2
       with:
         subject-path: |
           artifacts/LCE-Revelations-Server-Win64.zip
@@ -311,7 +311,7 @@ jobs:
       run: gh api repos/${{ github.repository }}/git/refs/tags/Nightly-Dedicated-Server --method DELETE || true
 
     - name: Import GPG key
-      uses: crazy-max/ghaction-import-gpg@v6
+      uses: https://github.com/crazy-max/ghaction-import-gpg@v6
       with:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
         passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -345,16 +345,16 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: https://github.com/actions/checkout@v6
 
     - name: Download client artifacts
-      uses: actions/download-artifact@v7
+      uses: https://github.com/actions/download-artifact@v7
       with:
         name: client-build
         path: artifacts
 
     - name: Attest artifacts
-      uses: actions/attest-build-provenance@v2
+      uses: https://github.com/actions/attest-build-provenance@v2
       with:
         subject-path: |
           artifacts/LCE-Revelations-Client-Win64.zip
@@ -376,7 +376,7 @@ jobs:
       run: gh api repos/${{ github.repository }}/git/refs/tags/Nightly --method DELETE || true
 
     - name: Import GPG key
-      uses: crazy-max/ghaction-import-gpg@v6
+      uses: https://github.com/crazy-max/ghaction-import-gpg@v6
       with:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
         passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -437,7 +437,7 @@ jobs:
     runs-on: [self-hosted, linux]
     steps:
     - name: Cleanup artifacts
-      uses: geekyeggo/delete-artifact@v5
+      uses: https://github.com/geekyeggo/delete-artifact@v5
       with:
         name: |
           client-build
