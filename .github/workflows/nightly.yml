@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build-client:
     name: Build Client
-    runs-on: windows-latest
+    runs-on: [self-hosted, windows]
 
     steps:
     - name: Checkout
@@ -93,7 +93,7 @@ jobs:
 
   build-server:
     name: Build Server
-    runs-on: windows-latest
+    runs-on: [self-hosted, windows]
 
     steps:
     - name: Checkout
@@ -207,7 +207,7 @@ jobs:
   docker:
     name: Build Docker (${{ matrix.variant }})
     needs: build-server
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     strategy:
       fail-fast: false
       matrix:
@@ -277,7 +277,7 @@ jobs:
   release-server:
     name: Release Server
     needs: build-server
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
 
     steps:
     - name: Checkout
@@ -341,7 +341,7 @@ jobs:
   release-client:
     name: Release Client
     needs: [build-client, release-server]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
 
     steps:
     - name: Checkout
@@ -434,7 +434,7 @@ jobs:
   cleanup:
     needs: [release-client, release-server, docker]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
     - name: Cleanup artifacts
       uses: geekyeggo/delete-artifact@v5
