@@ -86,7 +86,7 @@ jobs:
         Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.pdb staging/
 
     - name: Upload artifacts
-      uses: https://github.com/actions/upload-artifact@v6
+      uses: https://github.com/actions/upload-artifact@v3
       with:
         name: client-build
         path: staging/*
@@ -199,7 +199,7 @@ jobs:
         Copy-Item LCE-Revelations-Server-Win64-FourKit.zip staging/
 
     - name: Upload artifacts
-      uses: https://github.com/actions/upload-artifact@v6
+      uses: https://github.com/actions/upload-artifact@v3
       with:
         name: server-build
         path: staging/*
@@ -226,7 +226,7 @@ jobs:
       uses: https://github.com/actions/checkout@v6
 
     - name: Download server artifacts
-      uses: https://github.com/actions/download-artifact@v7
+      uses: https://github.com/actions/download-artifact@v3
       with:
         name: server-build
         path: .artifacts/
@@ -284,7 +284,7 @@ jobs:
       uses: https://github.com/actions/checkout@v6
 
     - name: Download server artifacts
-      uses: https://github.com/actions/download-artifact@v7
+      uses: https://github.com/actions/download-artifact@v3
       with:
         name: server-build
         path: artifacts
@@ -374,7 +374,7 @@ jobs:
       uses: https://github.com/actions/checkout@v6
 
     - name: Download client artifacts
-      uses: https://github.com/actions/download-artifact@v7
+      uses: https://github.com/actions/download-artifact@v3
       with:
         name: client-build
         path: artifacts
