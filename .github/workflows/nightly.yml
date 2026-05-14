@@ -358,10 +358,19 @@ jobs:
 
         for asset in artifacts/*; do
           name=$(basename "$asset")
-          echo "Uploading $name"
-          curl -sf -X POST -H "$AUTH" \
+          size=$(stat -c%s "$asset")
+          echo "Uploading $name ($size bytes)"
+          HTTP=$(curl -sS -w '%{http_code}' -o /tmp/upload-resp -X POST -H "$AUTH" \
             -F "attachment=@$asset" \
-            "$API/releases/$RID/assets?name=$name"
+            "$API/releases/$RID/assets?name=$name")
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            echo "Upload failed: HTTP $HTTP" >&2
+            echo "--- response body ---" >&2
+            cat /tmp/upload-resp >&2 || true
+            echo "" >&2
+            exit 1
+          fi
+          echo "Uploaded $name OK (HTTP $HTTP)"
         done
 
   release-client:
@@ -473,8 +482,17 @@ jobs:
 
         for asset in artifacts/*; do
           name=$(basename "$asset")
-          echo "Uploading $name"
-          curl -sf -X POST -H "$AUTH" \
+          size=$(stat -c%s "$asset")
+          echo "Uploading $name ($size bytes)"
+          HTTP=$(curl -sS -w '%{http_code}' -o /tmp/upload-resp -X POST -H "$AUTH" \
             -F "attachment=@$asset" \
-            "$API/releases/$RID/assets?name=$name"
+            "$API/releases/$RID/assets?name=$name")
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            echo "Upload failed: HTTP $HTTP" >&2
+            echo "--- response body ---" >&2
+            cat /tmp/upload-resp >&2 || true
+            echo "" >&2
+            exit 1
+          fi
+          echo "Uploaded $name OK (HTTP $HTTP)"
         done
