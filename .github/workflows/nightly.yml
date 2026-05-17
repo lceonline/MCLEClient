@@ -246,7 +246,7 @@ jobs:
       shell: bash
       run: |
         owner="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
-        echo "image=git.huckle.dev/$owner/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+        echo "image=git.revela.dev/$owner/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
 
     - name: Extract Docker metadata
       id: meta
@@ -283,7 +283,7 @@ jobs:
         REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
       run: |
         set -euo pipefail
-        echo "$REGISTRY_TOKEN" | crane auth login git.huckle.dev -u "${{ github.actor }}" --password-stdin
+        echo "$REGISTRY_TOKEN" | crane auth login git.revela.dev -u "${{ github.actor }}" --password-stdin
         crane push --chunk-size 52428800 /tmp/image-${{ matrix.variant }}.tar ${{ steps.meta.outputs.tags }}
 
   release-server:
