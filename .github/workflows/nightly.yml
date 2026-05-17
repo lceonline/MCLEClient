@@ -256,35 +256,23 @@ jobs:
         tags: |
           type=raw,value=nightly
 
-    - name: Set up Docker Buildx
-      uses: https://github.com/docker/setup-buildx-action@v3
+    - name: Login to Forgejo registry
+      uses: https://github.com/docker/login-action@v3
+      with:
+        registry: git.revela.dev
+        username: ${{ github.actor }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
 
-    - name: Build image to OCI tarball
+    - name: Build and push image
       uses: https://github.com/docker/build-push-action@v6
       with:
         context: .
         file: docker/dedicated-server/Dockerfile
-        outputs: type=oci,dest=/tmp/image-${{ matrix.variant }}.tar
+        push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           MC_RUNTIME_DIR=runtime
-
-    - name: Install crane
-      run: |
-        set -euo pipefail
-        VER=v0.20.2
-        curl -fsSL "https://github.com/google/go-containerregistry/releases/download/${VER}/go-containerregistry_Linux_x86_64.tar.gz" \
-          | tar -xz -C /usr/local/bin crane
-        crane version
-
-    - name: Push image with chunked upload
-      env:
-        REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-      run: |
-        set -euo pipefail
-        echo "$REGISTRY_TOKEN" | crane auth login git.revela.dev -u "${{ github.actor }}" --password-stdin
-        crane push --chunk-size 52428800 /tmp/image-${{ matrix.variant }}.tar ${{ steps.meta.outputs.tags }}
 
   release-server:
     name: Release Server
@@ -294,8 +282,6 @@ jobs:
     steps:
     - name: Checkout
       uses: https://github.com/actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - name: Download server artifacts
       uses: https://github.com/actions/download-artifact@v3
@@ -395,8 +381,6 @@ jobs:
     steps:
     - name: Checkout
       uses: https://github.com/actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - name: Download client artifacts
       uses: https://github.com/actions/download-artifact@v3
