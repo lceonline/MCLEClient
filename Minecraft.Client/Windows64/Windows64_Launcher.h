@@ -23,15 +23,10 @@ public:
 	static int API_GetAccountInfo(const std::string token);
 	static int API_AttemptAccountRegister(const std::string username, const std::string password, std::string& tokenOut);
 	static int API_AttemptAccountLogin(const std::string username, const std::string password, std::string& tokenOut);
+	static int API_AttemptDiscordLogin(const std::string& accessToken, std::string& tokenOut);
 
 	static bool IsInOfflineMode();
 
-	static std::vector<std::wstring> GetBannedUsersList();
-	static void SaveBannedUsersList(std::vector<std::wstring> bannedUsers);
-
 	static const std::string& GetAuthenticationToken();
 	static const std::string& GetUsername();
-
-	static void CheckForUpdates();
-
 };

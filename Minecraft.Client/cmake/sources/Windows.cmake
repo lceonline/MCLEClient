@@ -355,15 +355,23 @@ set(_MINECRAFT_CLIENT_WINDOWS64_LAUNCHER
 )
 source_group("Windows64/Launcher" FILES ${_MINECRAFT_CLIENT_WINDOWS64_LAUNCHER})
 
-set(_MINECRAFT_CLIENT_WINDOWS64_DISCORDRPC
-  "${BASE_DIR}/Extralibs/discordrpc/discord_register_win.cpp"
-  "${BASE_DIR}/Extralibs/discordrpc/connection_win.cpp"
-  "${BASE_DIR}/Extralibs/discordrpc/rpc_connection.cpp"
-  "${BASE_DIR}/Extralibs/discordrpc/serialization.cpp"
-  "${BASE_DIR}/Extralibs/discordrpc/discord_rpc.cpp"
-  "${BASE_DIR}/Extralibs/discordrpc/dllmain.cpp"
+set(_MINECRAFT_CLIENT_WINDOWS64_DISCORDSDK
+  "${BASE_DIR}/ExtraLibs/discordsdk/achievement_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/activity_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/application_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/core.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/image_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/lobby_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/network_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/overlay_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/relationship_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/storage_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/store_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/types.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/user_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/voice_manager.cpp"
 )
-source_group("Windows64/Discordrpc" FILES ${_MINECRAFT_CLIENT_WINDOWS64_DISCORDRPC})
+source_group("Windows64/discordsdk" FILES ${_MINECRAFT_CLIENT_WINDOWS64_DISCORDSDK})
 
 set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_4JLIBS_INC
   "${BASE_DIR}/4JLibs/inc/4J_Input.h"
@@ -499,7 +507,7 @@ set(MINECRAFT_CLIENT_WINDOWS
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64}
   ${_MINECRAFT_CLIENT_WINDOWS64_LAUNCHER}
-  ${_MINECRAFT_CLIENT_WINDOWS64_DISCORDRPC}
+  ${_MINECRAFT_CLIENT_WINDOWS64_DISCORDSDK}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_4JLIBS_INC}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_GAMECONFIG}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_IGGY_GDRAW}

@@ -60,6 +60,7 @@ target_link_libraries(Minecraft.Client PRIVATE
   4JLibs.${PLATFORM_NAME}.Profile
   4JLibs.${PLATFORM_NAME}.Storage
   4JLibs.${PLATFORM_NAME}.Render
+  $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/discordsdk/discord_game_sdk.dll.lib>
 )
 
 # Iggy libs
