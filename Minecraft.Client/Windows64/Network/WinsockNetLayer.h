@@ -1,5 +1,7 @@
-// Code implemented by LCEMP, credit if used on other repos
-// https://github.com/LCEMP/LCEMP
+// Written by DrperkyLegit, Improved upon by Str1k3r/MCLEMP
+// https://github.com/DrPerkyLegit
+// https://github.com/mclemp
+
 #pragma once
 
 #ifdef _WINDOWS64

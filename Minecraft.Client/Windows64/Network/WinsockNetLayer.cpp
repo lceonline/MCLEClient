@@ -1,5 +1,6 @@
-// Code implemented by LCEMP, credit if used on other repos
-// https://github.com/LCEMP/LCEMP
+// Written by DrperkyLegit, Improved upon by Str1k3r/MCLEMP
+// https://github.com/DrPerkyLegit
+// https://github.com/mclemp
 
 #include "stdafx.h"
 
@@ -390,7 +391,7 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 	std::string authToken = Windows64Launcher::GetAuthenticationToken();
 #endif
 	std::string hostname(ip);
-	std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
+	std::string req = "JOIN " + authToken + " 0 " + hostname + " 0\n";
 	send(s_hostConnectionSocket, req.c_str(), (int)req.length(), 0);
 
 	BYTE assignBuf[1];
@@ -550,7 +551,7 @@ DWORD WINAPI WinsockNetLayer::JoinThreadProc(LPVOID param)
 		std::string authToken = Windows64Launcher::GetAuthenticationToken();
 #endif
 		std::string hostname(s_joinIP);
-		std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
+		std::string req = "JOIN " + authToken + " 0 " + hostname + " 0\n";
 		send(sock, req.c_str(), (int)req.length(), 0);
 
 		BYTE assignBuf[1];
@@ -1209,7 +1210,8 @@ bool WinsockNetLayer::JoinSplitScreen(int padIndex, BYTE* outSmallId)
 	std::string authToken = Windows64Launcher::GetAuthenticationToken();
 #endif
 	std::string hostname(g_Win64MultiplayerIP);
-	std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
+	std::string req = "JOIN " + authToken + " 0 " + hostname + " 1\n";
+	app.DebugPrintf("Win64 LAN: Sending JOIN request: %s", req.c_str());
 	send(sock, req.c_str(), (int)req.length(), 0);
 
 	BYTE assignBuf[1];
