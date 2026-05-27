@@ -57,6 +57,7 @@ extern Renderer InternalRenderManager;
 
 #include "Xbox/Resource.h"
 
+#include "Windows64_Minecraft.h"
 #include "Windows64_Launcher.h"
 
 // request use of dedicated GPU from AMD and Nvidia drivers
@@ -125,15 +126,49 @@ static bool g_bResizeReady = false;
 char g_Win64Username[17] = { 0 };
 wchar_t g_Win64UsernameW[17] = { 0 };
 
+char g_Win64SessionTicket[256];
+
+bool s_externalLauncher = false;
+
+bool isOfflineMode = false;
+
+bool Windows64Minecraft::IsOfflineMode() {
+	return isOfflineMode;
+}
+
+bool Windows64Minecraft::IsExternalLauncher() {
+	return s_externalLauncher;
+}
+
+std::string Windows64Minecraft::GetAuthenticationTicket() {
+	return g_Win64SessionTicket;
+}
+
+static bool FetchSessionInfo() {
+	std::vector<std::wstring> headers;
+	headers.push_back(L"Content-Type: text/plain");
+
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/getAccountInfo", L"POST", Windows64Minecraft::GetAuthenticationTicket(), headers);
+
+	if (response.status == 0) return false;
+
+	if (response.status != 200) return false;
+
+	if (response.body.empty() || response.body[0] != '-') return false;
+	std::string payload = response.body.substr(1);
+	//std::vector<std::string> splitData = split(payload, '|');
+
+	strncpy_s(g_Win64Username, sizeof(g_Win64Username), payload.c_str(), _TRUNCATE);
+	MultiByteToWideChar(CP_UTF8, 0, g_Win64Username, -1, g_Win64UsernameW, sizeof(g_Win64UsernameW) / sizeof(wchar_t));
+
+	//WideCharToMultiByte(CP_ACP, 0, g_Win64UsernameW, -1, g_Win64Username, static_cast<int>(sizeof(g_Win64Username)), nullptr, nullptr);
+
+	return true;
+}
+
 // Fullscreen toggle state
 static bool g_isFullscreen = false;
 static WINDOWPLACEMENT g_wpPrev = { sizeof(g_wpPrev) };
-
-struct Win64LaunchOptions
-{
-	int screenMode;
-	bool fullscreen;
-};
 
 static void CopyWideArgToAnsi(LPCWSTR source, char* dest, size_t destSize)
 {
@@ -213,13 +248,12 @@ static void ApplyScreenMode(int screenMode)
 	}
 }
 
+using Win64LaunchOptions = Windows64Minecraft::Win64LaunchOptions;
+
 static Win64LaunchOptions ParseLaunchOptions()
 {
 	Win64LaunchOptions options = {};
 	options.screenMode = 0;
-
-	g_Win64MultiplayerJoin = false;
-	g_Win64MultiplayerPort = WIN64_NET_DEFAULT_PORT;
 
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -236,6 +270,21 @@ static Win64LaunchOptions ParseLaunchOptions()
 	{
 		if (_wcsicmp(argv[i], L"-fullscreen") == 0)
 			options.fullscreen = true;
+	}
+
+	for (int i = 1; i < argc; ++i)
+	{
+		if (_wcsicmp(argv[i], L"-username") == 0 && (i + 1) < argc) {
+			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
+			options.username = true;
+		}
+		else if (_wcsicmp(argv[i], L"-token") == 0 && (i + 1) < argc) {
+			CopyWideArgToAnsi(argv[++i], g_Win64SessionTicket, sizeof(g_Win64SessionTicket));
+			options.token = true;
+		}
+		else if (_wcsicmp(argv[i], L"-offline") == 0) {
+			isOfflineMode = true;
+		}
 	}
 
 	LocalFree(argv);
@@ -1289,10 +1338,7 @@ static Minecraft* InitialiseMinecraftRuntime()
 
 void StartGame(Win64LaunchOptions launchOptions, int nCmdShow);
 
-int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-					   _In_opt_ HINSTANCE hPrevInstance,
-					   _In_ LPTSTR    lpCmdLine,
-					   _In_ int       nCmdShow)
+int APIENTRY _tWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPTSTR lpCmdLine, _In_ int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -1300,29 +1346,45 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// 4J-Win64: set CWD to exe dir so asset paths resolve correctly
 	{
 		char szExeDir[MAX_PATH] = {};
-		GetModuleFileNameA(NULL, szExeDir, MAX_PATH);
-		char *pSlash = strrchr(szExeDir, '\\');
+		GetModuleFileNameA(nullptr, szExeDir, MAX_PATH);
+		char* pSlash = strrchr(szExeDir, '\\');
 		if (pSlash) { *(pSlash + 1) = '\0'; SetCurrentDirectoryA(szExeDir); }
 	}
 
-	// Declare DPI awareness so GetSystemMetrics returns physical pixels
 	SetProcessDPIAware();
 	g_iScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 	g_iScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+	g_rScreenWidth = g_iScreenWidth;
+	g_rScreenHeight = g_iScreenHeight;
 
-	// Load stuff from launch options, including username
 	Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
 
 	hMyInst = hInstance;
 
+	// If -token was passed by an external launcher then skip the internal launcher
+	// or if -offline was passed then skip auth
+	if (launchOptions.token)
+	{
+		// External launcher path: resolve session info and go straight to game
+		s_externalLauncher = true;
+		MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
+		FetchSessionInfo();
+		StartGame(launchOptions, nCmdShow);
+	}
+	else if (Windows64Minecraft::IsOfflineMode()) {
+		MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
+		StartGame(launchOptions, nCmdShow);
+	}
+	else
+	{
 		Windows64Launcher::CreateLauncherWindow(hInstance, [launchOptions, nCmdShow]() {
 			const char* username = Windows64Launcher::GetUsername().c_str();
 			strncpy_s(g_Win64Username, sizeof(g_Win64Username), username, _TRUNCATE);
 			MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
-
 			StartGame(launchOptions, nCmdShow);
-		});
+			});
+	}
 
 	return 0;
 }
