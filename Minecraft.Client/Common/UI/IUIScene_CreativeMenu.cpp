@@ -1,3 +1,4 @@
+#include "IUIScene_CreativeMenu.h"
 #include "stdafx.h"
 #include "IUIScene_CreativeMenu.h"
 
@@ -21,6 +22,56 @@ vector< shared_ptr<ItemInstance> > IUIScene_CreativeMenu::categoryGroups[eCreati
 #define ITEM(id) list->push_back( shared_ptr<ItemInstance>(new ItemInstance(id, 1, 0)) );
 #define ITEM_AUX(id, aux) list->push_back( shared_ptr<ItemInstance>(new ItemInstance(id, 1, aux)) );
 #define DEF(index) list = &categoryGroups[index];
+
+void IUIScene_CreativeMenu::_wipeCreativeItems() {
+	for (int i = 0; i < eCreativeInventoryGroupsCount; i++) {
+		IUIScene_CreativeMenu::categoryGroups[i].clear();
+	}
+}
+
+void IUIScene_CreativeMenu::loadFromLocal() {
+	IUIScene_CreativeMenu::_wipeCreativeItems();
+	IUIScene_CreativeMenu::staticCtor();
+}
+
+void IUIScene_CreativeMenu::loadFromPacket(byteArray packetData) {
+	ByteArrayInputStream bais(packetData);
+	DataInputStream input(&bais);
+
+	IUIScene_CreativeMenu::_wipeCreativeItems();
+		
+	for (int i = 0; i < eCreativeInventoryGroupsCount; i++) {
+		int itemCount = input.readShort();
+
+		for (int j = 0; j < itemCount; j++) {
+			int itemId = input.readShort();
+			int itemAux = input.readShort();
+
+			shared_ptr<ItemInstance> item = std::make_shared<ItemInstance>(itemId, 1, 0);
+			item->setRawAuxValue(itemAux);
+			item->tag = Packet::readNbt(&input);
+
+			IUIScene_CreativeMenu::categoryGroups[i].emplace_back(item);
+		}
+	}
+
+}
+
+std::shared_ptr<CustomPayloadPacket> IUIScene_CreativeMenu::createUpdatePacket() {
+	ByteArrayOutputStream baos;
+	DataOutputStream dos(&baos);
+
+	for (int i = 0; i < eCreativeInventoryGroupsCount; i++) {
+		dos.writeShort(IUIScene_CreativeMenu::categoryGroups[i].size());
+		for (shared_ptr<ItemInstance>& item : IUIScene_CreativeMenu::categoryGroups[i]) {
+			dos.writeShort(item->id);
+			dos.writeShort(item->getAuxValue());
+			Packet::writeNbt(item->tag, &dos);
+		}
+	}
+
+	return std::make_shared<CustomPayloadPacket>(CustomPayloadPacket::UPDATE_CREATIVE_REGISTRY, baos.toByteArray());
+}
 
 void IUIScene_CreativeMenu::staticCtor()
 {
@@ -801,55 +852,56 @@ void IUIScene_CreativeMenu::staticCtor()
 			ITEM_AUX(Item::potion_Id,MACRO_MAKEPOTION_AUXVAL(MASK_SPLASH, MASK_LEVEL2EXTENDED, MASK_JUMPBOOST))
 			// end of tu31 potions
 
+	if (specs == nullptr) {
+		specs = new TabSpec * [eCreativeInventoryTab_COUNT];
 
-		specs = new TabSpec*[eCreativeInventoryTab_COUNT];
-
-	// Top Row
-	ECreative_Inventory_Groups blocksGroup[] = {eCreativeInventory_BuildingBlocks};
-	specs[eCreativeInventoryTab_BuildingBlocks] = new TabSpec(L"Structures", IDS_GROUPNAME_BUILDING_BLOCKS, 1, blocksGroup);
+		// Top Row
+		ECreative_Inventory_Groups blocksGroup[] = { eCreativeInventory_BuildingBlocks };
+		specs[eCreativeInventoryTab_BuildingBlocks] = new TabSpec(L"Structures", IDS_GROUPNAME_BUILDING_BLOCKS, 1, blocksGroup);
 
 #ifndef _CONTENT_PACKAGE
-	ECreative_Inventory_Groups decorationsGroup[] = {eCreativeInventory_Decoration};
-	ECreative_Inventory_Groups debugDecorationsGroup[] = {eCreativeInventory_ArtToolsDecorations};
-	specs[eCreativeInventoryTab_Decorations] = new TabSpec(L"Decoration", IDS_GROUPNAME_DECORATIONS, 1, decorationsGroup, 0, nullptr, 1, debugDecorationsGroup);
+		ECreative_Inventory_Groups decorationsGroup[] = { eCreativeInventory_Decoration };
+		ECreative_Inventory_Groups debugDecorationsGroup[] = { eCreativeInventory_ArtToolsDecorations };
+		specs[eCreativeInventoryTab_Decorations] = new TabSpec(L"Decoration", IDS_GROUPNAME_DECORATIONS, 1, decorationsGroup, 0, nullptr, 1, debugDecorationsGroup);
 #else
-	ECreative_Inventory_Groups decorationsGroup[] = {eCreativeInventory_Decoration};
-	specs[eCreativeInventoryTab_Decorations] = new TabSpec(L"Decoration", IDS_GROUPNAME_DECORATIONS, 1, decorationsGroup);
+		ECreative_Inventory_Groups decorationsGroup[] = { eCreativeInventory_Decoration };
+		specs[eCreativeInventoryTab_Decorations] = new TabSpec(L"Decoration", IDS_GROUPNAME_DECORATIONS, 1, decorationsGroup);
 #endif
 
-	ECreative_Inventory_Groups redAndTranGroup[] = {eCreativeInventory_Transport, eCreativeInventory_Redstone};
-	specs[eCreativeInventoryTab_RedstoneAndTransport] = new TabSpec(L"RedstoneAndTransport", IDS_GROUPNAME_REDSTONE_AND_TRANSPORT, 2, redAndTranGroup);
+		ECreative_Inventory_Groups redAndTranGroup[] = { eCreativeInventory_Transport, eCreativeInventory_Redstone };
+		specs[eCreativeInventoryTab_RedstoneAndTransport] = new TabSpec(L"RedstoneAndTransport", IDS_GROUPNAME_REDSTONE_AND_TRANSPORT, 2, redAndTranGroup);
 
-	ECreative_Inventory_Groups materialsGroup[] = {eCreativeInventory_Materials};
-	specs[eCreativeInventoryTab_Materials] = new TabSpec(L"Materials", IDS_GROUPNAME_MATERIALS, 1, materialsGroup);
+		ECreative_Inventory_Groups materialsGroup[] = { eCreativeInventory_Materials };
+		specs[eCreativeInventoryTab_Materials] = new TabSpec(L"Materials", IDS_GROUPNAME_MATERIALS, 1, materialsGroup);
 
-	ECreative_Inventory_Groups foodGroup[] = {eCreativeInventory_Food};
-	specs[eCreativeInventoryTab_Food] = new TabSpec(L"Food", IDS_GROUPNAME_FOOD, 1, foodGroup);
+		ECreative_Inventory_Groups foodGroup[] = { eCreativeInventory_Food };
+		specs[eCreativeInventoryTab_Food] = new TabSpec(L"Food", IDS_GROUPNAME_FOOD, 1, foodGroup);
 
-	ECreative_Inventory_Groups toolsGroup[] = {eCreativeInventory_ToolsArmourWeapons};
-	specs[eCreativeInventoryTab_ToolsWeaponsArmor] = new TabSpec(L"Tools", IDS_GROUPNAME_TOOLS_WEAPONS_ARMOR, 1, toolsGroup);
+		ECreative_Inventory_Groups toolsGroup[] = { eCreativeInventory_ToolsArmourWeapons };
+		specs[eCreativeInventoryTab_ToolsWeaponsArmor] = new TabSpec(L"Tools", IDS_GROUPNAME_TOOLS_WEAPONS_ARMOR, 1, toolsGroup);
 
-	ECreative_Inventory_Groups brewingGroup[] = {eCreativeInventory_Brewing, eCreativeInventory_Potions_Level2_Extended, eCreativeInventory_Potions_Extended, eCreativeInventory_Potions_Level2, eCreativeInventory_Potions_Basic};
+		ECreative_Inventory_Groups brewingGroup[] = { eCreativeInventory_Brewing, eCreativeInventory_Potions_Level2_Extended, eCreativeInventory_Potions_Extended, eCreativeInventory_Potions_Level2, eCreativeInventory_Potions_Basic };
 
-	// Just use the text LT - the graphic doesn't fit in splitscreen either
-	// In 480p there's not enough room for the LT button, so use text instead
-	//if(!RenderManager.IsHiDef() && !RenderManager.IsWidescreen())
-	{
-		specs[eCreativeInventoryTab_Brewing] = new TabSpec(L"Brewing", IDS_GROUPNAME_POTIONS_480, 5, brewingGroup);
+		// Just use the text LT - the graphic doesn't fit in splitscreen either
+		// In 480p there's not enough room for the LT button, so use text instead
+		//if(!RenderManager.IsHiDef() && !RenderManager.IsWidescreen())
+		{
+			specs[eCreativeInventoryTab_Brewing] = new TabSpec(L"Brewing", IDS_GROUPNAME_POTIONS_480, 5, brewingGroup);
+		}
+		// 	else
+		// 	{
+		// 		specs[eCreativeInventoryTab_Brewing] = new TabSpec(L"icon_brewing.png", IDS_GROUPNAME_POTIONS, 1, brewingGroup, 4, potionsGroup);
+		// 	}
+
+#ifndef _CONTENT_PACKAGE
+		ECreative_Inventory_Groups miscGroup[] = { eCreativeInventory_Misc };
+		ECreative_Inventory_Groups debugMiscGroup[] = { eCreativeInventory_ArtToolsMisc };
+		specs[eCreativeInventoryTab_Misc] = new TabSpec(L"Misc", IDS_GROUPNAME_MISCELLANEOUS, 1, miscGroup, 0, nullptr, 1, debugMiscGroup);
+#else
+		ECreative_Inventory_Groups miscGroup[] = { eCreativeInventory_Misc };
+		specs[eCreativeInventoryTab_Misc] = new TabSpec(L"Misc", IDS_GROUPNAME_MISCELLANEOUS, 1, miscGroup);
+#endif
 	}
-	// 	else
-	// 	{
-	// 		specs[eCreativeInventoryTab_Brewing] = new TabSpec(L"icon_brewing.png", IDS_GROUPNAME_POTIONS, 1, brewingGroup, 4, potionsGroup);
-	// 	}
-
-#ifndef _CONTENT_PACKAGE
-	ECreative_Inventory_Groups miscGroup[] = {eCreativeInventory_Misc};
-	ECreative_Inventory_Groups debugMiscGroup[] = {eCreativeInventory_ArtToolsMisc};
-	specs[eCreativeInventoryTab_Misc] = new TabSpec(L"Misc", IDS_GROUPNAME_MISCELLANEOUS, 1, miscGroup, 0, nullptr, 1, debugMiscGroup);
-#else
-	ECreative_Inventory_Groups miscGroup[] = {eCreativeInventory_Misc};
-	specs[eCreativeInventoryTab_Misc] = new TabSpec(L"Misc", IDS_GROUPNAME_MISCELLANEOUS, 1, miscGroup);
-#endif
 }
 
 IUIScene_CreativeMenu::IUIScene_CreativeMenu()

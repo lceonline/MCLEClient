@@ -38,11 +38,11 @@ void ClothDyeRecipes::addRecipes(Recipes *r)
 	}
 
 	// some dye recipes
-	r->addShapelessRecipy(new ItemInstance(Item::dye_powder, 2, DyePowderItem::YELLOW),
+	r->addShapelessRecipy(new ItemInstance(Item::dye_powder, 1, DyePowderItem::YELLOW),
 		L"tg", 
 		Tile::flower,L'D');
 
-	r->addShapelessRecipy(new ItemInstance(Item::dye_powder, 2, DyePowderItem::RED),
+	r->addShapelessRecipy(new ItemInstance(Item::dye_powder, 1, DyePowderItem::RED),
 		L"tg", 
 		Tile::rose,L'D');
 

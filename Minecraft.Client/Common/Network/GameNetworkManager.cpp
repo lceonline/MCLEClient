@@ -1546,7 +1546,7 @@ void CGameNetworkManager::CreateSocket(INetworkPlayer* pNetworkPlayer, bool loca
 			IQNet::m_player[padIdx].m_smallId = assignedSmallId;
 			IQNet::m_player[padIdx].m_resolvedXuid = Win64Xuid::DeriveXuidForPad(Win64Xuid::ResolvePersistentXuidFromName(IQNet::m_player[padIdx].m_gamertag), padIdx);
 
-			// Network socket (not hostLocal) — data goes through TCP via GetLocalSocket
+			// Network socket (not hostLocal) â€” data goes through TCP via GetLocalSocket
 			socket = new Socket(pNetworkPlayer, false, false);
 			pNetworkPlayer->SetSocket(socket);
 

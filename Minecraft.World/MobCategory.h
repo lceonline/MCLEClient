@@ -7,9 +7,9 @@ class MobCategory
 {
 public:
 	// 4J - putting constants for xbox spawning in one place to tidy things up a bit - all numbers are per level
-	static const int CONSOLE_MONSTERS_HARD_LIMIT = 50;									// Max number of enemies (skeleton, zombie, creeper etc) that the mob spawner will produce
-	static const int CONSOLE_ANIMALS_HARD_LIMIT = 50;									// Max number of animals (cows, sheep, pigs) that the mob spawner will produce	
-	static const int CONSOLE_AMBIENT_HARD_LIMIT = 20;									// Ambient mobs
+	static const int CONSOLE_MONSTERS_HARD_LIMIT = 100;									// Max number of enemies (skeleton, zombie, creeper etc) that the mob spawner will produce
+	static const int CONSOLE_ANIMALS_HARD_LIMIT = 100;									// Max number of animals (cows, sheep, pigs) that the mob spawner will produce	
+	static const int CONSOLE_AMBIENT_HARD_LIMIT = 40;									// Ambient mobs
 
 	static const int MAX_XBOX_CHICKENS = 8;										// Max number of chickens that the mob spawner will produce
 	static const int MAX_XBOX_WOLVES = 8;										// Max number of wolves that the mob spawner will produce
@@ -20,7 +20,7 @@ public:
 	static const int MAX_CONSOLE_BOSS = 1;										// Max number of bosses (enderdragon/wither)
 	
 	// 4J Villager breeding/egg limits - villagers are not a MobCategory so these stay hardcoded
-	static const int MAX_VILLAGERS_WITH_BREEDING = 35;
+	static const int MAX_VILLAGERS_WITH_BREEDING = 70;
 	static const int MAX_XBOX_VILLAGERS_WITH_SPAWN_EGG = MAX_VILLAGERS_WITH_BREEDING + 15;
 
 	// Breeding headroom above the natural spawn cap. Read at call time so these

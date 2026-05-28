@@ -1,5 +1,7 @@
-// Code implemented by LCEMP, credit if used on other repos
-// https://github.com/LCEMP/LCEMP
+// Written by DrperkyLegit, Improved upon by Str1k3r/MCLEMP
+// https://github.com/DrPerkyLegit
+// https://github.com/mclemp
+
 #pragma once
 
 #ifdef _WINDOWS64
@@ -109,12 +111,12 @@ public:
 	static SOCKET GetLocalSocket(BYTE senderSmallId);
 	static BYTE GetSplitScreenSmallId(int padIndex);
 
-	static bool IsHosting()    { return s_isHost; }
-	static bool IsConnected()  { return s_connected; }
-	static bool IsActive()     { return s_active; }
+	static bool IsHosting() { return s_isHost; }
+	static bool IsConnected() { return s_connected; }
+	static bool IsActive() { return s_active; }
 
 	static BYTE GetLocalSmallId() { return s_localSmallId; }
-	static BYTE GetHostSmallId()  { return s_hostSmallId; }
+	static BYTE GetHostSmallId() { return s_hostSmallId; }
 
 	static SOCKET GetSocketForSmallId(BYTE smallId);
 

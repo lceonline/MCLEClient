@@ -94,6 +94,18 @@ S32 UIControl::getYPos()
 	return m_y;
 }
 
+void UIControl::setXPos(S32 x)
+{
+	m_x = x;
+	IggyValueSetF64RS( getIggyValuePath(), m_nameXPos, nullptr, (F64)x );
+}
+
+void UIControl::setYPos(S32 y)
+{
+	m_y = y;
+	IggyValueSetF64RS( getIggyValuePath(), m_nameYPos, nullptr, (F64)y );
+}
+
 S32 UIControl::getWidth()
 {
 	return m_width;

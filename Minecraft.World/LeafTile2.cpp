@@ -15,13 +15,13 @@ const unsigned int LeafTile2::LEAF2_NAMES[LEAF2_NAMES_SIZE] = {
 };
 
 const wstring LeafTile2::TEXTURES[2][2] = { 
-	{ L"leaves_acacia", L"leaves_dark_oak" },               // Indice 0: Fancy
-	{ L"leaves_acacia_opaque", L"leaves_dark_oak_opaque" }  // Indice 1: Veloce/Opaca
+	{ L"leaves_acacia", L"leaves_dark_oak" },               // index 0: Fancy
+	{ L"leaves_acacia_opaque", L"leaves_dark_oak_opaque" }  // index 1: Fast
 };
 
 LeafTile2::LeafTile2(int id) : LeafTile(id)
 {
-	// Non serve fare checkBuffer qui, ci pensa già la classe padre LeafTile!
+	// do nothing here
 }
 
 Icon *LeafTile2::getTexture(int face, int data)
@@ -29,8 +29,8 @@ Icon *LeafTile2::getTexture(int face, int data)
 	int type = data & 3; 
 	if (type >= LEAF2_NAMES_SIZE) type = 0;
 	
-	// isSolidRender() in LeafTile restituisce 'true' se la grafica è su Veloce/Opaca.
-	// Quindi se è true usiamo l'indice 1, se è false (Trasparente) usiamo l'indice 0.
+	// isSolidRender() in LeafTile returns 'true' if graphics is Fast
+	// if true -> index is 1, else 0.
 	int textureSet = isSolidRender(false) ? 1 : 0; 
 	
 	return icons[textureSet][type];
@@ -56,13 +56,14 @@ void LeafTile2::registerIcons(IconRegister *iconRegister)
 
 int LeafTile2::getColor(int data)
 {
-	// In inventario o in mano, l'Acacia e la Dark Oak usano il verde base
+	// in the inventory use the default colour for leaves
 	return FoliageColor::getDefaultColor();
 }
 
 int LeafTile2::getColor(LevelSource *level, int x, int y, int z, int data)
 {
-	// Codice di blending per il colore del bioma (copiato dal tuo LeafTile.cpp)
+	// Codice di blending per il colore del bioma (copiato dal tuo LeafTile.cpp))
+	// blending biome colors copied from LeafTile.cpp
 	int totalRed = 0;
 	int totalGreen = 0;
 	int totalBlue = 0;
@@ -71,7 +72,7 @@ int LeafTile2::getColor(LevelSource *level, int x, int y, int z, int data)
 	{
 		for (int ox = -1; ox <= 1; ox++)
 		{
-			int foliageColor = level->getBiome(x + ox, z + oz)->getFolageColor(); // Attento, nel tuo engine si chiama getFolageColor() senza la 'i'
+			int foliageColor = level->getBiome(x + ox, z + oz)->getFolageColor(); // they mispelled the word. getFolageColor without "i"
 			totalRed += (foliageColor & 0xff0000) >> 16;
 			totalGreen += (foliageColor & 0xff00) >> 8;
 			totalBlue += (foliageColor & 0xff);
@@ -83,7 +84,7 @@ int LeafTile2::getColor(LevelSource *level, int x, int y, int z, int data)
 
 void LeafTile2::playerDestroy(Level *level, shared_ptr<Player> player, int x, int y, int z, int data)
 {
-	// Se il giocatore usa le cesoie, vogliamo droppare "leaves2" (ID 161) e non "leaves" (ID 18)
+	// if player is using shears, drop "leaves2" (ID 161) , instead of "leaves" (ID 18)
 	if (!level->isClientSide && player->getSelectedItem() != nullptr && player->getSelectedItem()->id == Item::shears->id)
 	{
 		player->awardStat(
@@ -95,7 +96,7 @@ void LeafTile2::playerDestroy(Level *level, shared_ptr<Player> player, int x, in
 	}
 	else
 	{
-		// Altrimenti usa la distruzione standard di TransparentTile
+		// or default destroy
 		TransparentTile::playerDestroy(level, player, x, y, z, data);
 	}
 }

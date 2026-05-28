@@ -1,5 +1,6 @@
-// Code implemented by LCEMP, credit if used on other repos
-// https://github.com/LCEMP/LCEMP
+// Written by DrperkyLegit, Improved upon by Str1k3r/MCLEMP
+// https://github.com/DrPerkyLegit
+// https://github.com/mclemp
 
 #include "stdafx.h"
 
@@ -15,6 +16,7 @@
 #include "./../../Minecraft.Server/Windows64/ServerAuth.h"
 #else
 #include "../Windows64_Launcher.h"
+#include "../Windows64_Minecraft.h"
 #endif
 
 #include "../../../Minecraft.World/DisconnectPacket.h"
@@ -92,7 +94,7 @@ char g_Win64RelayServerIP[256] = "relay.mclegacyedition.xyz";
 wchar_t g_Win64RelayServerIP_Wide[256] = L"relay.mclegacyedition.xyz";
 wchar_t g_Win64AuthIP[256] = L"auth.mclegacyedition.xyz";
 int g_Win64RelayServerPort = 2052;
-char g_GameVersion[9] = "TU31";
+char g_GameVersion[] = "TU19";
 
 bool WinsockNetLayer::Initialize()
 {
@@ -242,7 +244,12 @@ bool WinsockNetLayer::HostGame(int port, const char* bindIp)
 {
 #if defined(MINECRAFT_SERVER_BUILD)
 #else
-	if (Windows64Launcher::IsInOfflineMode()) return true;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		if (Windows64Minecraft::IsOfflineMode()) return true;
+	}
+	else {
+		if (Windows64Launcher::IsInOfflineMode()) return true;
+	}
 #endif
 	if (!s_initialized && !Initialize()) return false;
 
@@ -302,7 +309,13 @@ bool WinsockNetLayer::HostGame(int port, const char* bindIp)
 #if defined(MINECRAFT_SERVER_BUILD)
 	std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-	std::string authToken = Windows64Launcher::GetAuthenticationToken();
+	std::string authToken;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		authToken = Windows64Minecraft::GetAuthenticationTicket();
+	}
+	else {
+		authToken = Windows64Launcher::GetAuthenticationToken();
+	}
 #endif
 	std::string isDedicatedServer = (g_Win64DedicatedServer ? "1" : "0");
 	std::string req = "HOST " + authToken + " " + isDedicatedServer + "\n";
@@ -321,7 +334,12 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 {
 #if defined(MINECRAFT_SERVER_BUILD)
 #else
-	if (Windows64Launcher::IsInOfflineMode()) return true;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		if (Windows64Minecraft::IsOfflineMode()) return true;
+	}
+	else {
+		if (Windows64Launcher::IsInOfflineMode()) return true;
+	}
 #endif
 	if (!s_initialized && !Initialize()) return false;
 
@@ -387,10 +405,16 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 #if defined(MINECRAFT_SERVER_BUILD)
 	std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-	std::string authToken = Windows64Launcher::GetAuthenticationToken();
+	std::string authToken;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		authToken = Windows64Minecraft::GetAuthenticationTicket();
+	}
+	else {
+		authToken = Windows64Launcher::GetAuthenticationToken();
+	}
 #endif
 	std::string hostname(ip);
-	std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
+	std::string req = "JOIN " + authToken + " 0 " + hostname + " 0\n";
 	send(s_hostConnectionSocket, req.c_str(), (int)req.length(), 0);
 
 	BYTE assignBuf[1];
@@ -440,7 +464,12 @@ bool WinsockNetLayer::BeginJoinGame(const char* ip, int port)
 {
 #if defined(MINECRAFT_SERVER_BUILD)
 #else
-	if (Windows64Launcher::IsInOfflineMode()) return true;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		if (Windows64Minecraft::IsOfflineMode()) return true;
+	}
+	else {
+		if (Windows64Launcher::IsInOfflineMode()) return true;
+	}
 #endif
 	if (!s_initialized && !Initialize()) return false;
 
@@ -547,10 +576,16 @@ DWORD WINAPI WinsockNetLayer::JoinThreadProc(LPVOID param)
 #if defined(MINECRAFT_SERVER_BUILD)
 		std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-		std::string authToken = Windows64Launcher::GetAuthenticationToken();
+		std::string authToken;
+		if (Windows64Minecraft::IsExternalLauncher()) {
+			authToken = Windows64Minecraft::GetAuthenticationTicket();
+		}
+		else {
+			authToken = Windows64Launcher::GetAuthenticationToken();
+		}
 #endif
 		std::string hostname(s_joinIP);
-		std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
+		std::string req = "JOIN " + authToken + " 0 " + hostname + " 0\n";
 		send(sock, req.c_str(), (int)req.length(), 0);
 
 		BYTE assignBuf[1];
@@ -846,7 +881,13 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 #if defined(MINECRAFT_SERVER_BUILD)
 				std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-				std::string authToken = Windows64Launcher::GetAuthenticationToken();
+				std::string authToken;
+				if (Windows64Minecraft::IsExternalLauncher()) {
+					authToken = Windows64Minecraft::GetAuthenticationTicket();
+				}
+				else {
+					authToken = Windows64Launcher::GetAuthenticationToken();
+				}
 #endif
 				std::string isDedicatedServer = (g_Win64DedicatedServer ? "1" : "0");
 				std::string acc = "ACCEPT " + authToken + " " + isDedicatedServer + " " + clientId + "\n";
@@ -1206,10 +1247,17 @@ bool WinsockNetLayer::JoinSplitScreen(int padIndex, BYTE* outSmallId)
 #if defined(MINECRAFT_SERVER_BUILD)
 	std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-	std::string authToken = Windows64Launcher::GetAuthenticationToken();
+	std::string authToken;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		authToken = Windows64Minecraft::GetAuthenticationTicket();
+	}
+	else {
+		authToken = Windows64Launcher::GetAuthenticationToken();
+	}
 #endif
 	std::string hostname(g_Win64MultiplayerIP);
-	std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
+	std::string req = "JOIN " + authToken + " 0 " + hostname + " 1\n";
+	app.DebugPrintf("Win64 LAN: Sending JOIN request: %s", req.c_str());
 	send(sock, req.c_str(), (int)req.length(), 0);
 
 	BYTE assignBuf[1];
@@ -1362,7 +1410,12 @@ bool WinsockNetLayer::StartAdvertising(int gamePort, const wchar_t* hostName, un
 {
 #if defined(MINECRAFT_SERVER_BUILD)
 #else
-	if (Windows64Launcher::IsInOfflineMode()) return true;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		if (Windows64Minecraft::IsOfflineMode()) return true;
+	}
+	else {
+		if (Windows64Launcher::IsInOfflineMode()) return true;
+	}
 #endif
 	if (s_advertising) return true;
 	if (!s_initialized) return false;
@@ -1475,7 +1528,13 @@ DWORD WINAPI WinsockNetLayer::AdvertiseThreadProc(LPVOID param)
 #if defined(MINECRAFT_SERVER_BUILD)
 		std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-		std::string authToken = Windows64Launcher::GetAuthenticationToken();
+		std::string authToken;
+		if (Windows64Minecraft::IsExternalLauncher()) {
+			authToken = Windows64Minecraft::GetAuthenticationTicket();
+		}
+		else {
+			authToken = Windows64Launcher::GetAuthenticationToken();
+		}
 #endif
 		std::string isDedicatedServer = (g_Win64DedicatedServer ? "1" : "0");
 		std::string req = "ADVERTISE " + authToken + " " + isDedicatedServer;
@@ -1502,7 +1561,12 @@ bool WinsockNetLayer::StartDiscovery()
 {
 #if defined(MINECRAFT_SERVER_BUILD)
 #else
-	if (Windows64Launcher::IsInOfflineMode()) return true;
+	if (Windows64Minecraft::IsExternalLauncher()) {
+		if (Windows64Minecraft::IsOfflineMode()) return true;
+	}
+	else {
+		if (Windows64Launcher::IsInOfflineMode()) return true;
+	}
 #endif
 	if (s_discovering) return true;
 	if (!s_initialized) return false;
@@ -1589,7 +1653,13 @@ DWORD WINAPI WinsockNetLayer::DiscoveryThreadProc(LPVOID param)
 #if defined(MINECRAFT_SERVER_BUILD)
 		std::string authToken = ServerAuth::GetAuthenticationToken();
 #else
-		std::string authToken = Windows64Launcher::GetAuthenticationToken();
+		std::string authToken;
+		if (Windows64Minecraft::IsExternalLauncher()) {
+			authToken = Windows64Minecraft::GetAuthenticationTicket();
+		}
+		else {
+			authToken = Windows64Launcher::GetAuthenticationToken();
+		}
 #endif
 		std::string req = "LIST " + authToken + " 0 dedicated " + g_GameVersion + "\n";
 		send(sock, req.c_str(), (int)req.length(), 0);

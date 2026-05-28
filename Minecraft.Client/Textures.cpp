@@ -1256,8 +1256,14 @@ int Textures::getHeight(const wstring& url, int backup)
 
 		if (img)
 		{
+			MemTexture* _texture = new MemTexture();
+			_texture->loadedImage = img;
+			_texture->isLoaded = true;
+			_texture->id = getTexture(_texture->loadedImage, C4JRender::TEXTURE_FORMAT_RxGyBzAw, MIPMAP);
+
 			int h = img->getHeight();
-			delete img;
+			//delete img; // commenting this out and inserting the loaded texture to memTextures unordered_map
+			this->memTextures[url] = _texture;
 			return h;
 		}
 

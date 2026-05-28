@@ -1,4 +1,6 @@
-﻿#include "Windows64_Launcher.h"
+﻿#include "stdafx.h"
+
+#include "Windows64_Launcher.h"
 #include "Xbox/resource.h"
 #include "../Minecraft.World/Dimension.h"
 #include "../Minecraft.h"
@@ -18,84 +20,76 @@
 #include <winhttp.h>
 #include <commdlg.h>
 
-#include "./ExtraLibs/discordrpc/discord_rpc.h"
+#include "./ExtraLibs/discordsdk/discord.h"
 
 float g_sleepPercentage = 100;
 int g_autosaveInterval = 120;
 
+std::string g_discordUserId = "";
+
 bool g_doBoatBreak = true;
 
+discord::Core* g_discordCore = nullptr;
 
-DWORD WINAPI DiscordRPCThreadFunc(LPVOID lpParam) {
-	DiscordEventHandlers handlers;
-	memset(&handlers, 0, sizeof(handlers));
+DWORD WINAPI DiscordCallbackThreadFunc(LPVOID lpParam) {
+	auto result = discord::Core::Create(1424889204110004316LL, DiscordCreateFlags_NoRequireDiscord, &g_discordCore);
 
-	const char* applicationId = "1424889204110004316";
-	Discord_Initialize(applicationId, &handlers, 1, NULL);
-
-	DiscordRichPresence presence;
-	memset(&presence, 0, sizeof(presence));
-	presence.startTimestamp = time(0);
-	static std::string detailsStr = "Playing as " + Windows64Launcher::GetUsername();
-	presence.details = detailsStr.c_str();
-	presence.button1Label = "Join The Discord";
-	presence.button1Url = "https://discord.gg/u9f67jaWyP";
-	presence.button2Label = "Download On Github";
-	presence.button2Url = "https://github.com/mclemp/MCLEClient";
-	presence.largeImageKey = "MCLE";
-	presence.largeImageText = "MCLE";
-
-	Discord_UpdatePresence(&presence);
-
-	const char* lastSmallImageKey = (const char*)1;
+	if (result != discord::Result::Ok || !g_discordCore) {
+		return 1;
+	}
 
 	while (true) {
-		Discord_RunCallbacks();
+		g_discordCore->RunCallbacks();
+		Sleep(100);
+	}
 
-		const char* newSmallImageKey = nullptr;
-		const char* newSmallImageText = nullptr;
+	return 0;
+}
 
+DWORD WINAPI DiscordRPCThreadFunc(LPVOID lpParam) {
+	while (!g_discordCore) {
+		Sleep(100);
+	}
+
+	discord::Activity activity{};
+	activity.GetTimestamps().SetStart(time(0));
+	static std::string detailsStr = "Playing as " + Windows64Launcher::GetUsername();
+	activity.SetDetails(detailsStr.c_str());
+	activity.GetAssets().SetLargeImage("MCLE");
+	activity.GetAssets().SetLargeText("MCLE");
+	g_discordCore->ActivityManager().UpdateActivity(activity, [](discord::Result r) {});
+
+	while (true) {
 		Minecraft* minecraft = Minecraft::GetInstance();
-		if (minecraft && minecraft->player)
-		{
-			switch (minecraft->player->dimension)
-			{
+		if (minecraft && minecraft->player) {
+			discord::Activity updatedActivity{};
+			updatedActivity.SetDetails(detailsStr.c_str());
+
+			switch (minecraft->player->dimension) {
 			case -1:
-				newSmallImageKey = "nether";
-				newSmallImageText = "In The Nether";
+				updatedActivity.GetAssets().SetSmallImage("nether");
+				updatedActivity.GetAssets().SetSmallText("In The Nether");
 				break;
 			case 0:
-				newSmallImageKey = "overworld";
-				newSmallImageText = "In The Overworld";
+				updatedActivity.GetAssets().SetSmallImage("overworld");
+				updatedActivity.GetAssets().SetSmallText("In The Overworld");
 				break;
 			case 1:
-				newSmallImageKey = "end";
-				newSmallImageText = "In The End";
-				break;
-			default:
-				newSmallImageKey = "";
-				newSmallImageText = "";
+				updatedActivity.GetAssets().SetSmallImage("end");
+				updatedActivity.GetAssets().SetSmallText("In The End");
 				break;
 			}
-		}
 
-		if (newSmallImageKey != lastSmallImageKey)
-		{
-			presence.smallImageKey = newSmallImageKey;
-			presence.smallImageText = newSmallImageText;
-			lastSmallImageKey = newSmallImageKey;
-			Discord_UpdatePresence(&presence);
+			g_discordCore->ActivityManager().UpdateActivity(updatedActivity, [](discord::Result r) {});
 		}
 
 		Sleep(2000);
 	}
 
-	Discord_Shutdown();
 	return 0;
 }
 
-
-static  ATOM RegisterLauncherClass(HINSTANCE hInstance);
+static ATOM RegisterLauncherClass(HINSTANCE hInstance);
 static BOOL InitWindow(HINSTANCE hInstance);
 
 HWND launcher_HWND = NULL;
@@ -109,6 +103,7 @@ HWND hBtnLaunch;
 HWND hBtnLogout;
 
 HWND hBtnDiscord;
+HWND hBtnDiscordLogin;
 
 HWND hBtnRegister;
 HWND hBtnLogin;
@@ -123,12 +118,14 @@ HWND hLoginUsernameLabel;
 std::string username = "";
 std::string authenticationToken = "";
 
-bool startedThread = false;
+bool startedCallbackThread = false;
+bool startedRPCThread = false;
 
 bool offlinemode = false;
 bool Windows64Launcher::IsInOfflineMode() { return offlinemode; }
 
 void onSuccessfulLogin();
+void onAccountLogout();
 void onLoginFailed();
 void AttemptFullLoginFlow();
 
@@ -164,8 +161,7 @@ void AttemptFullLoginFlow() {
 		int responseState = Windows64Launcher::API_GetAccountInfo(authenticationToken);
 		if (responseState == 0) {
 			onSuccessfulLogin();
-		}
-		else {
+		} else {
 			onLoginFailed();
 			MessageBoxW(launcher_HWND, L"Unable To Connect To Saved Account", L"Login Failed", MB_OK);
 		}
@@ -193,12 +189,34 @@ void onSuccessfulLogin() {
 	ShowWindow(hBtnRegister, SW_HIDE);
 	ShowWindow(hBtnLogin, SW_HIDE);
 
-	if (!startedThread) {
+	ShowWindow(hBtnDiscordLogin, SW_HIDE);
+
+	if (!startedRPCThread) {
 		HANDLE hThread = CreateThread(NULL, 0, DiscordRPCThreadFunc, NULL, 0, NULL);
 		CloseHandle(hThread);
 
-		startedThread = true;
+		startedRPCThread = true;
 	}
+}
+
+void onAccountLogout() {
+	Windows64Launcher::SaveAuthenticationData("", username);
+
+	ShowWindow(hBtnLaunch, SW_HIDE);
+	ShowWindow(hBtnOffline, SW_HIDE);
+
+	ShowWindow(hBtnLogout, SW_HIDE);
+	ShowWindow(hLoginUsernameLabel, SW_HIDE);
+
+	ShowWindow(hUsernameLabel, SW_SHOW);
+	ShowWindow(hUsernameEdit, SW_SHOW);
+	ShowWindow(hPasswordLabel, SW_SHOW);
+	ShowWindow(hPasswordEdit, SW_SHOW);
+
+	ShowWindow(hBtnRegister, SW_SHOW);
+	ShowWindow(hBtnLogin, SW_SHOW);
+
+	ShowWindow(hBtnDiscordLogin, SW_SHOW);
 }
 
 void onLoginFailed() {
@@ -217,9 +235,14 @@ void onLoginFailed() {
 	ShowWindow(hBtnLogin, SW_SHOW);
 }
 
-
-
 LRESULT OnWindowCreation(HWND hWnd) {
+	if (!startedCallbackThread) {
+		HANDLE hThread = CreateThread(NULL, 0, DiscordCallbackThreadFunc, NULL, 0, NULL);
+		CloseHandle(hThread);
+
+		startedCallbackThread = true;
+	}
+
 	hBottomBar = CreateWindowW(L"STATIC", nullptr, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hWnd, nullptr, nullptr, nullptr);
 
 	hStatusText = CreateWindowW(L"STATIC", L"Version: " L"" LAUNCHER_VERSION, WS_CHILD | WS_VISIBLE, 10, 10, 200, 20, hBottomBar, nullptr, nullptr, nullptr);
@@ -234,13 +257,14 @@ LRESULT OnWindowCreation(HWND hWnd) {
 
 	hBtnDiscord = CreateWindowW(L"BUTTON", L"Discord", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)6, nullptr, nullptr);
 
+	hBtnDiscordLogin = CreateWindowW(L"BUTTON", L"Discord Login", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)7, nullptr, nullptr);
+
 	hUsernameLabel = CreateWindowW(L"STATIC", L"Username:", WS_CHILD | WS_VISIBLE, 0, 0, 80, 20, hWnd, nullptr, nullptr, nullptr);
 	hUsernameEdit = CreateWindowW(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 0, 180, 25, hWnd, nullptr, nullptr, nullptr);
 	hPasswordLabel = CreateWindowW(L"STATIC", L"Password:", WS_CHILD | WS_VISIBLE, 0, 0, 80, 20, hWnd, nullptr, nullptr, nullptr);
 	hPasswordEdit = CreateWindowW(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_PASSWORD, 0, 0, 180, 25, hWnd, nullptr, nullptr, nullptr);
 
 	hLoginUsernameLabel = CreateWindowW(L"STATIC", L"Welcome: Placeholder", WS_CHILD | WS_VISIBLE, 0, 0, 300, 20, hWnd, nullptr, nullptr, nullptr);
-
 
 	return 0;
 }
@@ -257,6 +281,9 @@ LRESULT OnWindowSize(int width, int height) {
 	MoveWindow(hBtnLogout, 0, 30, labelWidth, 20, TRUE);
 
 	MoveWindow(hBtnDiscord, centerX, 125, labelWidth, 20, TRUE);
+
+	MoveWindow(hBtnDiscord, centerX - 5, 125, 75, 20, TRUE);
+	MoveWindow(hBtnDiscordLogin, centerX + 75, 125, 95, 20, TRUE);
 
 	// Username
 	MoveWindow(hUsernameLabel, centerX - labelWidth + 50, startY - 5, labelWidth, 20, TRUE);
@@ -392,6 +419,24 @@ LRESULT OnAccountLogin() {
 	return 0;
 }
 
+LRESULT OnDiscordLogin() {
+	if (!g_discordCore) {
+		MessageBoxW(launcher_HWND, L"Discord is not running.", L"Discord Login", MB_OK);
+		return 0;
+	}
+
+	g_discordCore->ApplicationManager().GetOAuth2Token([](discord::Result res, discord::OAuth2Token const& token) {
+		if (res != discord::Result::Ok) {
+			PostMessageA(launcher_HWND, WM_APP + 2, 0, 0);
+			return;
+		}
+		std::string t = token.GetAccessToken();
+		PostMessageA(launcher_HWND, WM_APP + 1, 0, (LPARAM)new std::string(t));
+		});
+
+	return 0;
+}
+
 LRESULT OnCommandReceived(HWND hWnd, int type) {
 	switch (type) {
 	case 1: // Launch
@@ -411,22 +456,51 @@ LRESULT OnCommandReceived(HWND hWnd, int type) {
 		OnAccountLogin();
 		break;
 	case 5: //Logout
-		Windows64Launcher::SaveAuthenticationData("", username);
-		onLoginFailed();
+		onAccountLogout();
 		break;
 	case 6: //Discord
-	{
 		ShellExecute(0, 0, "https://discord.gg/xjc9JW4Bfp", 0, 0, SW_SHOW);
-	}
-	break;
+		break;
+	case 7: //Discord Login
+		OnDiscordLogin();
+		break;
 	}
 	return 0;
 }
 
 LRESULT CALLBACK WndProc_Launcher(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-
 	switch (message)
 	{
+	case WM_APP + 1: { // Discord token received — on main thread
+		std::string* token = reinterpret_cast<std::string*>(lParam);
+
+		int response = Windows64Launcher::API_AttemptDiscordLogin(*token, authenticationToken);
+		delete token;
+
+		if (response == 0) {
+			Windows64Launcher::SaveAuthenticationData(authenticationToken, username);
+			AttemptFullLoginFlow();
+		}
+		else if (response == 1111) {
+			MessageBoxW(launcher_HWND, L"Invalid Username / Password", L"Login Failed", MB_OK);
+		}
+		else if (response == 2222) {
+			MessageBoxW(launcher_HWND, L"You Have Been Banned", L"Login Failed", MB_OK);
+		}
+		else if (response == 3333) {
+			MessageBoxW(launcher_HWND, L"Invalid OAuth token", L"Discord Login", MB_OK);
+		}
+		else if (response == 4444) {
+			MessageBoxW(launcher_HWND, L"Discord isnt linked to any account", L"Discord Login", MB_OK);
+		}
+		else {
+			MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(response)).c_str(), L"Discord Login", MB_OK);
+		}
+		return 0;
+	}
+	case WM_APP + 2:
+		MessageBoxW(hWnd, L"Failed to get Discord token.\nMake sure Discord is open.", L"Discord Login", MB_OK);
+		return 0;
 	case WM_COMMAND:
 		return OnCommandReceived(hWnd, LOWORD(wParam));
 	case WM_SIZE:
@@ -632,6 +706,27 @@ int Windows64Launcher::API_AttemptAccountLogin(const std::string _username, cons
 
 	username = splitData[0];
 	authenticationToken = splitData[1];
+
+	return 0;
+}
+
+int Windows64Launcher::API_AttemptDiscordLogin(const std::string& ticket, std::string& tokenOut) {
+	std::vector<std::wstring> headers;
+	headers.push_back(L"Content-Type: text/plain");
+
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/discordLogin", L"POST", ticket, headers);
+
+	if (response.status == 0) return -1;
+	if (response.status != 200) return (20000 + response.status);
+	if (response.body.find('-') == std::string::npos) return stoi(response.body);
+
+	std::string body = response.body.erase(0, 1);
+	size_t colonPos = body.find(':');
+	if (colonPos == std::string::npos) return -2;
+
+	username = body.substr(0, colonPos);
+	authenticationToken = body.substr(colonPos + 1);
+	tokenOut = authenticationToken;
 
 	return 0;
 }

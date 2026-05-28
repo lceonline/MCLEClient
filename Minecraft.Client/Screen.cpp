@@ -23,6 +23,18 @@ Screen::Screen()	// 4J added
 	clickedButton = nullptr;
 }
 
+Screen::~Screen()
+{
+	delete particles;
+	particles = nullptr;
+
+	for (Button *button : buttons)
+	{
+		delete button;
+	}
+	buttons.clear();
+}
+
 void Screen::render(int xm, int ym, float a)
 {
 	for (Button* button : buttons)

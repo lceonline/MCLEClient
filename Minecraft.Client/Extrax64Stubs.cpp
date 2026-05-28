@@ -193,19 +193,19 @@ D3DXVECTOR3& D3DXVECTOR3::operator += (CONST D3DXVECTOR3 & add) { x += add.x; y 
 BYTE IQNetPlayer::GetSmallId() { return m_smallId; }
 void IQNetPlayer::SendData(IQNetPlayer * player, const void* pvData, DWORD dwDataSize, DWORD dwFlags)
 {
-    if (WinsockNetLayer::IsActive())
-    {
-        if (!WinsockNetLayer::IsHosting() && !m_isRemote)
-        {
-            SOCKET sock = WinsockNetLayer::GetLocalSocket(m_smallId);
-            if (sock != INVALID_SOCKET)
-                WinsockNetLayer::SendOnSocket(sock, pvData, dwDataSize);
-        }
-        else
-        {
-            WinsockNetLayer::SendToSmallId(player->m_smallId, pvData, dwDataSize);
-        }
-    }
+	if (WinsockNetLayer::IsActive())
+	{
+		if (!WinsockNetLayer::IsHosting() && !m_isRemote)
+		{
+			SOCKET sock = WinsockNetLayer::GetLocalSocket(m_smallId);
+			if (sock != INVALID_SOCKET)
+				WinsockNetLayer::SendOnSocket(sock, pvData, dwDataSize);
+		}
+		else
+		{
+			WinsockNetLayer::SendToSmallId(player->m_smallId, pvData, dwDataSize);
+		}
+	}
 }
 bool IQNetPlayer::IsSameSystem(IQNetPlayer * player) { return (this == player) || (!m_isRemote && !player->m_isRemote); }
 DWORD IQNetPlayer::GetSendQueueSize(IQNetPlayer * player, DWORD dwFlags) { return 0; }
@@ -253,7 +253,7 @@ void Win64_SetupRemoteQNetPlayer(IQNetPlayer * player, BYTE smallId, bool isHost
 		IQNet::s_playerCount = smallId + 1;
 }
 
-static bool Win64_IsActivePlayer(IQNetPlayer* p, DWORD index);
+static bool Win64_IsActivePlayer(IQNetPlayer * p, DWORD index);
 
 HRESULT IQNet::AddLocalPlayerByUserIndex(DWORD dwUserIndex) {
 	if (dwUserIndex >= MINECRAFT_NET_MAX_PLAYERS) return E_FAIL;

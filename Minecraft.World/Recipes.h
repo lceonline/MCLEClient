@@ -16,6 +16,7 @@ import net.minecraft.world.level.tile.Tile;
 */
 
 #include "Recipy.h"
+#include "../Minecraft.World/CustomPayloadPacket.h"
 
 #pragma once
 using namespace std;
@@ -84,6 +85,8 @@ public:
 
 private: 
 	void _init(); // 4J add
+	void _compileRecipes();
+	void _wipeRecipes();
 	Recipes();
 
 public:
@@ -96,6 +99,11 @@ public:
 	// 4J-PB - Added all below for new Xbox 'crafting'
 	shared_ptr<ItemInstance> getItemForRecipe(Recipy *r);
 	Recipy::INGREDIENTS_REQUIRED *getRecipeIngredientsArray();
+
+	void loadFromLocal();
+	void loadFromPacket(byteArray packetData);
+
+	std::shared_ptr<CustomPayloadPacket> createUpdatePacket();
 
 private:
 	void buildRecipeIngredientsArray();

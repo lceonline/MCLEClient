@@ -8,7 +8,7 @@
 
 const BlockPos BlockPos::ZERO = BlockPos(0, 0, 0);
 
-// Costruttori
+
 BlockPos::BlockPos() : Vec3i(0, 0, 0) {}
 
 BlockPos::BlockPos(int x, int y, int z) : Vec3i(x, y, z) {}
@@ -49,7 +49,7 @@ BlockPos::BlockPos(int compressed) : Vec3i(0, 0, 0) {
 BlockPos::BlockPos(BlockSource& source)
     : Vec3i(source.getBlockX(), source.getBlockY(), source.getBlockZ()) {}
 
-// Metodi di confronto
+
 bool BlockPos::equals(const BlockPos& other) const {
     return x == other.x && y == other.y && z == other.z;
 }
@@ -88,7 +88,7 @@ BlockPos BlockPos::relative(int direction, int distance) const {
     return BlockPos(x + dx, y, z + dz);
 }
 
-// Metodi direzionali
+// directional methods
 BlockPos BlockPos::above(int distance) const {
     return BlockPos(x, y + distance, z);
 }
@@ -119,7 +119,7 @@ BlockPos BlockPos::multiply(int factor) const {
     return BlockPos(x * factor, y * factor, z * factor);
 }
 
-// Compressione
+// compression
 int BlockPos::compress() const {
     static const int MASK_X = (1 << BITS_X) - 1;
     static const int MASK_Y = (1 << BITS_Y) - 1;

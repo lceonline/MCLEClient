@@ -108,6 +108,7 @@ enum EGameHostOptionWorldSize
 #define GAMESETTING_VSYNC								0x01000000
 #define GAMESETTING_EXCLUSIVEFULLSCREEN					0x02000000
 #define GAMESETTING_CLASSICCRAFTING						0x04000000
+#define GAMESETTING_HIDESAVESIZEBAR			            0x08000000
 
 
 // defines for languages

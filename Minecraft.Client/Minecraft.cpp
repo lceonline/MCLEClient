@@ -526,9 +526,10 @@ LevelStorageSource *Minecraft::getLevelSource()
 
 void Minecraft::setScreen(Screen *screen)
 {
-	if (this->screen != nullptr)
+	Screen *oldScreen = this->screen;
+	if (oldScreen != nullptr)
 	{
-		this->screen->removed();
+		oldScreen->removed();
 	}
 
 #ifdef _WINDOWS64
@@ -1258,6 +1259,8 @@ void Minecraft::applyFrameMouseLook()
 
 void Minecraft::run_middle()
 {
+	pause = app.IsAppPaused();
+
 	static int64_t lastTime = 0;
 	static bool bFirstTimeIntoGame = true;
 	static bool bAutosaveTimerSet=false;
@@ -2111,8 +2114,7 @@ void Minecraft::run_middle()
 			while (System::nanoTime() >= lastTime + 1000000000)
 			{
 				MemSect(31);
-				fpsString = std::to_wstring(frames) + L" FPS";
-				chunkupdateString = std::to_wstring(Chunk::updates) + L" Chunk Updates";
+				fpsString = std::to_wstring(frames) + L" fps (" + std::to_wstring(Chunk::updates) + L" chunk updates)";
 				MemSect(0);
 				Chunk::updates = 0;
 				lastTime += 1000000000;
@@ -4427,6 +4429,8 @@ void Minecraft::setLevel(MultiPlayerLevel *level, int message /*=-1*/, shared_pt
 	// 4J If we are setting the level to nullptr then we are exiting, so delete the levels
 	if( level == nullptr )
 	{
+		if (soundEngine) soundEngine->stopElytraSound();
+
 		if(levels[0]!=nullptr)
 		{
 			delete levels[0];
@@ -4694,7 +4698,7 @@ void Minecraft::respawnPlayer(int iPad, int dimension, int newEntityId)
 	ProfileManager.GetXUID(iTempPad,&playerXUIDOffline,false);
 	ProfileManager.GetXUID(iTempPad,&playerXUIDOnline,true);
 #ifdef _WINDOWS64
-		playerXUIDOffline = Win64Xuid::ResolvePersistentXuidFromName(player->name);
+	playerXUIDOffline = Win64Xuid::ResolvePersistentXuidFromName(player->name);
 #endif
 	player->setXuid(playerXUIDOffline);
 	player->setOnlineXuid(playerXUIDOnline);

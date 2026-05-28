@@ -14,11 +14,12 @@ private:
 		eControl_Splitscreen,
 		eControl_ShowSplitscreenGamertags,
 		eControl_ShowClassicCrafting,
+		eControl_HideSaveSizeBar,
 		eControl_UISize,
 		eControl_UISizeSplitscreen
 	};
 
-	UIControl_CheckBox m_checkboxDisplayHUD, m_checkboxDisplayHand, m_checkboxDisplayDeathMessages, m_checkboxDisplayAnimatedCharacter, m_checkboxSplitscreen, m_checkboxShowSplitscreenGamertags, m_checkboxShowClassicCrafting; // Checkboxes
+	UIControl_CheckBox m_checkboxDisplayHUD, m_checkboxDisplayHand, m_checkboxDisplayDeathMessages, m_checkboxDisplayAnimatedCharacter, m_checkboxSplitscreen, m_checkboxShowSplitscreenGamertags, m_checkboxShowClassicCrafting, m_checkboxHideLoadCreateJoinSaveSizeBar; // Checkboxes
 	UIControl_Slider m_sliderUISize, m_sliderUISizeSplitscreen; // Sliders
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT( m_checkboxDisplayHUD, "DisplayHUD")
@@ -28,6 +29,7 @@ private:
 		UI_MAP_ELEMENT( m_checkboxSplitscreen, "Splitscreen")
 		UI_MAP_ELEMENT( m_checkboxShowSplitscreenGamertags, "ShowSplitscreenGamertags")
 		UI_MAP_ELEMENT(m_checkboxShowClassicCrafting, "ShowClassicCrafting")
+		UI_MAP_ELEMENT(m_checkboxHideLoadCreateJoinSaveSizeBar, "LoadCreateJoinSaveSizeBar")
 
 		UI_MAP_ELEMENT( m_sliderUISize, "UISize")
 		UI_MAP_ELEMENT( m_sliderUISizeSplitscreen, "UISizeSplitscreen")

@@ -5,30 +5,39 @@
 #include "CustomPayloadPacket.h"
 
 // Mojang-defined custom packets
-const wstring CustomPayloadPacket::CUSTOM_BOOK_PACKET = L"MC|BEdit";
-const wstring CustomPayloadPacket::CUSTOM_BOOK_SIGN_PACKET = L"MC|BSign";
-const wstring CustomPayloadPacket::TEXTURE_PACK_PACKET = L"MC|TPack";
-const wstring CustomPayloadPacket::TRADER_LIST_PACKET = L"MC|TrList";
-const wstring CustomPayloadPacket::TRADER_SELECTION_PACKET = L"MC|TrSel";
-const wstring CustomPayloadPacket::SET_ADVENTURE_COMMAND_PACKET = L"MC|AdvCdm";
-const wstring CustomPayloadPacket::SET_BEACON_PACKET = L"MC|Beacon";
-const wstring CustomPayloadPacket::SET_ITEM_NAME_PACKET = L"MC|ItemName";
+const wstring CustomPayloadPacket::CUSTOM_BOOK_PACKET = CreateVanillaPayloadKey(L"BEdit");
+const wstring CustomPayloadPacket::CUSTOM_BOOK_SIGN_PACKET = CreateVanillaPayloadKey(L"BSign");
+const wstring CustomPayloadPacket::TEXTURE_PACK_PACKET = CreateVanillaPayloadKey(L"TPack");
+const wstring CustomPayloadPacket::TRADER_LIST_PACKET = CreateVanillaPayloadKey(L"TrList");
+const wstring CustomPayloadPacket::TRADER_SELECTION_PACKET = CreateVanillaPayloadKey(L"TrSel");
 
-const wstring CustomPayloadPacket::CIPHER_KEY_CHANNEL = L"MC|CKey";
-const wstring CustomPayloadPacket::CIPHER_ACK_CHANNEL = L"MC|CAck";
-const wstring CustomPayloadPacket::CIPHER_ON_CHANNEL = L"MC|COn";
+// neoLegacy-defined custom packets
+const wstring CustomPayloadPacket::UPDATE_RECIPE_REGISTRY = CreatePayloadKey(L"neo", L"UpdRReg");
+const wstring CustomPayloadPacket::UPDATE_CREATIVE_REGISTRY = CreatePayloadKey(L"neo", L"UpdCReg");
 
-const wstring CustomPayloadPacket::IDENTITY_TOKEN_ISSUE = L"MC|CTIssue";
-const wstring CustomPayloadPacket::IDENTITY_TOKEN_CHALLENGE = L"MC|CTChallenge";
-const wstring CustomPayloadPacket::IDENTITY_TOKEN_RESPONSE = L"MC|CTResponse";
+//todo: figure out if we should replace the packets in the comment section with a custom payload identifier
+//comment section start
+const wstring CustomPayloadPacket::SET_ADVENTURE_COMMAND_PACKET = CreateVanillaPayloadKey(L"AdvCdm");
+const wstring CustomPayloadPacket::SET_BEACON_PACKET = CreateVanillaPayloadKey(L"Beacon");
+const wstring CustomPayloadPacket::SET_ITEM_NAME_PACKET = CreateVanillaPayloadKey(L"ItemName");
 
-const wstring CustomPayloadPacket::FORK_HELLO_CHANNEL = L"MC|ForkHello";
-const wstring CustomPayloadPacket::FORK_PLAYER_LEAVE_CHANNEL = L"MC|ForkPLeave";
+const wstring CustomPayloadPacket::CIPHER_KEY_CHANNEL = CreateVanillaPayloadKey(L"CKey");
+const wstring CustomPayloadPacket::CIPHER_ACK_CHANNEL = CreateVanillaPayloadKey(L"CAck");
+const wstring CustomPayloadPacket::CIPHER_ON_CHANNEL = CreateVanillaPayloadKey(L"COn");
 
-const wstring CustomPayloadPacket::QUICK_EQUIP_PACKET = L"MC|QEquip";
-const wstring CustomPayloadPacket::QUICK_EQUIP_SERVER_PACKET = L"MC|QEquipServer";
+const wstring CustomPayloadPacket::IDENTITY_TOKEN_ISSUE = CreateVanillaPayloadKey(L"CTIssue");
+const wstring CustomPayloadPacket::IDENTITY_TOKEN_CHALLENGE = CreateVanillaPayloadKey(L"CTChallenge");
+const wstring CustomPayloadPacket::IDENTITY_TOKEN_RESPONSE = CreateVanillaPayloadKey(L"CTResponse");
 
-const wstring CustomPayloadPacket::ENCHANTMENT_LIST_PACKET = L"MC|EnchList";
+const wstring CustomPayloadPacket::FORK_HELLO_CHANNEL = CreateVanillaPayloadKey(L"ForkHello");
+const wstring CustomPayloadPacket::FORK_PLAYER_LEAVE_CHANNEL = CreateVanillaPayloadKey(L"ForkPLeave");
+
+const wstring CustomPayloadPacket::ENCHANTMENT_LIST_PACKET = CreateVanillaPayloadKey(L"EnchList");
+//comment section end
+
+//removed cause its now handled on the server side
+// const wstring CustomPayloadPacket::QUICK_EQUIP_PACKET = CreateVanillaPayloadKey(L"QEquip");
+// const wstring CustomPayloadPacket::QUICK_EQUIP_SERVER_PACKET = CreateVanillaPayloadKey(L"QEquipServer");
 
 CustomPayloadPacket::CustomPayloadPacket()
 	: length(0)

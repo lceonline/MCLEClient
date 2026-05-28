@@ -90,6 +90,7 @@ public:
 	int getDamageValue();
 	int getAuxValue() const;
 	void setAuxValue(int value);
+	void setRawAuxValue(int value);
 	int getMaxDamage();
 	bool hurt(int dmg, Random *random);
 	void hurtAndBreak(int dmg, shared_ptr<LivingEntity> owner);

@@ -2041,6 +2041,11 @@ void UIScene_LoadOrJoinMenu::UpdateGamesList()
     // clear out the games list and re-fill
     m_buttonListGames.clearList();
 
+#ifdef _WINDOWS64
+    // Always add the "Add Server" button as the first entry in the games list
+    m_buttonListGames.addItem(wstring(L"Add Server"));
+#endif
+
     if( filteredListSize > 0 )
     {
         // Reset the focus to the selected session if it still exists

@@ -148,6 +148,7 @@ GameRenderer::GameRenderer(Minecraft *mc)
 	itemInHandRenderer = nullptr;
 
 	// 4J-PB - set up the local players iteminhand renderers here - needs to be done with lighting enabled so that the render geometry gets compiled correctly
+#ifndef MINECRAFT_SERVER_BUILD
 	glEnable(GL_LIGHTING);
 	mc->localitemInHandRenderers[0] = new ItemInHandRenderer(mc);//itemInHandRenderer;
 	mc->localitemInHandRenderers[1] = new ItemInHandRenderer(mc);
@@ -170,7 +171,9 @@ GameRenderer::GameRenderer(Minecraft *mc)
 	for(int i=0;i<NUM_LIGHT_TEXTURES;i++)
 		lightPixels[i] = intArray(16*16);
 #endif
+#endif
 
+#ifndef MINECRAFT_SERVER_BUILD
 #ifdef MULTITHREAD_ENABLE
 	m_updateEvents  = new C4JThread::EventArray(eUpdateEventCount, C4JThread::EventArray::e_modeAutoClear);
 	m_updateEvents->Set(eUpdateEventIsFinished);
@@ -182,6 +185,7 @@ GameRenderer::GameRenderer(Minecraft *mc)
 #endif// __PS3__
 	m_updateThread->SetProcessor(CPU_CORE_CHUNK_UPDATE);
 	m_updateThread->Run();
+#endif
 #endif
 }
 

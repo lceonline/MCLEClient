@@ -104,6 +104,8 @@ public:
 	float GetLookX(float sensitivity) const;
 	float GetLookY(float sensitivity) const;
 
+	void SetCursorIcon(LPCWSTR cursorName);
+
 private:
 	bool m_keyDown[MAX_KEYS];
 	bool m_keyDownPrev[MAX_KEYS];

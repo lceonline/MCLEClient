@@ -23,6 +23,7 @@ public:
 	static int API_GetAccountInfo(const std::string token);
 	static int API_AttemptAccountRegister(const std::string username, const std::string password, std::string& tokenOut);
 	static int API_AttemptAccountLogin(const std::string username, const std::string password, std::string& tokenOut);
+	static int API_AttemptDiscordLogin(const std::string& accessToken, std::string& tokenOut);
 
 	static bool IsInOfflineMode();
 

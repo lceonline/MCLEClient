@@ -6,13 +6,13 @@
 #include "net.minecraft.world.item.h"
 #include "net.minecraft.world.item.enchantment.h"
 #include "EnchantmentMenu.h"
-#include "../../../Minecraft.Client/ServerPlayer.h"
-#include "../../../Minecraft.Client/MinecraftServer.h"
-#include "../../../Minecraft.Client/PlayerList.h"
-#include "../../../Minecraft.Client/MultiPlayerLocalPlayer.h"
-#include "../../../Minecraft.Client/PlayerConnection.h"
-#include "../../../Minecraft.World/CustomPayloadPacket.h"
-#include "../../../Minecraft.Client/Minecraft.h"
+#include "../Minecraft.Client/ServerPlayer.h"
+#include "../Minecraft.Client/MinecraftServer.h"
+#include "../Minecraft.Client/PlayerList.h"
+#include "../Minecraft.Client/MultiPlayerLocalPlayer.h"
+#include "../Minecraft.Client/PlayerConnection.h"
+#include "../Minecraft.World/CustomPayloadPacket.h"
+#include "../Minecraft.Client/Minecraft.h"
 
 EnchantmentMenu::EnchantmentMenu(shared_ptr<Inventory> inventory, Level *level, int xt, int yt, int zt)
 {

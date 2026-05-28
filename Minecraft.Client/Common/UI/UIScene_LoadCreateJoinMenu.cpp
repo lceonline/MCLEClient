@@ -751,6 +751,7 @@ UIScene_LoadCreateJoinMenu::UIScene_LoadCreateJoinMenu(int iPad, void *initData,
     m_buttonListNewGames.init(eControl_NewGamesList);
 
     m_buttonListGames.init(eControl_GamesList);
+    m_buttonListGames.enableX2Icons();
 
 
 
@@ -1606,6 +1607,32 @@ void UIScene_LoadCreateJoinMenu::UpdateMouseHoverForActiveTab()
     if (!ConvertMouseToSceneCoords(sceneMouseX, sceneMouseY))
         return;
 
+    // tab area threshold (approx coordinates based on handleMouseClick)
+    float maxY = (getSceneResolution() == eSceneResolution_1080) ? 200.0f : 135.0f;
+
+    if (sceneMouseY < maxY)
+    {
+        // mouse is high up (near or on tabs) deselect lists to avoid collisions
+        if (m_buttonListSaves.getCurrentSelection() != -1)
+        {
+            m_buttonListSaves.setCurrentSelection(-1);
+        }
+        if (m_buttonListNewGames.getCurrentSelection() != -1)
+        {
+            m_buttonListNewGames.setCurrentSelection(-1);
+        }
+        if (m_buttonListGames.getCurrentSelection() != -1)
+        {
+            m_buttonListGames.setCurrentSelection(-1);
+        }
+
+        // reset internal indices to -1 so tick() doesn't restore selection
+        m_iSaveListIndex = -1;
+        m_iNewGameListIndex = -1;
+        m_iGameListIndex = -1;
+        m_bUpdateSaveSize = true; // refresh save size bar / secondary UI
+    }
+
     UIControl_ButtonList *pActiveList = nullptr;
     switch (m_activeTab)
     {
@@ -1748,6 +1775,76 @@ void UIScene_LoadCreateJoinMenu::UpdateMouseHoverForActiveTab()
     updateTooltips();
     m_bPendingSaveSizeBarRefresh = true;
     m_bPendingJoinTabAvailabilityRefresh = true;
+}
+
+bool UIScene_LoadCreateJoinMenu::handleMouseClick(F32 x, F32 y)
+{
+    if (!hasFocus(m_iPad) || getMovie() == nullptr || g_KBMInput.IsMouseGrabbed() || !g_KBMInput.IsKBMActive())
+    {
+        return false;
+    }
+
+    if (m_bIgnoreInput)
+    {
+        return false;
+    }
+
+    float sceneMouseX = 0.0f;
+    float sceneMouseY = 0.0f;
+    if (!ConvertMouseToSceneCoords(sceneMouseX, sceneMouseY))
+    {
+        return false;
+    }
+
+    float loadMinX = 335.0f;
+    float loadMaxX = 535.0f;
+    float createMaxX = 735.0f;
+    float joinMaxX = 935.0f;
+    float minY = 77.0f;
+    float maxY = 135.0f;
+
+    if (getSceneResolution() == eSceneResolution_1080)
+    {
+        loadMinX = 502.0f;
+        loadMaxX = 802.0f;
+        createMaxX = 1102.0f;
+        joinMaxX = 1402.0f;
+        minY = 115.0f;
+        maxY = 200.0f;
+    }
+
+    if (sceneMouseY >= minY && sceneMouseY <= maxY)
+    {
+        if (sceneMouseX >= loadMinX && sceneMouseX <= loadMaxX)
+        {
+            if (m_activeTab != eTab_Load)
+            {
+                SetActiveTab(eTab_Load, true);
+                ui.PlayUISFX(eSFX_Press);
+            }
+            return true; // click consumed by tab
+        }
+        else if (sceneMouseX > loadMaxX && sceneMouseX <= createMaxX)
+        {
+            if (m_activeTab != eTab_Create)
+            {
+                SetActiveTab(eTab_Create, true);
+                ui.PlayUISFX(eSFX_Press);
+            }
+            return true; // click consumed by tab
+        }
+        else if (sceneMouseX > createMaxX && sceneMouseX <= joinMaxX)
+        {
+            if (m_activeTab != eTab_Join)
+            {
+                SetActiveTab(eTab_Join, true);
+                ui.PlayUISFX(eSFX_Press);
+            }
+            return true; // click consumed by tab
+        }
+    }
+
+    return UIScene::handleMouseClick(x, y);
 }
 #endif
 wstring UIScene_LoadCreateJoinMenu::getMoviePath()
@@ -1935,7 +2032,10 @@ void UIScene_LoadCreateJoinMenu::UpdateSaveSizeBarVisibility()
 
 
 
-    const bool showSaveSizeBar = (m_activeTab == eTab_Load);
+    // user option to hide the save size bar entirely (added via SettingsUIMenu checkbox)
+    const bool hideBar = (app.GetGameSettings(m_iPad, eGameSetting_HideSaveSizeBar) != 0);
+
+    const bool showSaveSizeBar = (m_activeTab == eTab_Load) && !hideBar;
 
     IggyDataValue result;
 
@@ -1954,6 +2054,10 @@ void UIScene_LoadCreateJoinMenu::tick()
 {
 
     UIScene::tick();
+
+#ifdef _WINDOWS64
+    UpdateMouseHoverForActiveTab();
+#endif
 
 #if (defined  __PS3__  || defined __ORBIS__ || defined _DURANGO || defined _WINDOWS64 || defined __PSVITA__)
 
@@ -3665,6 +3769,12 @@ void UIScene_LoadCreateJoinMenu::handleFocusChange(F64 controlId, F64 childId)
 
         m_iGameListIndex = childId;
 
+#ifdef _WINDOWS64
+
+        m_iGameListIndex -= 1;
+
+#endif
+
         m_buttonListGames.updateChildFocus(static_cast<int>(childId));
 
         if (childId < m_hoverBaseIndexJoin)
@@ -4189,6 +4299,58 @@ void UIScene_LoadCreateJoinMenu::CheckAndJoinGame(int gameIndex)
 
 		m_initData->selectedSession = m_currentSessions->at( gameIndex );
 
+#ifdef _WINDOWS64
+
+		{
+
+
+
+			int serverDbCount = 0;
+
+			FILE* dbFile = fopen("servers.db", "rb");
+
+			if (dbFile)
+
+			{
+
+				char magic[4] = {};
+
+				if (fread(magic, 1, 4, dbFile) == 4 && memcmp(magic, "MCSV", 4) == 0)
+
+				{
+
+					uint32_t version = 0, count = 0;
+
+					fread(&version, sizeof(uint32_t), 1, dbFile);
+
+					fread(&count, sizeof(uint32_t), 1, dbFile);
+
+					if (version == 1)
+
+						serverDbCount = static_cast<int>(count);
+
+				}
+
+				fclose(dbFile);
+
+			}
+
+			int lanCount = static_cast<int>(m_currentSessions->size()) - serverDbCount;
+
+			if (gameIndex >= lanCount && lanCount >= 0)
+
+				m_initData->serverIndex = gameIndex - lanCount;
+
+			else
+
+				m_initData->serverIndex = -1; 
+
+		}
+
+#endif
+
+
+
 		if(m_initData->selectedSession->data.texturePackParentId!=0)
 
 		{
@@ -4452,9 +4614,19 @@ void UIScene_LoadCreateJoinMenu::RebuildJoinGamesListVisual(bool syncFocus)
 
         unsigned int nIndex = m_buttonListGames.getCurrentSelection();
 
+#ifdef _WINDOWS64
+
+        if (m_currentSessions != nullptr && nIndex > 0 && (nIndex - 1) < m_currentSessions->size())
+
+            pSelectedSession = m_currentSessions->at( nIndex - 1 );
+
+#else
+
         if (m_currentSessions != nullptr && nIndex < m_currentSessions->size())
 
             pSelectedSession = m_currentSessions->at( nIndex );
+
+#endif
 
     }
 
@@ -4478,81 +4650,74 @@ void UIScene_LoadCreateJoinMenu::RebuildJoinGamesListVisual(bool syncFocus)
 
     m_buttonListGames.setCurrentSelection(0);
 
-    for( FriendSessionInfo *sessionInfo : *m_currentSessions )
-
+    for (FriendSessionInfo *sessionInfo : *m_currentSessions)
     {
+        const int gameType = app.GetGameHostOption(sessionInfo->data.m_uiGameHostSettings, eGameHostOption_GameType);
+        const wchar_t *modeIconFile = L"SurvivalIcon.png";
+        const wchar_t *modeIconName = L"SurvivalIcon";
 
-        wchar_t textureName[64] = L"\0";
-
-        if(sessionInfo->data.texturePackParentId!=0)
-
+        if (gameType == GameType::CREATIVE->getId())
         {
-
-            Minecraft *pMinecraft = Minecraft::GetInstance();
-            TexturePack *tp = pMinecraft->skins->getTexturePackById(sessionInfo->data.texturePackParentId);
-            DWORD dwImageBytes=0;
-            PBYTE pbImageData=nullptr;
-
-            if(tp==nullptr)
-
-            {
-
-                DWORD dwBytes=0;
-                PBYTE pbData=nullptr;
-                app.GetTPD(sessionInfo->data.texturePackParentId,&pbData,&dwBytes);
-                app.GetFileFromTPD(eTPDFileType_Icon,pbData,dwBytes,&pbImageData,&dwImageBytes );
-
-                if(dwImageBytes > 0 && pbImageData)
-
-                {
-
-                    swprintf(textureName,64,L"%ls",sessionInfo->displayLabel);
-                    registerSubstitutionTexture(textureName,pbImageData,dwImageBytes);
-
-                }
-
-            }
-
-            else
-
-            {
-
-                pbImageData = tp->getPackIcon(dwImageBytes);
-                if(dwImageBytes > 0 && pbImageData)
-
-                {
-
-                    swprintf(textureName,64,L"%ls",sessionInfo->displayLabel);
-                    registerSubstitutionTexture(textureName,pbImageData,dwImageBytes);
-
-                }
-
-            }
-
+            modeIconFile = L"CreativeIcon.png";
+            modeIconName = L"CreativeIcon";
+        }
+        else if (gameType == GameType::ADVENTURE->getId())
+        {
+            modeIconFile = L"AdventureIcon.png";
+            modeIconName = L"AdventureIcon";
         }
 
-        else
+        // register game mode icon
+        TrySetButtonListIcon(m_buttonListGames, -1, modeIconFile, modeIconName);
 
+        // texture pack icon logic
+        wchar_t tpIconName[64] = L"\0";
+        if (sessionInfo->data.texturePackParentId != 0)
         {
+            Minecraft *pMinecraft = Minecraft::GetInstance();
+            TexturePack *tp = pMinecraft->skins->getTexturePackById(sessionInfo->data.texturePackParentId);
+            DWORD dwImageBytes = 0;
+            PBYTE pbImageData = nullptr;
 
+            if (tp == nullptr)
+            {
+                DWORD dwBytes = 0;
+                PBYTE pbData = nullptr;
+                app.GetTPD(sessionInfo->data.texturePackParentId, &pbData, &dwBytes);
+                app.GetFileFromTPD(eTPDFileType_Icon, pbData, dwBytes, &pbImageData, &dwImageBytes);
+
+                if (dwImageBytes > 0 && pbImageData)
+                {
+                    swprintf(tpIconName, 64, L"tp_%ls", sessionInfo->displayLabel);
+                    registerSubstitutionTexture(tpIconName, pbImageData, dwImageBytes);
+                }
+            }
+            else
+            {
+                pbImageData = tp->getPackIcon(dwImageBytes);
+                if (dwImageBytes > 0 && pbImageData)
+                {
+                    swprintf(tpIconName, 64, L"tp_%ls", sessionInfo->displayLabel);
+                    registerSubstitutionTexture(tpIconName, pbImageData, dwImageBytes);
+                }
+            }
+        }
+        else
+        {
             Minecraft *pMinecraft = Minecraft::GetInstance();
             TexturePack *tp = pMinecraft->skins->getTexturePackByIndex(0);
             DWORD dwImageBytes;
             PBYTE pbImageData = tp->getPackIcon(dwImageBytes);
-            if(dwImageBytes > 0 && pbImageData)
-
+            if (dwImageBytes > 0 && pbImageData)
             {
-
-                swprintf(textureName,64,L"%ls",sessionInfo->displayLabel);
-                registerSubstitutionTexture(textureName,pbImageData,dwImageBytes);
-
+                swprintf(tpIconName, 64, L"tp_%ls", sessionInfo->displayLabel);
+                registerSubstitutionTexture(tpIconName, pbImageData, dwImageBytes);
             }
-
         }
 
-        m_buttonListGames.addItem( sessionInfo->displayLabel, textureName );
+        m_buttonListGames.addItem(sessionInfo->displayLabel, modeIconName, tpIconName);
 
-        if(memcmp( &selectedSessionId, &sessionInfo->sessionId, sizeof(SessionID) ) == 0)
+        if (memcmp(&selectedSessionId, &sessionInfo->sessionId, sizeof(SessionID)) == 0)
 
         {
 
@@ -8816,3 +8981,95 @@ int UIScene_LoadCreateJoinMenu::CopySaveErrorDialogFinishedCallback(void *pParam
 
 
 #endif // _XBOX_ONE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

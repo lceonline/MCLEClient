@@ -183,7 +183,7 @@ void PlayerConnection::tick()
 	// Ensure server-side player tick runs even when no move packet was received this tick.
 	// Without this, environmental damage (drowning, fire, lava) is never applied to clients
 	// that don't send frequent move packets.
-	if (!didTick && player != nullptr)
+	if (!didTick && player != nullptr && !server->IsServerPaused() && !app.IsAppPaused())
 	{
 		player->doTick(false);
 	}
@@ -2417,7 +2417,7 @@ void PlayerConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 			player->inventory->setItem(player->inventory->selected, sentItem);
 		}
 	}
-	else if (CustomPayloadPacket::QUICK_EQUIP_PACKET.compare(customPayloadPacket->identifier) == 0) {
+	/*else if (CustomPayloadPacket::QUICK_EQUIP_PACKET.compare(customPayloadPacket->identifier) == 0) {
 		//ByteArrayInputStream bais(customPayloadPacket->data);
 		//DataInputStream input(&bais);
 		//shared_ptr<ItemInstance> sentItem = Packet::readItem(&input);
@@ -2448,7 +2448,7 @@ void PlayerConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 		//PlayerList* playerList = MinecraftServer::getInstance()->getPlayers();
 		//playerList->broadcastAll(std::make_shared<SetEquippedItemPacket>(player->entityId, slot, sentItem));
 
-	}
+	}*/
 	else if (CustomPayloadPacket::TRADER_SELECTION_PACKET.compare(customPayloadPacket->identifier) == 0)
 	{
 		ByteArrayInputStream bais(customPayloadPacket->data);

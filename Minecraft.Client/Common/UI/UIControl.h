@@ -81,6 +81,8 @@ public:
 
 	S32 getXPos();
 	S32 getYPos();
+	void setXPos(S32 x);
+	void setYPos(S32 y);
 	S32 getWidth();
 	S32 getHeight();
 

@@ -66,39 +66,34 @@ void SoundEngine::playMusicTick() {};
 #else
 
 #ifdef _WINDOWS64
-char SoundEngine::m_szSoundPath[] = { "Windows64Media\\Sound\\" };
-char SoundEngine::m_szMusicPath[] = { "Windows64Media\\Music\\" };
-char SoundEngine::m_szRedistName[] = { "redist64" };
+char SoundEngine::m_szSoundPath[]={"Windows64Media\\Sound\\"};
+char SoundEngine::m_szMusicPath[]={"music\\"};
+char SoundEngine::m_szRedistName[]={"redist64"};
 #elif defined _DURANGO
-char SoundEngine::m_szSoundPath[] = { "Durango\\Sound\\" };
-char SoundEngine::m_szMusicPath[] = { "DurangoMedia\\Music\\" };
-char SoundEngine::m_szRedistName[] = { "redist64" };
+char SoundEngine::m_szSoundPath[]={"Sound\\"};
+char SoundEngine::m_szMusicPath[]={"music\\"};
+char SoundEngine::m_szRedistName[]={"redist64"};
 #elif defined __ORBIS__
-char SoundEngine::m_szSoundPath[] = { "Orbis\\Sound\\" };
-char SoundEngine::m_szMusicPath[] = { "OrbisMedia\\Music\\" };
-char SoundEngine::m_szRedistName[] = { "redist64" };
-#elif defined _XBOX
-char SoundEngine::m_szSoundPath[] = { "Xbox\\Sound\\" };
-char SoundEngine::m_szMusicPath[] = { "XboxMedia\\Music\\" };
-char SoundEngine::m_szRedistName[] = { "redist" };
-#elif defined __PSVITA__
-char SoundEngine::m_szSoundPath[] = { "PSVita\\Sound\\" };
-char SoundEngine::m_szMusicPath[] = { "PSVitaMedia\\Music\\" };
-char SoundEngine::m_szRedistName[] = { "redist" };
-#elif defined __PS3__
-//extern const char* getPS3HomePath();
-char SoundEngine::m_szSoundPath[] = { "PS3\\Sound\\" };
-char SoundEngine::m_szMusicPath[] = { "PS3Media\\Music\\" };
-char SoundEngine::m_szRedistName[] = { "redist" };
 
 #ifdef _CONTENT_PACKAGE
-char SoundEngine::m_szSoundPath[] = { "Sound/" };
+char SoundEngine::m_szSoundPath[]={"Sound/"};
 #elif defined _ART_BUILD
-char SoundEngine::m_szSoundPath[] = { "Sound/" };
+char SoundEngine::m_szSoundPath[]={"Sound/"};
 #else
 // just use the host Durango folder for the sound. In the content package, we'll have moved this in the .gp4 file
-char SoundEngine::m_szSoundPath[] = { "Durango/Sound/" };
+char SoundEngine::m_szSoundPath[]={"Durango/Sound/"};
 #endif
+char SoundEngine::m_szMusicPath[]={"music/"};
+char SoundEngine::m_szRedistName[]={"redist64"};
+#elif defined __PSVITA__
+char SoundEngine::m_szSoundPath[]={"PSVita/Sound/"};
+char SoundEngine::m_szMusicPath[]={"music/"};
+char SoundEngine::m_szRedistName[]={"redist"};
+#elif defined __PS3__
+//extern const char* getPS3HomePath();
+char SoundEngine::m_szSoundPath[]={"PS3/Sound/"};
+char SoundEngine::m_szMusicPath[]={"music/"};
+char SoundEngine::m_szRedistName[]={"redist"};
 
 #define USE_SPURS
 

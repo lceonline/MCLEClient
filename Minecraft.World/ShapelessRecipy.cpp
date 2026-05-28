@@ -19,6 +19,19 @@ ShapelessRecipy::ShapelessRecipy(ItemInstance *result, vector<ItemInstance *> *i
 {
 }
 
+ShapelessRecipy::~ShapelessRecipy() {
+	for (int i = 0; i < ingredients->size(); i++) {
+		delete (*ingredients)[i];
+	}
+
+	delete ingredients;
+	delete result;
+
+	ingredients = nullptr;
+	result = nullptr;
+}
+
+
 const int ShapelessRecipy::getGroup() 
 {	
 	return group;
@@ -173,4 +186,61 @@ void ShapelessRecipy::reqs(INGREDIENTS_REQUIRED *pIngReq)
 	delete [] TempIngReq.iIngValA;
 	delete [] TempIngReq.iIngAuxValA;
 	delete [] TempIngReq.uiGridA;
+}
+
+void ShapelessRecipy::writeToStream(DataOutputStream* dos) {
+	dos->writeByte(1);
+	dos->writeByte(this->group);
+
+	//write result item, it should always be valid
+	{
+		dos->writeShort(this->result->id);
+		dos->writeByte(this->result->count);
+		dos->writeShort(this->result->getAuxValue());
+
+		Packet::writeNbt(this->result->tag, dos);
+	}
+
+	byte iCount = ingredients->size();
+	dos->writeByte(iCount);
+
+	for (int i = 0; i < iCount; i++) {
+		ItemInstance* item = (*ingredients)[i];
+		dos->writeBoolean(item == nullptr);
+		if (item == nullptr) continue;
+
+		dos->writeShort(item->id);
+		dos->writeShort(item->getAuxValue());
+		Packet::writeNbt(item->tag, dos);
+	}
+
+}
+
+ShapelessRecipy* ShapelessRecipy::readFromStream(DataInputStream* dis) {
+	unsigned char groupType = dis->readByte();
+
+	int resultItemID = dis->readShort();
+	int resultItemCount = dis->readByte();
+	int resultItemAux = dis->readShort();
+
+	ItemInstance* resultItem = new ItemInstance(resultItemID, resultItemCount, 0);
+	resultItem->setRawAuxValue(resultItemAux);
+	resultItem->tag = Packet::readNbt(dis);
+
+	vector<ItemInstance*>* ingredients = new vector<ItemInstance*>();
+	int iCount = dis->readByte();
+	for (int i = 0; i < iCount; i++) {
+		if (dis->readBoolean() == true) continue; //item is null or something weird
+
+		int itemID = dis->readShort();
+		int itemAux = dis->readShort();
+
+		ItemInstance* ingredients_item = new ItemInstance(itemID, 1, 0);
+		ingredients_item->setRawAuxValue(itemAux);
+		ingredients_item->tag = Packet::readNbt(dis);
+
+		ingredients->push_back(ingredients_item);
+	}
+
+	return new ShapelessRecipy(resultItem, ingredients, (Recipy::_eGroupType)groupType);
 }

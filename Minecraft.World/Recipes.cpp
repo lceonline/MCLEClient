@@ -29,20 +29,14 @@ void Recipes::_init()
 {
 	// 4J Jev: instance = new Recipes();
 	recipies = new RecipyList();
-}
 
-Recipes::Recipes()
-{
-	int iCount=0;
-	_init();
-
-	pArmorRecipes		= new ArmorRecipes;
-	pClothDyeRecipes	= new ClothDyeRecipes;
-	pFoodRecipies		= new FoodRecipies;
-	pOreRecipies		= new OreRecipies;
-	pStructureRecipies	= new StructureRecipies;
-	pToolRecipies		= new ToolRecipies;
-	pWeaponRecipies		= new WeaponRecipies;
+	pArmorRecipes = new ArmorRecipes;
+	pClothDyeRecipes = new ClothDyeRecipes;
+	pFoodRecipies = new FoodRecipies;
+	pOreRecipies = new OreRecipies;
+	pStructureRecipies = new StructureRecipies;
+	pToolRecipies = new ToolRecipies;
+	pWeaponRecipies = new WeaponRecipies;
 
 	// 4J Stu - These just don't work with our crafting menu
 	//recipies->push_back(new ArmorDyeRecipe());
@@ -50,8 +44,10 @@ Recipes::Recipes()
 	//recipies->add(new MapExtendingRecipe());
 	//recipies->add(new FireworksRecipe());
 	pFireworksRecipes = new FireworksRecipe();
+}
 
-
+void Recipes::_compileRecipes()
+{
 	addShapedRecipy(new ItemInstance(Tile::wood, 4, 0), //
 		L"sczg",
 		L"#", //
@@ -186,7 +182,7 @@ Recipes::Recipes()
 		L"W#W", //
 		L"W#W", //
 
-		L'#', Item::stick, 
+		L'#', Item::stick,
 		L'W', new ItemInstance(Tile::wood, 1, TreeTile::ACACIA_TRUNK),
 		L'S');
 
@@ -195,7 +191,7 @@ Recipes::Recipes()
 		L"W#W", //
 		L"W#W", //
 
-		L'#', Item::stick, 
+		L'#', Item::stick,
 		L'W', new ItemInstance(Tile::wood, 1, TreeTile::DARK_TRUNK),
 		L'S');
 
@@ -475,11 +471,9 @@ Recipes::Recipes()
 		L'S');
 
 	pArmorRecipes->addRecipes(this);
-	//iCount=getRecipies()->size();
+
 
 	pClothDyeRecipes->addRecipes(this);
-
-
 
 	addShapedRecipy(new ItemInstance(Tile::snow, 1), //
 		L"sscig",
@@ -497,7 +491,7 @@ Recipes::Recipes()
 		L'#', Item::prismarine_shard,
 		L'S');
 
-	addShapedRecipy(new ItemInstance(Tile::prismarine, 1,PrismarineTile::TYPE_BRICKS), //
+	addShapedRecipy(new ItemInstance(Tile::prismarine, 1, PrismarineTile::TYPE_BRICKS), //
 		L"ssscig",
 		L"###", //
 		L"###", //
@@ -507,7 +501,7 @@ Recipes::Recipes()
 		L'S');
 
 
-	addShapedRecipy(new ItemInstance(Tile::prismarine, 1,PrismarineTile::TYPE_DARK), //
+	addShapedRecipy(new ItemInstance(Tile::prismarine, 1, PrismarineTile::TYPE_DARK), //
 		L"ssscicig",
 		L"###", //
 		L"#X#", //
@@ -657,10 +651,6 @@ Recipes::Recipes()
 
 
 
-
-
-	//iCount=getRecipies()->size();
-
 	addShapedRecipy(new ItemInstance(Item::cake, 1), //
 		L"ssscicicicig",
 		L"AAA", //
@@ -770,7 +760,7 @@ Recipes::Recipes()
 		L'#', Tile::wood,
 		L'V');
 
-	addShapedRecipy(new ItemInstance((Item *)Item::fishingRod, 1), //
+	addShapedRecipy(new ItemInstance((Item*)Item::fishingRod, 1), //
 		L"ssscicig",
 		L"  #", //
 		L" #X", //
@@ -803,7 +793,7 @@ Recipes::Recipes()
 		L'F');
 
 	// Moved bow and arrow in from weapons to avoid stacking on the group name display
-	addShapedRecipy(new ItemInstance((Item *)Item::bow, 1), //
+	addShapedRecipy(new ItemInstance((Item*)Item::bow, 1), //
 		L"ssscicig",
 		L" #X", //
 		L"# X", //
@@ -850,7 +840,7 @@ Recipes::Recipes()
 		L'#', Tile::glass,
 		L'T');
 
-	
+
 
 	// torch made of charcoal - moved to be the default due to the tutorial using it
 	addShapedRecipy(new ItemInstance(Tile::torch, 4), //
@@ -961,12 +951,12 @@ Recipes::Recipes()
 
 	addShapelessRecipy(new ItemInstance(Item::fireball, 3), //
 		L"iiig",
-		Item::gunpowder, Item::blazePowder,Item::coal,
+		Item::gunpowder, Item::blazePowder, Item::coal,
 		L'T');
 
 	addShapelessRecipy(new ItemInstance(Item::fireball, 3), //
 		L"iizg",
-		Item::gunpowder, Item::blazePowder,new ItemInstance(Item::coal, 1, CoalItem::CHAR_COAL),
+		Item::gunpowder, Item::blazePowder, new ItemInstance(Item::coal, 1, CoalItem::CHAR_COAL),
 		L'T');
 
 	addShapedRecipy(new ItemInstance(Item::lead, 2), //
@@ -1096,24 +1086,24 @@ Recipes::Recipes()
 
 		L'#', Tile::wood, L'X', Item::diamond,
 		'D');
-	
-	addShapedRecipy(new ItemInstance(Item::leather, 1), 
-		L"sscig",
-		L"##", 
-		L"##", 
 
-		L'#', Item::rabbit_hide, 
-		L'D'); 
+	addShapedRecipy(new ItemInstance(Item::leather, 1),
+		L"sscig",
+		L"##",
+		L"##",
+
+		L'#', Item::rabbit_hide,
+		L'D');
 
 	addShapedRecipy(new ItemInstance(Item::armor_stand, 1),
-		L"ssscictg",  
-		L"SSS", 
-		L" S ", 
-		L"SXS", 
-		L'S', Item::stick,   
-		L'X', Tile::stoneSlabHalf, 
+		L"ssscictg",
+		L"SSS",
+		L" S ",
+		L"SXS",
+		L'S', Item::stick,
+		L'X', Tile::stoneSlabHalf,
 		L'D');
-	
+
 
 
 	addShapedRecipy(new ItemInstance(Item::paper, 3), //
@@ -1206,21 +1196,21 @@ Recipes::Recipes()
 		L'D');
 
 	// 4J - TODO - put these new 1.7.3 items in required place within recipes
-    addShapedRecipy(new ItemInstance(static_cast<Tile *>(Tile::pistonBase), 1), //
+	addShapedRecipy(new ItemInstance(static_cast<Tile*>(Tile::pistonBase), 1), //
 		L"sssctcicictg",
-        L"TTT", //
-        L"#X#", //
-        L"#R#", //
+		L"TTT", //
+		L"#X#", //
+		L"#R#", //
 
-        L'#', Tile::cobblestone, L'X', Item::ironIngot, L'R', Item::redStone, L'T', Tile::wood,
+		L'#', Tile::cobblestone, L'X', Item::ironIngot, L'R', Item::redStone, L'T', Tile::wood,
 		L'M');
 
-    addShapedRecipy(new ItemInstance(static_cast<Tile *>(Tile::pistonStickyBase), 1), //
+	addShapedRecipy(new ItemInstance(static_cast<Tile*>(Tile::pistonStickyBase), 1), //
 		L"sscictg",
-        L"S", //
-        L"P", //
+		L"S", //
+		L"P", //
 
-        L'S', Item::slimeBall, L'P', Tile::pistonBase,
+		L'S', Item::slimeBall, L'P', Tile::pistonBase,
 		L'M');
 
 
@@ -1233,7 +1223,7 @@ Recipes::Recipes()
 		L'P', Item::paper, L'G', Item::gunpowder,
 		L'D');
 
-	addShapedRecipy(new ItemInstance(Item::fireworksCharge,1), //
+	addShapedRecipy(new ItemInstance(Item::fireworksCharge, 1), //
 		L"sscicig",
 		L" D ", //
 		L" G ", //
@@ -1241,7 +1231,7 @@ Recipes::Recipes()
 		L'D', Item::dye_powder, L'G', Item::gunpowder,
 		L'D');
 
-	addShapedRecipy(new ItemInstance(Item::fireworksCharge,1), //
+	addShapedRecipy(new ItemInstance(Item::fireworksCharge, 1), //
 		L"sscicig",
 		L" D ", //
 		L" C ", //
@@ -1249,35 +1239,36 @@ Recipes::Recipes()
 		L'D', Item::dye_powder, L'C', Item::fireworksCharge,
 		L'D');
 
-
-	// Sort so the largest recipes get checked first!
-	/* 4J-PB - TODO
-	Collections.sort(recipies, new Comparator<Recipy>()
-	{
-	public: int compare(Recipy r0, Recipy r1)
-			{
-
-				// shapeless recipes are put in the back of the list
-				if (r0 instanceof ShapelessRecipy && r1 instanceof ShapedRecipy)
-				{
-					return 1;
-				}
-				if (r1 instanceof ShapelessRecipy && r0 instanceof ShapedRecipy)
-				{
-					return -1;
-				}
-
-				if (r1.size() < r0.size()) return -1;
-				if (r1.size() > r0.size()) return 1;
-				return 0;
-			}
-	});
-	*/
-
-	// 4J-PB removed System.out.println(recipies->size() + L" recipes");
-
-	// 4J-PB - build the array of ingredients required per recipe
 	buildRecipeIngredientsArray();
+}
+
+void Recipes::_wipeRecipes()
+{
+	int iCount = recipies->size();
+
+	for (int i = 0; i < iCount; i++) {
+		Recipy::INGREDIENTS_REQUIRED& req = m_pRecipeIngredientsRequired[i];
+
+		delete[] req.iIngIDA;
+		delete[] req.iIngValA;
+		delete[] req.iIngAuxValA;
+		delete[] req.uiGridA;
+	}
+
+	for (int i = 0; i < iCount; i++) {
+		delete (*recipies)[i];
+	}
+
+	recipies->clear();
+
+	delete[] m_pRecipeIngredientsRequired;
+	m_pRecipeIngredientsRequired = nullptr;
+}
+
+Recipes::Recipes()
+{
+	_init();
+	_compileRecipes();
 }
 
 // 4J-PB - this function has been substantially changed due to the differences with a va_list of classes in C++ and Java
@@ -1563,7 +1554,7 @@ void Recipes::buildRecipeIngredientsArray(void)
 	 
 	int iRecipeC=static_cast<int>(recipies->size());
 
-	m_pRecipeIngredientsRequired= new Recipy::INGREDIENTS_REQUIRED [iRecipeC];
+	m_pRecipeIngredientsRequired = new Recipy::INGREDIENTS_REQUIRED [iRecipeC];
 
 	int iCount=0;
 	for (auto& recipe : *recipies)
@@ -1577,4 +1568,46 @@ void Recipes::buildRecipeIngredientsArray(void)
 Recipy::INGREDIENTS_REQUIRED *Recipes::getRecipeIngredientsArray(void)
 {
 	return m_pRecipeIngredientsRequired;
+}
+
+void Recipes::loadFromLocal()
+{
+	this->_wipeRecipes();
+	this->_compileRecipes();
+}
+
+void Recipes::loadFromPacket(byteArray packetData)
+{
+	ByteArrayInputStream bais(packetData);
+	DataInputStream input(&bais);
+
+	this->_wipeRecipes();
+	{
+		int iCount = input.readInt();
+		for (int i = 0; i < iCount; i++) {
+			int recipeType = input.readByte();
+
+			if (recipeType == 1) {
+				recipies->push_back(ShapelessRecipy::readFromStream(&input));
+			} else if (recipeType == 2) {
+				recipies->push_back(ShapedRecipy::readFromStream(&input));
+			}
+		}
+	}
+	this->buildRecipeIngredientsArray();
+}
+
+std::shared_ptr<CustomPayloadPacket> Recipes::createUpdatePacket()
+{
+	ByteArrayOutputStream baos;
+	DataOutputStream dos(&baos);
+
+	int iCount = recipies->size();
+	dos.writeInt(iCount);
+
+	for (int i = 0; i < iCount; i++) {
+		(*recipies)[i]->writeToStream(&dos);
+	}
+
+	return std::make_shared<CustomPayloadPacket>(CustomPayloadPacket::UPDATE_RECIPE_REGISTRY, baos.toByteArray());
 }

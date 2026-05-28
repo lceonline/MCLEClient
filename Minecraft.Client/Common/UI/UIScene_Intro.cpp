@@ -2,6 +2,12 @@
 #include "UI.h"
 #include "UIScene_Intro.h"
 
+// HUCKLE - added below for joining game on launch
+#ifdef _WINDOWS64
+#include "../../Windows64/Network/WinsockNetLayer.h"
+#include "../../User.h"
+#endif
+
 
 UIScene_Intro::UIScene_Intro(int iPad, void *initData, UILayer *parentLayer) : UIScene(iPad, parentLayer)
 {
@@ -104,6 +110,82 @@ void UIScene_Intro::handleInput(int iPad, int key, bool repeat, bool pressed, bo
 			}
 #elif defined _XBOX_ONE
 			ui.NavigateToScene(0,eUIScene_MainMenu);
+#elif defined _WINDOWS64
+		// HUCKLE - added this for auto joining servers on game launch
+		// THANKS so much to DrPerky and GeorgeV22 for helping with this bit, honestly got stuck for 4 hours :sob:
+		if(g_Win64MultiplayerJoin == true)
+		{
+			int primaryPad = ProfileManager.GetPrimaryPad();
+
+            if (!ProfileManager.IsSignedIn(primaryPad) || ProfileManager.IsGuest(primaryPad))
+            {
+                UINT uiIDA[1] = { IDS_OK };
+                ui.RequestErrorMessage(IDS_MUST_SIGN_IN_TITLE, IDS_MUST_SIGN_IN_TEXT, uiIDA, 1);
+                ui.NavigateToScene(0, eUIScene_MainMenu);
+                return;
+            }
+
+            app.ClearSignInChangeUsersMask();
+            app.ReleaseSaveThumbnail();
+            ProfileManager.SetLockedProfile(primaryPad);
+            ProfileManager.QuerySigninStatus();
+
+            if (!app.DLCInstallProcessCompleted()) 
+                app.StartInstallDLCProcess(primaryPad);
+
+            Minecraft* pMinecraft = Minecraft::GetInstance();
+            pMinecraft->user->name = convStringToWstring(ProfileManager.GetGamertag(primaryPad));
+            app.ApplyGameSettingsChanged(primaryPad);
+			
+			auto sessionInfo = std::make_unique<FriendSessionInfo>();
+
+			// label and name
+			const wchar_t* defaultName = L"";
+    		size_t nameLen = wcslen(defaultName);
+			
+			// ip and port
+			strncpy_s(sessionInfo->data.hostIP, g_Win64MultiplayerIP, sizeof(sessionInfo->data.hostIP) - 1);
+            sessionInfo->data.hostPort = g_Win64MultiplayerPort;
+
+			// display label
+    		sessionInfo->displayLabel = new wchar_t[nameLen + 1];
+			wcscpy_s(sessionInfo->displayLabel, nameLen + 1, defaultName);
+			sessionInfo->displayLabelLength = static_cast<unsigned char>(nameLen);
+			sessionInfo->displayLabelViewableStartIndex = 0;
+
+			// name
+			wcsncpy_s(sessionInfo->data.hostName, XUSER_NAME_SIZE, defaultName, _TRUNCATE);
+
+			// session ids
+			sessionInfo->sessionId = static_cast<uint64_t>(inet_addr(g_Win64MultiplayerIP)) |
+                             static_cast<uint64_t>(g_Win64MultiplayerPort) << 32;
+
+			// random props
+			sessionInfo->data.isReadyToJoin = true;
+			sessionInfo->data.isJoinable = true;
+
+            DWORD dwLocalUsersMask = 0;
+            dwLocalUsersMask |= CGameNetworkManager::GetLocalPlayerMask(ProfileManager.GetPrimaryPad());
+            
+            CGameNetworkManager::eJoinGameResult result = g_NetworkManager.JoinGame( sessionInfo.get(), dwLocalUsersMask );
+
+			if (result == CGameNetworkManager::JOINGAME_PENDING)
+			{
+				ConnectionProgressParams *param = new ConnectionProgressParams();
+				param->iPad = ProfileManager.GetPrimaryPad();
+				param->stringId = IDS_PROGRESS_CONNECTING;
+				param->showTooltips = true;
+				param->setFailTimer = false;
+				param->timerTime = 0;
+				param->cancelFunc = nullptr;
+				param->cancelFuncParam = nullptr;
+				ui.NavigateToScene(ProfileManager.GetPrimaryPad(), eUIScene_ConnectingProgress, param);
+			}
+		}
+		else
+		{
+			ui.NavigateToScene(0,eUIScene_SaveMessage);
+		}
 #else
 			ui.NavigateToScene(0,eUIScene_SaveMessage);
 #endif
@@ -168,6 +250,82 @@ void UIScene_Intro::handleAnimationEnd()
 		else
 		{
 			m_bAnimationEnded = true;
+		}
+#elif defined _WINDOWS64
+		// HUCKLE - added this for auto joining servers on game launch
+		// THANKS so much to DrPerky and GeorgeV22 for helping with this bit, honestly got stuck for 4 hours :sob:
+		if(g_Win64MultiplayerJoin == true)
+		{
+			int primaryPad = ProfileManager.GetPrimaryPad();
+
+            if (!ProfileManager.IsSignedIn(primaryPad) || ProfileManager.IsGuest(primaryPad))
+            {
+                UINT uiIDA[1] = { IDS_OK };
+                ui.RequestErrorMessage(IDS_MUST_SIGN_IN_TITLE, IDS_MUST_SIGN_IN_TEXT, uiIDA, 1);
+                ui.NavigateToScene(0, eUIScene_MainMenu);
+                return;
+            }
+
+            app.ClearSignInChangeUsersMask();
+            app.ReleaseSaveThumbnail();
+            ProfileManager.SetLockedProfile(primaryPad);
+            ProfileManager.QuerySigninStatus();
+
+            if (!app.DLCInstallProcessCompleted()) 
+                app.StartInstallDLCProcess(primaryPad);
+
+            Minecraft* pMinecraft = Minecraft::GetInstance();
+            pMinecraft->user->name = convStringToWstring(ProfileManager.GetGamertag(primaryPad));
+            app.ApplyGameSettingsChanged(primaryPad);
+			
+			auto sessionInfo = std::make_unique<FriendSessionInfo>();
+
+			// label and name
+			const wchar_t* defaultName = L"";
+    		size_t nameLen = wcslen(defaultName);
+			
+			// ip and port
+			strncpy_s(sessionInfo->data.hostIP, g_Win64MultiplayerIP, sizeof(sessionInfo->data.hostIP) - 1);
+            sessionInfo->data.hostPort = g_Win64MultiplayerPort;
+
+			// display label
+    		sessionInfo->displayLabel = new wchar_t[nameLen + 1];
+			wcscpy_s(sessionInfo->displayLabel, nameLen + 1, defaultName);
+			sessionInfo->displayLabelLength = static_cast<unsigned char>(nameLen);
+			sessionInfo->displayLabelViewableStartIndex = 0;
+
+			// name
+			wcsncpy_s(sessionInfo->data.hostName, XUSER_NAME_SIZE, defaultName, _TRUNCATE);
+
+			// session ids
+			sessionInfo->sessionId = static_cast<uint64_t>(inet_addr(g_Win64MultiplayerIP)) |
+                             static_cast<uint64_t>(g_Win64MultiplayerPort) << 32;
+
+			// random props
+			sessionInfo->data.isReadyToJoin = true;
+			sessionInfo->data.isJoinable = true;
+
+            DWORD dwLocalUsersMask = 0;
+            dwLocalUsersMask |= CGameNetworkManager::GetLocalPlayerMask(ProfileManager.GetPrimaryPad());
+            
+            CGameNetworkManager::eJoinGameResult result = g_NetworkManager.JoinGame( sessionInfo.get(), dwLocalUsersMask );
+
+			if (result == CGameNetworkManager::JOINGAME_PENDING)
+			{
+				ConnectionProgressParams *param = new ConnectionProgressParams();
+				param->iPad = ProfileManager.GetPrimaryPad();
+				param->stringId = IDS_PROGRESS_CONNECTING;
+				param->showTooltips = true;
+				param->setFailTimer = false;
+				param->timerTime = 0;
+				param->cancelFunc = nullptr;
+				param->cancelFuncParam = nullptr;
+				ui.NavigateToScene(ProfileManager.GetPrimaryPad(), eUIScene_ConnectingProgress, param);
+			}
+		}
+		else
+		{
+			ui.NavigateToScene(0,eUIScene_SaveMessage);
 		}
 #else
 		ui.NavigateToScene(0,eUIScene_SaveMessage);

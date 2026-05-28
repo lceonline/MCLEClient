@@ -93,6 +93,7 @@ if(MINECRAFT_CLIENT_USE_4J_DEBUG_LIBS)
     4JLibs.${PLATFORM_NAME}.Profile
     4JLibs.${PLATFORM_NAME}.Storage
     4JLibs.${PLATFORM_NAME}.Render
+    $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/discordsdk/discord_game_sdk.dll.lib>
   )
 else()
   target_link_libraries(Minecraft.Client PRIVATE
@@ -119,7 +120,7 @@ endforeach()
 # ---
 include("${CMAKE_SOURCE_DIR}/cmake/CopyAssets.cmake")
 set(ASSET_FOLDER_PAIRS
-  "${CMAKE_CURRENT_SOURCE_DIR}/Music"                  "${PLATFORM_NAME}Media/Music"
+  "${CMAKE_CURRENT_SOURCE_DIR}/music"                  "music"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/Media"           "Common/Media"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/res"             "Common/res"
   "${CMAKE_CURRENT_SOURCE_DIR}/${PLATFORM_NAME}Media"  "${PLATFORM_NAME}Media"
@@ -148,8 +149,8 @@ endif()
 # Copy redist files
 add_copyredist_target(Minecraft.Client)
 
-# Make sure GameHDD & Settings exists in Windows64
+# Make sure GameHDD exists on Windows
 if(PLATFORM_NAME STREQUAL "Windows64")
   add_gamehdd_target(Minecraft.Client)
-  add_settings_target(Minecraft.Client)
 endif()
+

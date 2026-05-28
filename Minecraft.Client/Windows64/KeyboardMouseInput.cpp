@@ -390,6 +390,20 @@ float KeyboardMouseInput::GetLookY(float sensitivity) const
 	return static_cast<float>(-m_mouseDeltaY) * sensitivity;
 }
 
+void KeyboardMouseInput::SetCursorIcon(LPCWSTR cursorName) 
+{
+	HCURSOR hCursor = LoadCursorW(nullptr, cursorName);
+	if (hCursor)
+	{
+		SetCursor(hCursor);
+
+		if (g_hWnd)
+		{
+			SetClassLongPtrW(g_hWnd, GCLP_HCURSOR, (LONG_PTR)hCursor);
+		}
+	}
+}
+
 void KeyboardMouseInput::OnChar(wchar_t c)
 {
 	int next = (m_charBufferHead + 1) % CHAR_BUFFER_SIZE;

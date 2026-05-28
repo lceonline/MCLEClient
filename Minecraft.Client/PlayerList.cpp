@@ -37,6 +37,8 @@
 #include "Common/Network/Sony/NetworkPlayerSony.h"
 #endif
 
+#include "../Minecraft.World/Recipes.h"
+
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
 #include "../Minecraft.Server/Access/Access.h"
 #include "../Minecraft.Server/Common/StringUtils.h"
@@ -51,6 +53,7 @@ extern bool g_Win64DedicatedServer;
 static unsigned int s_playerListTickCount = 0;
 static const int kIdentityResponseGraceTicks = 200; // 10 seconds at 20 TPS
 #endif
+#include "../Minecraft.Client/Common/UI/IUIScene_CreativeMenu.h"
 
 // 4J - this class is fairly substantially altered as there didn't seem any point in porting code for banning, whitelisting, ops etc.
 
@@ -299,6 +302,9 @@ bool PlayerList::placeNewPlayer(Connection *connection, shared_ptr<ServerPlayer>
 	if (np) newSmallId = np->GetSmallId();
 	app.DebugPrintf("RECONNECT: placeNewPlayer smallId=%d entityId=%d dim=%d\n",
 		newSmallId, player->entityId, level->dimension->id);
+
+	playerConnection->send(Recipes::getInstance()->createUpdatePacket());
+	playerConnection->send(IUIScene_CreativeMenu::createUpdatePacket());
 
 	playerConnection->send(std::make_shared<LoginPacket>(L"", player->entityId, level->getLevelData()->getGenerator(),
 	                                                     level->getSeed(),
@@ -731,16 +737,16 @@ shared_ptr<ServerPlayer> PlayerList::getPlayerForLogin(PendingConnection *pendin
 	player->setXuid( xuid ); // 4J Added
 	player->setOnlineXuid( onlineXuid ); // 4J Added
 #ifdef _WINDOWS64
-    {
-        PlayerUID persistentXuid = Win64Xuid::ResolvePersistentXuidFromName(userName);
-        player->setXuid(persistentXuid);
+	{
+		PlayerUID persistentXuid = Win64Xuid::ResolvePersistentXuidFromName(userName);
+		player->setXuid(persistentXuid);
 
-        INetworkPlayer* np = pendingConnection->connection->getSocket()->getPlayer();
-        if (np != nullptr)
-        {
-            player->setOnlineXuid(np->GetUID());
-        }
-    }
+		INetworkPlayer* np = pendingConnection->connection->getSocket()->getPlayer();
+		if (np != NULL)
+		{
+			player->setOnlineXuid(np->GetUID());
+		}
+	}
 #endif
 	// Work out the base server player settings
 	INetworkPlayer *networkPlayer = pendingConnection->connection->getSocket()->getPlayer();

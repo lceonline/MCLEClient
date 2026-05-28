@@ -23,6 +23,24 @@ ShapedRecipy::ShapedRecipy(int width, int height, ItemInstance **recipeItems, It
 		_keepTag = false;
 }
 
+ShapedRecipy::~ShapedRecipy() {
+	// todo: why does this cause a error when clearing out these specifically? 
+	// might be leaking memory here but im not sure cause it crashes when you clear them, so we dont clear them
+	/*for (int x = 0; x < 3; x++) {
+		for (int y = 0; y < 3; y++) {
+			if (x < width && y < height) {
+				delete recipeItems[x + y * width];
+			}
+		}
+	}*/
+
+	delete[] recipeItems;
+	delete result;
+
+	recipeItems = nullptr;
+	result = nullptr;
+}
+
 const int ShapedRecipy::getGroup() 
 {
 	return group;
@@ -227,4 +245,65 @@ ShapedRecipy *ShapedRecipy::keepTag()
 {
 	_keepTag = true;
 	return this;
+}
+
+void ShapedRecipy::writeToStream(DataOutputStream* dos) {
+	dos->writeByte(2);
+	dos->writeByte(this->group);
+
+	//write result item, it should always be valid
+	{
+		dos->writeShort(this->result->id);
+		dos->writeByte(this->result->count);
+		dos->writeShort(this->result->getAuxValue());
+
+		Packet::writeNbt(this->result->tag, dos);
+	}
+
+	dos->writeByte((this->width << 2) | this->height);
+	
+	for (int i = 0; i < (this->width * this->height); i++) {
+		ItemInstance* ingredients_item = this->recipeItems[i];
+		dos->writeBoolean(ingredients_item == nullptr);
+		if (ingredients_item == nullptr) continue;
+
+		dos->writeShort(ingredients_item->id);
+		dos->writeShort(ingredients_item->getAuxValue());
+		Packet::writeNbt(ingredients_item->tag, dos);
+	}
+}
+
+ShapedRecipy* ShapedRecipy::readFromStream(DataInputStream* dis) {
+	int groupType = dis->readByte();
+	
+	int resultItemID = dis->readShort();
+	int resultItemCount = dis->readByte();
+	int resultItemAux = dis->readShort();
+
+	ItemInstance* resultItem = new ItemInstance(resultItemID, resultItemCount, 0);
+	resultItem->setRawAuxValue(resultItemAux);
+	resultItem->tag = Packet::readNbt(dis);
+
+	unsigned char packedSize = dis->readByte();
+
+	int width = (packedSize >> 2) & 0x3;
+	int height = packedSize & 0x3;
+	ItemInstance** ids = new ItemInstance*[width * height];
+
+	for (int i = 0; i < width * height; i++) {
+		ItemInstance* ingredients_item = nullptr;
+		bool isNull = dis->readBoolean();
+		if (!isNull) {
+			int itemId = dis->readShort();
+			int itemAux = dis->readShort();
+
+			ingredients_item = new ItemInstance(itemId, 1, 0);
+			ingredients_item->setRawAuxValue(itemAux);
+			ingredients_item->tag = Packet::readNbt(dis);
+		}
+
+		ids[i] = ingredients_item;
+	}
+
+	return new ShapedRecipy(width, height, ids, resultItem, groupType);
 }

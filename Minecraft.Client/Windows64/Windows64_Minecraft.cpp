@@ -60,6 +60,7 @@ extern Renderer InternalRenderManager;
 
 #include "Xbox/Resource.h"
 
+#include "Windows64_Minecraft.h"
 #include "Windows64_Launcher.h"
 
 // request use of dedicated GPU from AMD and Nvidia drivers
@@ -132,11 +133,45 @@ wchar_t g_Win64UsernameW[17] = { 0 };
 static bool g_isFullscreen = false;
 static WINDOWPLACEMENT g_wpPrev = { sizeof(g_wpPrev) };
 
-struct Win64LaunchOptions
-{
-	int screenMode;
-	bool fullscreen;
-};
+char g_Win64SessionTicket[256];
+
+bool s_externalLauncher = false;
+
+bool isOfflineMode = false;
+
+bool Windows64Minecraft::IsOfflineMode() {
+	return isOfflineMode;
+}
+
+bool Windows64Minecraft::IsExternalLauncher() {
+	return s_externalLauncher;
+}
+
+std::string Windows64Minecraft::GetAuthenticationTicket() {
+	return g_Win64SessionTicket;
+}
+
+static bool FetchSessionInfo() {
+	std::vector<std::wstring> headers;
+	headers.push_back(L"Content-Type: text/plain");
+
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/getAccountInfo", L"POST", Windows64Minecraft::GetAuthenticationTicket(), headers);
+
+	if (response.status == 0) return false;
+
+	if (response.status != 200) return false;
+
+	if (response.body.empty() || response.body[0] != '-') return false;
+	std::string payload = response.body.substr(1);
+	//std::vector<std::string> splitData = split(payload, '|');
+
+	strncpy_s(g_Win64Username, sizeof(g_Win64Username), payload.c_str(), _TRUNCATE);
+	MultiByteToWideChar(CP_UTF8, 0, g_Win64Username, -1, g_Win64UsernameW, sizeof(g_Win64UsernameW) / sizeof(wchar_t));
+
+	//WideCharToMultiByte(CP_ACP, 0, g_Win64UsernameW, -1, g_Win64Username, static_cast<int>(sizeof(g_Win64Username)), nullptr, nullptr);
+
+	return true;
+}
 
 static void CopyWideArgToAnsi(LPCWSTR source, char* dest, size_t destSize)
 {
@@ -151,47 +186,57 @@ static void CopyWideArgToAnsi(LPCWSTR source, char* dest, size_t destSize)
 	dest[destSize - 1] = 0;
 }
 
-// ---------- Persistent options (options.txt next to exe) ----------
-static void GetOptionsFilePath(char *out, size_t outSize)
+// ---------- Persistent options (options.dat next to exe) ----------
+static void GetOptionsFilePath(char *out, DWORD outSize)
 {
-	GetModuleFileNameA(nullptr, out, static_cast<DWORD>(outSize));
-	char *p = strrchr(out, '\\');
-	if (p) *(p + 1) = '\0';
-	strncat_s(out, outSize, "options.txt", _TRUNCATE);
+    GetModuleFileNameA(nullptr, out, outSize);
+    char *p = strrchr(out, '\\');
+    if (p) *(p + 1) = '\0';
+    strncat_s(out, outSize, "settings.dat", _TRUNCATE);
 }
 
 static void SaveFullscreenOption(bool fullscreen)
 {
-	char path[MAX_PATH];
-	GetOptionsFilePath(path, sizeof(path));
-	FILE *f = nullptr;
-	if (fopen_s(&f, path, "w") == 0 && f)
-	{
-		fprintf(f, "fullscreen=%d\n", fullscreen ? 1 : 0);
-		fclose(f);
-	}
+    GAME_SETTINGS settings = {};
+    
+    char path[MAX_PATH] = {};
+    GetOptionsFilePath(path, MAX_PATH);
+    FILE *f = nullptr;
+    if (fopen_s(&f, path, "rb") == 0 && f)
+    {
+        fread(&settings, sizeof(GAME_SETTINGS), 1, f);
+        fclose(f);
+    }
+
+    if (fullscreen)
+        settings.uiBitmaskValues |= (1UL << 25);
+    else
+        settings.uiBitmaskValues &= ~(1UL << 25);
+
+	if (fopen_s(&f, path, "wb") == 0 && f)
+    {
+        fwrite(&settings, sizeof(GAME_SETTINGS), 1, f);
+        fclose(f);
+    }
 }
 
 static bool LoadFullscreenOption()
 {
-	char path[MAX_PATH];
+    char path[MAX_PATH] = {};
 	GetOptionsFilePath(path, sizeof(path));
-	FILE *f = nullptr;
-	if (fopen_s(&f, path, "r") == 0 && f)
-	{
-		char line[256];
-		while (fgets(line, sizeof(line), f))
-		{
-			int val = 0;
-			if (sscanf_s(line, "fullscreen=%d", &val) == 1)
-			{
-				fclose(f);
-				return val != 0;
-			}
-		}
-		fclose(f);
-	}
-	return false;
+    
+    FILE *f = nullptr;
+    if (fopen_s(&f, path, "rb") != 0 || !f)
+        return false;
+    
+    GAME_SETTINGS current = {};
+    bool ok = (fread(&current, sizeof(GAME_SETTINGS), 1, f) == 1);
+    fclose(f);
+    
+    if (!ok)
+        return false;
+
+    return (current.uiBitmaskValues & (1UL << 25)) != 0;
 }
 // ------------------------------------------------------------------
 
@@ -216,13 +261,12 @@ static void ApplyScreenMode(int screenMode)
 	}
 }
 
+using Win64LaunchOptions = Windows64Minecraft::Win64LaunchOptions;
+
 static Win64LaunchOptions ParseLaunchOptions()
 {
 	Win64LaunchOptions options = {};
 	options.screenMode = 0;
-
-	g_Win64MultiplayerJoin = false;
-	g_Win64MultiplayerPort = WIN64_NET_DEFAULT_PORT;
 
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -237,28 +281,24 @@ static Win64LaunchOptions ParseLaunchOptions()
 
 	for (int i = 1; i < argc; ++i)
 	{
-		if (_wcsicmp(argv[i], L"-name") == 0 && (i + 1) < argc)
-		{
-			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
-		}
-		else if (_wcsicmp(argv[i], L"-ip") == 0 && (i + 1) < argc)
-		{
-			char ipBuf[256];
-			CopyWideArgToAnsi(argv[++i], ipBuf, sizeof(ipBuf));
-			strncpy_s(g_Win64MultiplayerIP, sizeof(g_Win64MultiplayerIP), ipBuf, _TRUNCATE);
-			g_Win64MultiplayerJoin = true;
-		}
-		else if (_wcsicmp(argv[i], L"-port") == 0 && (i + 1) < argc)
-		{
-			wchar_t* endPtr = nullptr;
-			const long port = wcstol(argv[++i], &endPtr, 10);
-			if (endPtr != argv[i] && *endPtr == 0 && port > 0 && port <= 65535)
-			{
-				g_Win64MultiplayerPort = static_cast<int>(port);
-			}
-		}
-		else if (_wcsicmp(argv[i], L"-fullscreen") == 0)
+		if (_wcsicmp(argv[i], L"-fullscreen") == 0)
 			options.fullscreen = true;
+
+	}
+
+	for (int i = 1; i < argc; ++i)
+	{
+		if (_wcsicmp(argv[i], L"-username") == 0 && (i + 1) < argc) {
+			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
+			options.username = true;
+		}
+		else if (_wcsicmp(argv[i], L"-token") == 0 && (i + 1) < argc) {
+			CopyWideArgToAnsi(argv[++i], g_Win64SessionTicket, sizeof(g_Win64SessionTicket));
+			options.token = true;
+		}
+		else if (_wcsicmp(argv[i], L"-offline") == 0) {
+			isOfflineMode = true;
+		}
 	}
 
 	LocalFree(argv);
@@ -821,8 +861,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 
-	ShowWindow(g_hWnd, (nCmdShow != SW_HIDE) ? SW_SHOWMAXIMIZED : nCmdShow);
-	UpdateWindow(g_hWnd);
+
 
 	return TRUE;
 }
@@ -1453,8 +1492,9 @@ void CleanupDevice()
 static Minecraft* InitialiseMinecraftRuntime()
 {
 	app.loadMediaArchive();
-
-	RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
+	// @CDevJoud: No need to call this method as it gets called once in `InitDevice()`
+	// Calling it again and it results of 20MB of memory leak!
+	//RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
 
 	app.loadStringTable();
 	ui.init(g_pd3dDevice, g_pImmediateContext, g_pRenderTargetView, g_pDepthStencilView, g_rScreenWidth, g_rScreenHeight);
@@ -1513,10 +1553,7 @@ static Minecraft* InitialiseMinecraftRuntime()
 
 void StartGame(Win64LaunchOptions launchOptions, int nCmdShow);
 
-int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-					   _In_opt_ HINSTANCE hPrevInstance,
-					   _In_ LPTSTR    lpCmdLine,
-					   _In_ int       nCmdShow)
+int APIENTRY _tWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPTSTR lpCmdLine, _In_ int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -1524,29 +1561,45 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// 4J-Win64: set CWD to exe dir so asset paths resolve correctly
 	{
 		char szExeDir[MAX_PATH] = {};
-		GetModuleFileNameA(NULL, szExeDir, MAX_PATH);
-		char *pSlash = strrchr(szExeDir, '\\');
+		GetModuleFileNameA(nullptr, szExeDir, MAX_PATH);
+		char* pSlash = strrchr(szExeDir, '\\');
 		if (pSlash) { *(pSlash + 1) = '\0'; SetCurrentDirectoryA(szExeDir); }
 	}
 
-	// Declare DPI awareness so GetSystemMetrics returns physical pixels
 	SetProcessDPIAware();
 	g_iScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 	g_iScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+	g_rScreenWidth = g_iScreenWidth;
+	g_rScreenHeight = g_iScreenHeight;
 
-	// Load stuff from launch options, including username
 	Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
 
 	hMyInst = hInstance;
 
+	// If -token was passed by an external launcher then skip the internal launcher
+	// or if -offline was passed then skip auth
+	if (launchOptions.token)
+	{
+		// External launcher path: resolve session info and go straight to game
+		s_externalLauncher = true;
+		MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
+		FetchSessionInfo();
+		StartGame(launchOptions, nCmdShow);
+	}
+	else if (Windows64Minecraft::IsOfflineMode()) {
+		MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
+		StartGame(launchOptions, nCmdShow);
+	}
+	else
+	{
 		Windows64Launcher::CreateLauncherWindow(hInstance, [launchOptions, nCmdShow]() {
 			const char* username = Windows64Launcher::GetUsername().c_str();
 			strncpy_s(g_Win64Username, sizeof(g_Win64Username), username, _TRUNCATE);
 			MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
-
 			StartGame(launchOptions, nCmdShow);
-		});
+			});
+	}
 
 	return 0;
 }
@@ -1570,11 +1623,12 @@ void StartGame(Win64LaunchOptions launchOptions, int nCmdShow) {
 		CleanupDevice();
 		return;
 	}
-
 	// Restore fullscreen state from previous session. Route through the
 	// deferred exclusive fullscreen path so the main loop applies it on the
 	// first tick (safer than transitioning during init).
-	if ((LoadFullscreenOption() && !g_isFullscreen) || launchOptions.fullscreen)
+
+	bool FullScreenEnabled = LoadFullscreenOption();
+	if (FullScreenEnabled && !g_isFullscreen)
 	{
 		g_bPendingExclusiveFullscreen = true;
 		g_bPendingExclusiveFullscreenValue = true;
@@ -1665,6 +1719,20 @@ void StartGame(Win64LaunchOptions launchOptions, int nCmdShow) {
 		hr = XuiTimersRun();
 	}
 #endif
+
+	// @CDevJoud The window should only be shown after the engine/game
+	// initialization has fully completed.
+	//
+	// Showing the window too early especially on low end devices,
+	// may cause windows to display a "Not Responding" state while
+	// initialization is still in progress.
+	//
+	// This creates an unprofessional first impression for the player.
+	// Instead, initialize all engine systems first, then display the
+	// window once everything is ready.
+	ShowWindow(g_hWnd, (nCmdShow != SW_HIDE) ? SW_SHOWMAXIMIZED : nCmdShow);
+	UpdateWindow(g_hWnd);
+
 	MSG msg = {0};
 	while( WM_QUIT != msg.message && !app.m_bShutdown)
 	{

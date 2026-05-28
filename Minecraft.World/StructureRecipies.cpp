@@ -76,8 +76,52 @@ void StructureRecipies::addRecipes(Recipes *r)
 
 		L'#', new ItemInstance(Tile::quartzBlock, 1, QuartzBlockTile::TYPE_DEFAULT),
 		L'S');
-	
-	
+
+	r->addShapedRecipy(new ItemInstance(Tile::stone_Id, 2, StoneTile::DIORITE), //
+		L"ssctcig",
+		L"#Q", //
+		L"Q#", //
+
+		L'#', Tile::cobblestone, L'Q', Item::netherQuartz,
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::stone_Id, 1, StoneTile::GRANITE), //
+		L"sczcig",
+		L"#Q", //
+
+		L'#', new ItemInstance(Tile::stone_Id, 1, StoneTile::DIORITE), L'Q', Item::netherQuartz,
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::stone_Id, 2, StoneTile::ANDESITE), //
+		L"sczctg",
+		L"#-", //
+
+		L'#', new ItemInstance(Tile::stone_Id, 1, StoneTile::DIORITE), L'-', Tile::cobblestone,
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::stone_Id, 4, StoneTile::POLISHED_DIORITE), //
+		L"ssczg",
+		L"##", //
+		L"##", //
+
+		L'#', new ItemInstance(Tile::stone_Id, 1, StoneTile::DIORITE),
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::stone_Id, 4, StoneTile::POLISHED_GRANITE), //
+		L"ssczg",
+		L"##", //
+		L"##", //
+
+		L'#', new ItemInstance(Tile::stone_Id, 1, StoneTile::GRANITE),
+		L'S');
+
+	r->addShapedRecipy(new ItemInstance(Tile::stone_Id, 4, StoneTile::POLISHED_ANDESITE), //
+		L"ssczg",
+		L"##", //
+		L"##", //
+
+		L'#', new ItemInstance(Tile::stone_Id, 1, StoneTile::ANDESITE),
+		L'S');
 
 	// 4J Stu - Changed the order, as the blocks that go with sandstone cause a 3-icon scroll
 	// that touches the text "Structures" in the title in 720 fullscreen.

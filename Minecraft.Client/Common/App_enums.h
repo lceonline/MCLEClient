@@ -184,6 +184,8 @@ enum eGameSetting
 
 	//TU25
 	eGameSetting_ClassicCrafting,
+	// if enabled hides the save size bar in loadcreatejoinmenu (load tab)
+	eGameSetting_HideSaveSizeBar,
 };
 
 

@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "../../Minecraft.World/net.minecraft.world.entity.item.h"
 #include "../../Minecraft.World/net.minecraft.world.entity.player.h"
 #include "../../Minecraft.World/net.minecraft.world.level.tile.entity.h"
@@ -27,6 +27,9 @@
 #include "../GameMode.h"
 #include "../Xbox/Social/SocialManager.h"
 #include "Tutorial/TutorialMode.h"
+#ifdef _WINDOWS64
+#include "../Windows64/Network/WinsockNetLayer.h" // HUCKLE - added for quit on disconnect
+#endif
 #if defined _XBOX || defined _WINDOWS64
 #include "../Xbox/XML/ATGXmlParser.h"
 #include "../Xbox/XML/xmlFilesCallback.h"
@@ -450,7 +453,7 @@ void CMinecraftApp::SetAction(int iPad, eXuiAction action, LPVOID param)
 
 bool CMinecraftApp::IsAppPaused()
 {
-#if defined(_XBOX_ONE) || defined(__ORBIS__)
+#if defined(_XBOX_ONE) || defined(__ORBIS__) || defined(_WINDOWS64)
 	bool paused = m_bIsAppPaused;
 	EnterCriticalSection(&m_saveNotificationCriticalSection);
 	if( g_NetworkManager.IsLocalGame() && g_NetworkManager.GetPlayerCount() == 1 )
@@ -895,7 +898,7 @@ static void Win64_GetSettingsPath(char *outPath, DWORD size)
     GetModuleFileNameA(nullptr, outPath, size);
     char *lastSlash = strrchr(outPath, '\\');
     if (lastSlash) *(lastSlash + 1) = '\0';
-    strncat_s(outPath, size, "/Windows64/Settings/settings.dat", _TRUNCATE);
+    strncat_s(outPath, size, "settings.dat", _TRUNCATE);
 }
 static void Win64_SaveSettings(GAME_SETTINGS *gs)
 {
@@ -946,7 +949,9 @@ void CMinecraftApp::InitGameSettings()
 		memset(pProfileSettings,0,sizeof(C_4JProfile::PROFILESETTINGS));
 		SetDefaultOptions(pProfileSettings,i);
 		Win64_LoadSettings(GameSettingsA[i]);
+#ifndef MINECRAFT_SERVER_BUILD
 		ApplyGameSettingsChanged(i);
+#endif
 #elif defined __PS3__ || defined __ORBIS__ || defined _DURANGO  || defined __PSVITA__
 		C4JStorage::PROFILESETTINGS *pProfileSettings=StorageManager.GetDashboardProfileSettings(i);
 		// 4J-PB - don't cause an options write to happen here
@@ -1502,6 +1507,7 @@ void CMinecraftApp::ApplyGameSettingsChanged(int iPad)
 
 	//TU25
 	ActionGameSettings(iPad, eGameSetting_ClassicCrafting);
+	ActionGameSettings(iPad, eGameSetting_HideSaveSizeBar);
 }
 
 void CMinecraftApp::ActionGameSettings(int iPad,eGameSetting eVal)
@@ -1753,6 +1759,9 @@ void CMinecraftApp::ActionGameSettings(int iPad,eGameSetting eVal)
 #endif
 		break;
 	case eGameSetting_ClassicCrafting:
+		//nothing to do here
+		break;
+	case eGameSetting_HideSaveSizeBar:
 		//nothing to do here
 		break;
 	}
@@ -2512,6 +2521,21 @@ void CMinecraftApp::SetGameSettings(int iPad,eGameSetting eVal,unsigned char ucV
 			GameSettingsA[iPad]->bSettingsChanged = true;
 		}
 		break;
+	case eGameSetting_HideSaveSizeBar:
+		if ((GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_HIDESAVESIZEBAR) != (ucVal & 0x01) << 27)
+		{
+			if (ucVal == 1)
+			{
+				GameSettingsA[iPad]->uiBitmaskValues |= GAMESETTING_HIDESAVESIZEBAR;
+			}
+			else
+			{
+				GameSettingsA[iPad]->uiBitmaskValues &= ~GAMESETTING_HIDESAVESIZEBAR;
+			}
+			ActionGameSettings(iPad, eVal);
+			GameSettingsA[iPad]->bSettingsChanged = true;
+		}
+		break;
 	}
 }
 
@@ -2649,6 +2673,9 @@ unsigned char CMinecraftApp::GetGameSettings(int iPad,eGameSetting eVal)
 
 	case eGameSetting_ClassicCrafting:
 		return (GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_CLASSICCRAFTING) >> 26;
+
+	case eGameSetting_HideSaveSizeBar:
+		return (GameSettingsA[iPad]->uiBitmaskValues & GAMESETTING_HIDESAVESIZEBAR) >> 27;
 
 	case eGameSetting_VSync:
 		return (GameSettingsA[iPad]->uiBitmaskValues&GAMESETTING_VSYNC)>>24;
@@ -9589,8 +9616,9 @@ bool CMinecraftApp::DLCContentRetrieved(eDLCMarketplaceType eType)
 
 void CMinecraftApp::SetAdditionalSkinBoxes(DWORD dwSkinID, SKIN_BOX *SkinBoxA, DWORD dwSkinBoxC)
 {
-	EntityRenderer *renderer = EntityRenderDispatcher::instance->getRenderer(eTYPE_PLAYER);
-	Model *pModel = renderer->getModel();
+	EntityRenderDispatcher *dispatcher = EntityRenderDispatcher::instance;
+	EntityRenderer *renderer = dispatcher ? dispatcher->getRenderer(eTYPE_PLAYER) : nullptr;
+	Model *pModel = renderer ? renderer->getModel() : nullptr;
 	vector<ModelPart *> *pvModelPart = new vector<ModelPart *>;
 	vector<SKIN_BOX *> *pvSkinBoxes = new vector<SKIN_BOX *>;
 
@@ -9621,8 +9649,9 @@ void CMinecraftApp::SetAdditionalSkinBoxes(DWORD dwSkinID, SKIN_BOX *SkinBoxA, D
 
 vector<ModelPart *> * CMinecraftApp::SetAdditionalSkinBoxes(DWORD dwSkinID, vector<SKIN_BOX *> *pvSkinBoxA)
 {
-	EntityRenderer *renderer = EntityRenderDispatcher::instance->getRenderer(eTYPE_PLAYER);
-	Model *pModel = renderer->getModel();
+	EntityRenderDispatcher *dispatcher = EntityRenderDispatcher::instance;
+	EntityRenderer *renderer = dispatcher ? dispatcher->getRenderer(eTYPE_PLAYER) : nullptr;
+	Model *pModel = renderer ? renderer->getModel() : nullptr;
 	vector<ModelPart *> *pvModelPart = new vector<ModelPart *>;
 
 	EnterCriticalSection( &csAdditionalModelParts );

@@ -103,7 +103,5 @@ public:
 	static shared_ptr<ItemInstance> readItem(DataInputStream *dis);
 	static void writeItem(shared_ptr<ItemInstance> item, DataOutputStream *dos);
 	static CompoundTag *readNbt(DataInputStream *dis);
-
-protected:
 	static void writeNbt(CompoundTag *tag, DataOutputStream *dos);
 };

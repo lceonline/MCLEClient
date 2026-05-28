@@ -220,6 +220,11 @@ void ItemInstance::setAuxValue(int value)
 	}
 }
 
+void ItemInstance::setRawAuxValue(int value)
+{
+	auxValue = value;
+}
+
 int ItemInstance::getMaxDamage()
 {
 	return Item::items[id]->getMaxDamage();

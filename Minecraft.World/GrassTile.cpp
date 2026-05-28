@@ -121,8 +121,14 @@ void GrassTile::tick(Level *level, int x, int y, int z, Random *random)
 		}
 	}
 
+  // using isSolid() here is wrong because non full blocks like iron bars,
+  // fences, walls are also flagged as solid by their material
+  int aboveTileId = level->getTile(x, y + 1, z);
   Material* above = level->getMaterial(x, y + 1, z);
-	if (above->isSolid() || above->isLiquid()) level->setTileAndUpdate(x, y, z, Tile::dirt_Id);
+  if (above->isLiquid() || Tile::lightBlock[aboveTileId] > 2)
+  {
+    level->setTileAndUpdate(x, y, z, Tile::dirt_Id);
+  }
 }
 
 int GrassTile::getResource(int data, Random *random, int playerBonusLevel)

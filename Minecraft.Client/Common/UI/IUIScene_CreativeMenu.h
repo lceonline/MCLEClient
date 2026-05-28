@@ -1,6 +1,7 @@
 #pragma once
 #include "IUIScene_AbstractContainerMenu.h"
 #include "../../../Minecraft.World/AbstractContainerMenu.h"
+#include "../../../Minecraft.World/CustomPayloadPacket.h"
 // 4J Stu - This class is for code that is common between XUI and Iggy
 
 class SimpleContainer;
@@ -100,10 +101,16 @@ protected:
 	bool m_bCarryingCreativeItem;
 	int m_creativeSlotX, m_creativeSlotY, m_inventorySlotX, m_inventorySlotY;
 
+	static void _wipeCreativeItems();
+
 public:
 	static void staticCtor();
 	IUIScene_CreativeMenu();
 
+	static void loadFromLocal();
+	static void loadFromPacket(byteArray packetData);
+
+	static std::shared_ptr<CustomPayloadPacket> createUpdatePacket();
 protected:
 	ECreativeInventoryTabs m_curTab;
 	int m_tabDynamicPos[eCreativeInventoryTab_COUNT];

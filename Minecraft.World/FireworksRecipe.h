@@ -43,4 +43,8 @@ public:
 	// 4J Added
 	static void updatePossibleRecipes(shared_ptr<CraftingContainer> craftSlots, bool *firework, bool *charge, bool *fade);
 	static bool isValidIngredient(shared_ptr<ItemInstance> item, bool firework, bool charge, bool fade);
+
+	virtual void writeToStream(DataOutputStream* dos) {
+		dos->writeByte(99);
+	}
 };

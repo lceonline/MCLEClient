@@ -220,6 +220,7 @@ private:
 	void UpdateSaveSizeBarVisibility();
 #ifdef _WINDOWS64
 	void UpdateMouseHoverForActiveTab();
+	virtual bool handleMouseClick(F32 x, F32 y) override;
 	bool ConvertMouseToSceneCoords(float &sceneMouseX, float &sceneMouseY);
 	void GetAbsoluteControlRect(UIControl *pControl, S32 &x, S32 &y, S32 &w, S32 &h);
 #endif

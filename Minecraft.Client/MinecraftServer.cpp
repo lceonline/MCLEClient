@@ -1848,7 +1848,7 @@ void MinecraftServer::run(int64_t seed, void *lpParameter)
             lastTime = now;
 
             // 4J Added ability to pause the server
-			if( !m_isServerPaused )
+			if( !m_isServerPaused && !app.IsAppPaused() )
             {
                 bool didTick = false;
                 if (levels[0]->allPlayersAreSleeping())
@@ -2017,7 +2017,11 @@ void MinecraftServer::run(int64_t seed, void *lpParameter)
                             QueryPerformanceCounter(&asAfterRules);
 #endif
 
+#ifdef MINECRAFT_SERVER_BUILD
+                            levels[0]->saveToDisc(nullptr, true);
+#else
                             levels[0]->saveToDisc(Minecraft::GetInstance()->progressRenderer, true);
+#endif
 
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
                             QueryPerformanceCounter(&asAfterFlush);

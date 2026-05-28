@@ -9,6 +9,7 @@ private:
 
 public:
 	ShapelessRecipy(ItemInstance *result, vector<ItemInstance *> *ingredients, _eGroupType egroup=Recipy::eGroupType_Decoration);
+	virtual ~ShapelessRecipy() override;
 
 	virtual const ItemInstance *getResultItem();
 	virtual const int getGroup();
@@ -20,4 +21,6 @@ public:
 	virtual bool reqs(int iRecipe);
 	virtual void reqs(INGREDIENTS_REQUIRED *pIngReq); 
 
+	virtual void writeToStream(DataOutputStream* dos);
+	static ShapelessRecipy* readFromStream(DataInputStream* dos);
 };
