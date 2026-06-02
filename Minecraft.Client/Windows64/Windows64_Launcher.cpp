@@ -413,7 +413,8 @@ LRESULT OnAccountLogin() {
 		MessageBoxW(launcher_HWND, L"You Have Been Banned", L"Login Failed", MB_OK);
 	}
 	else { //unknown error, we will setup internal codes and have them logged here
-		MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registraction Failed", MB_OK);
+		//MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, (L"Failed to Connect To Server: " + std::to_wstring(registerResponse)).c_str(), L"Login Failed", MB_OK);
 	}
 
 	return 0;
@@ -656,7 +657,7 @@ int Windows64Launcher::API_GetAccountInfo(const std::string token) {
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/getAccountInfo", L"POST", token, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/accountinfo", L"POST", token, headers);
 
 	if (response.status == 0) return -1;
 
@@ -675,7 +676,7 @@ int Windows64Launcher::API_AttemptAccountRegister(const std::string _username, c
 
 	std::string data = _username + ":" + password;
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/accountRegistration", L"POST", data, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/register", L"POST", data, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
@@ -696,7 +697,7 @@ int Windows64Launcher::API_AttemptAccountLogin(const std::string _username, cons
 
 	std::string data = _username + ":" + password;
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/accountLogin", L"POST", data, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/login", L"POST", data, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
@@ -714,7 +715,7 @@ int Windows64Launcher::API_AttemptDiscordLogin(const std::string& ticket, std::s
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/discordLogin", L"POST", ticket, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/discordlogin", L"POST", ticket, headers);
 
 	if (response.status == 0) return -1;
 	if (response.status != 200) return (20000 + response.status);
