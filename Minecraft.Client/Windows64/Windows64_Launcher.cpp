@@ -335,12 +335,12 @@ LRESULT OnAccountRegister() {
 	GetWindowText(hPasswordEdit, password_buf, 32);
 
 	if (!isValidUsername(username_buf)) {
-		MessageBoxW(launcher_HWND, L"A Username Can Only Consist Of Letters And Numbers", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"A Username Can Only Consist Of Letters And Numbers", L"Registration Failed", MB_OK);
 		return 0;
 	}
 
 	if (!IsValidPassword(password_buf)) {
-		MessageBoxW(launcher_HWND, L"A Password Can Only Consist Of Letters And Numbers And %$#@&", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"A Password Can Only Consist Of Letters And Numbers And %$#@&", L"Registration Failed", MB_OK);
 		return 0;
 	}
 
@@ -351,34 +351,34 @@ LRESULT OnAccountRegister() {
 		AttemptFullLoginFlow();
 	}
 	else if (registerResponse == 20000) {
-		MessageBoxW(launcher_HWND, L"Failed to Connect To Server", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Failed to Connect To Server", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 20500) {
-		MessageBoxW(launcher_HWND, L"Failed to Connect To Server", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Failed to Connect To Server", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 2222) {
-		MessageBoxW(launcher_HWND, L"Invalid Username Characters", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Invalid Username Characters", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 2233) {
-		MessageBoxW(launcher_HWND, L"Invalid Password Characters", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Invalid Password Characters", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 3333) {
-		MessageBoxW(launcher_HWND, L"Username Taken", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Username Taken", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 5555) {
-		MessageBoxW(launcher_HWND, L"VPN's Are Not Allowed", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"VPN's Are Not Allowed", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 6666) {
-		MessageBoxW(launcher_HWND, L"Too many accounts from this IP", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Too many accounts from this IP", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 7777) {
-		MessageBoxW(launcher_HWND, L"Username Contains Banned Word", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Username Contains Banned Word", L"Registration Failed", MB_OK);
 	}
 	else if (registerResponse == 8888) {
-		MessageBoxW(launcher_HWND, L"Username Is Banned", L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, L"Username Is Banned", L"Registration Failed", MB_OK);
 	}
 	else { //unknown error, we will setup internal codes and have them logged here
-		MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registraction Failed", MB_OK);
+		MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registration Failed", MB_OK);
 	}
 
 	return 0;
@@ -414,7 +414,7 @@ LRESULT OnAccountLogin() {
 		MessageBoxW(launcher_HWND, L"You Have Been Banned", L"Login Failed", MB_OK);
 	}
 	else { //unknown error, we will setup internal codes and have them logged here
-		//MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registraction Failed", MB_OK);
+		//MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registration Failed", MB_OK);
 		MessageBoxW(launcher_HWND, (L"Failed to Connect To Server: " + std::to_wstring(registerResponse)).c_str(), L"Login Failed", MB_OK);
 	}
 
