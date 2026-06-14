@@ -25,6 +25,7 @@ public:
 	int m_xzSize; // 4J Added
 	int m_hellScale; // 4J Added
 	bool m_isHardcore; // 4J Added - for hardcore mode
+	std::string lcenToken; // LCEN auth token, empty string if not present
 
 	// 1.8.2
 	int gameType;

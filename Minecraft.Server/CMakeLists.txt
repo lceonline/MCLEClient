@@ -11,6 +11,10 @@ include("${CMAKE_SOURCE_DIR}/cmake/ServerTarget.cmake")
 set(MINECRAFT_SERVER_SOURCES
   ${MINECRAFT_SERVER_COMMON}
   ${SOURCES_COMMON}
+
+  "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/UI/UIScene_AchievementsMenu.cpp"
+  "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/UI/UIControl_AchievementsList.cpp"
+    "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/StringUtils.cpp"
 )
 
 add_executable(Minecraft.Server ${MINECRAFT_SERVER_SOURCES})

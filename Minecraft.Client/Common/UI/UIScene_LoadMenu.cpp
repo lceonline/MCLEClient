@@ -29,8 +29,7 @@ int UIScene_LoadMenu::m_iDifficultyTitleSettingA[5]=
 	IDS_DIFFICULTY_TITLE_PEACEFUL,
 	IDS_DIFFICULTY_TITLE_EASY,
 	IDS_DIFFICULTY_TITLE_NORMAL,
-	IDS_DIFFICULTY_TITLE_HARD,
-	IDS_GAMEMODE_HARDCORE
+	IDS_DIFFICULTY_TITLE_HARD
 };
 
 int UIScene_LoadMenu::LoadSaveDataThumbnailReturned(LPVOID lpParam,PBYTE pbThumbnail,DWORD dwThumbnailBytes)
@@ -510,6 +509,17 @@ void UIScene_LoadMenu::tick()
 			m_MoreOptionsParams.bDoTileDrops = app.GetGameHostOption(uiHostOptions, eGameHostOption_DoTileDrops);
 			m_MoreOptionsParams.bNaturalRegeneration = app.GetGameHostOption(uiHostOptions, eGameHostOption_NaturalRegeneration);
 			m_MoreOptionsParams.bDoDaylightCycle = app.GetGameHostOption(uiHostOptions, eGameHostOption_DoDaylightCycle);
+
+			unsigned int saveDifficulty = app.GetGameHostOption(uiHostOptions, eGameHostOption_Difficulty);
+			if (saveDifficulty <= 3)
+			{
+				m_CurrentDifficulty = static_cast<unsigned char>(saveDifficulty);
+				app.SetGameSettings(m_iPad, eGameSetting_Difficulty, m_CurrentDifficulty);
+
+				WCHAR difficultyLabel[256];
+				swprintf((WCHAR*)difficultyLabel, 256, L"%ls: %ls", app.GetString(IDS_SLIDER_DIFFICULTY), app.GetString(m_iDifficultyTitleSettingA[m_CurrentDifficulty]));
+				m_sliderDifficulty.init(difficultyLabel, eControl_Difficulty, 0, 3, m_CurrentDifficulty);
+			}
 
 			bool cheatsOn = m_MoreOptionsParams.bHostPrivileges;
 			if (!cheatsOn)

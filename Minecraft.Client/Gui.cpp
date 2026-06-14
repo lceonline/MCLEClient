@@ -1086,10 +1086,10 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
         vector<wstring> lines;
 
         // Only show version/branch for player 0 to avoid cluttering each splitscreen viewport
-        if (iPad == 0 && ClientConstants::SHOW_VERSION_WATERMARK)
+        if (iPad == 0)
         {
             lines.push_back(ClientConstants::VERSION_STRING);
-            lines.push_back(ClientConstants::BRANCH_STRING);
+            lines.push_back(ClientConstants::GetLCENString());
         }
 
         if (minecraft->options->renderDebug && minecraft->player != nullptr && minecraft->level != nullptr)

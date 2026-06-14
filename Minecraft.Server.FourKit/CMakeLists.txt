@@ -109,6 +109,9 @@ set(MINECRAFT_SERVER_FOURKIT_SOURCES
   ${MINECRAFT_SERVER_COMMON}
   ${SOURCES_COMMON}
   ${_MINECRAFT_SERVER_COMMON_SERVER_FOURKIT}
+  "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/UI/UIScene_AchievementsMenu.cpp"
+  "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/UI/UIControl_AchievementsList.cpp"
+  "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/StringUtils.cpp"
 )
 
 add_executable(Minecraft.Server.FourKit ${MINECRAFT_SERVER_FOURKIT_SOURCES})

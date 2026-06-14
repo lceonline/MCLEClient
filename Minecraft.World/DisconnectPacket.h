@@ -51,6 +51,9 @@ public:
 		eDisconnect_ExitedGame,
 #endif
 		eDisconnect_HardcoreDeath,  // 4J Added - for hardcore mode multiplayer ban-on-death
+		eDisconnect_LCENAuth, // 4J Added - for LCEN auth disconnect
+		eDisconnect_LCENBanned, // 4J Added - for LCEN Banned
+		eDisconnect_LCENServiceUnavailable, // 4J added - for LCEN Service Unavailable
 	};
 
 	// 4J Stu - The reason was a string, but we need to send a non-locale specific reason

@@ -1089,13 +1089,13 @@ int PlayerConnection::countDelayedPackets()
 void PlayerConnection::info(const wstring& string)
 {
 	// 4J-PB - removed, since it needs to be localised in the language the client is in
-	//send( shared_ptr<ChatPacket>( new ChatPacket(L"�7" + string) ) );
+	//send( shared_ptr<ChatPacket>( new ChatPacket(L"<22>7" + string) ) );
 }
 
 void PlayerConnection::warn(const wstring& string)
 {
 	// 4J-PB - removed, since it needs to be localised in the language the client is in
-	//send( shared_ptr<ChatPacket>( new ChatPacket(L"�9" + string) ) );
+	//send( shared_ptr<ChatPacket>( new ChatPacket(L"<22>9" + string) ) );
 }
 
 wstring PlayerConnection::getConsoleName()

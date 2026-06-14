@@ -2,7 +2,6 @@
 #include "UI.h"
 #include "UIScene.h"
 #include "UISplitScreenHelpers.h"
-
 #include "../../Lighting.h"
 #include "../../LocalPlayer.h"
 #include "../../ItemRenderer.h"
@@ -765,7 +764,7 @@ void UIScene::setVisible(bool visible)
 
 void UIScene::customDraw(IggyCustomDrawCallbackRegion *region)
 {
-	app.DebugPrintf("Handling custom draw for scene with no override!\n");
+	//app.DebugPrintf("Handling custom draw for scene with no override!\n");
 }
 
 void UIScene::customDrawSlotControl(IggyCustomDrawCallbackRegion *region, int iPad, shared_ptr<ItemInstance> item, float fAlpha, bool isFoil, bool bDecorations)

@@ -849,6 +849,12 @@ void CMinecraftApp::InitGameSettings()
 		SetDefaultOptions(pProfileSettings,i,false);
 
 #endif
+		Minecraft* minecraft = Minecraft::GetInstance();
+		if (minecraft != nullptr && minecraft->stats[i] != nullptr)
+		{
+			minecraft->stats[i]->clear();
+			minecraft->stats[i]->parse(GameSettingsA[i]);
+		}
 	}
 }
 
@@ -4645,6 +4651,15 @@ int CMinecraftApp::SignoutExitWorldThreadProc( void* lpParameter )
 			case DisconnectPacket::eDisconnect_OutdatedClient:
 				exitReasonStringId = IDS_DISCONNECTED_CLIENT_OLD;
 				break;
+				case DisconnectPacket::eDisconnect_LCENAuth:
+    exitReasonStringId = IDS_CONNECTION_LOST_LCEN;
+    break;
+case DisconnectPacket::eDisconnect_LCENBanned:
+    exitReasonStringId = IDS_LCEN_BANNED;
+    break;
+case DisconnectPacket::eDisconnect_LCENServiceUnavailable:
+    exitReasonStringId = IDS_LCEN_NO_CONNECTION;
+    break;
 			default:
 				exitReasonStringId = IDS_DISCONNECTED;
 			}
@@ -4705,6 +4720,16 @@ int CMinecraftApp::SignoutExitWorldThreadProc( void* lpParameter )
 				break;
 			case DisconnectPacket::eDisconnect_OutdatedClient:
 				exitReasonStringId = IDS_DISCONNECTED_CLIENT_OLD;
+				break;
+			case DisconnectPacket::eDisconnect_LCENAuth:
+				exitReasonStringId = IDS_CONNECTION_LOST_LCEN;
+				break;
+			case DisconnectPacket::eDisconnect_LCENBanned:
+				exitReasonStringId = IDS_LCEN_BANNED;
+				break;
+			case DisconnectPacket::eDisconnect_LCENServiceUnavailable:
+				exitReasonStringId = IDS_LCEN_NO_CONNECTION;
+				break;
 			default:
 				exitReasonStringId = IDS_DISCONNECTED;
 			}
@@ -6527,7 +6552,7 @@ int CMinecraftApp::GetHTMLFontSize(EHTMLFontSize size)
 	return s_iHTMLFontSizesA[size];
 }
 
-wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shadowColour /*= 0xFFFFFFFF*/)
+wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shadowColour /*= 0xFFFFFFFF*/, bool override)
 {
 	wstring text(desc);
 
@@ -6610,7 +6635,7 @@ wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shado
 	text = replaceAll(text, L"{*CONTROLLER_VK_A*}",					GetVKReplacement(VK_PAD_A) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_B*}",					GetVKReplacement(VK_PAD_B) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_X*}",					GetVKReplacement(VK_PAD_X) );
-	text = replaceAll(text, L"{*CONTROLLER_VK_Y*}",					GetVKReplacement(VK_PAD_Y) );
+	text = replaceAll(text, L"{*CONTROLLER_VK_Y*}",					GetVKReplacement(VK_PAD_Y, override) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_LB*}",				GetVKReplacement(VK_PAD_LSHOULDER) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_RB*}",				GetVKReplacement(VK_PAD_RSHOULDER) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_LS*}",				GetVKReplacement(VK_PAD_LTHUMB_UP) );
@@ -6849,7 +6874,7 @@ wstring CMinecraftApp::GetActionReplacement(int iPad, unsigned char ucAction)
 #endif
 }
 
-wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey)
+wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey, bool override)
 {
 #ifdef _XBOX
 	switch(uiVKey)
@@ -6967,7 +6992,7 @@ wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey)
 	int size = 30;
 #elif defined _WIN64
 	int size = 45;
-	if(ui.getScreenHeight() < 1080) size = 30;
+	if(ui.getScreenHeight() < 1080 || override == true) size = 30;
 #else
 	int size = 45;
 #endif
@@ -9800,6 +9825,48 @@ bool CMinecraftApp::IsLocalMultiplayerAvailable()
 
 void CMinecraftApp::getLocale(vector<wstring> &vecWstrLocales)
 {
+	#ifdef _WINDOWS64
+{
+    int iPad = ProfileManager.GetPrimaryPad();
+    if (iPad >= 0 && GameSettingsA[iPad] != nullptr &&
+        GameSettingsA[iPad]->ucLanguage != MINECRAFT_LANGUAGE_DEFAULT)
+    {
+        DWORD lang   = GameSettingsA[iPad]->ucLanguage;
+        DWORD locale = GameSettingsA[iPad]->ucLocale;
+        vector<eMCLang> locales;
+        switch(lang)
+        {
+        case XC_LANGUAGE_GERMAN:     locales.push_back(eMCLang_deDE); break;
+        case XC_LANGUAGE_FRENCH:     locales.push_back(eMCLang_frFR); break;
+        case XC_LANGUAGE_ITALIAN:    locales.push_back(eMCLang_itIT); break;
+        case XC_LANGUAGE_JAPANESE:   locales.push_back(eMCLang_jaJP); break;
+        case XC_LANGUAGE_KOREAN:     locales.push_back(eMCLang_koKR); break;
+        case XC_LANGUAGE_POLISH:     locales.push_back(eMCLang_plPL); break;
+        case XC_LANGUAGE_RUSSIAN:    locales.push_back(eMCLang_ruRU); break;
+        case XC_LANGUAGE_DUTCH:      locales.push_back(eMCLang_nlNL); break;
+        case XC_LANGUAGE_DANISH:     locales.push_back(eMCLang_daDA); break;
+        case XC_LANGUAGE_FINISH:     locales.push_back(eMCLang_fiFI); break;
+        case XC_LANGUAGE_SWEDISH:    locales.push_back(eMCLang_svSV); break;
+        case XC_LANGUAGE_BNORWEGIAN: locales.push_back(eMCLang_nbNO); break;
+        case XC_LANGUAGE_GREEK:      locales.push_back(eMCLang_elGR); break;
+        case XC_LANGUAGE_TCHINESE:   locales.push_back(eMCLang_zhCHT); break;
+        case XC_LANGUAGE_PORTUGUESE:
+            if(locale == XC_LOCALE_BRAZIL) locales.push_back(eMCLang_ptBR);
+            locales.push_back(eMCLang_ptPT);
+            break;
+        case XC_LANGUAGE_SPANISH:
+            if(locale == XC_LOCALE_LATIN_AMERICA) locales.push_back(eMCLang_esMX);
+            locales.push_back(eMCLang_esES);
+            break;
+        }
+        locales.push_back(eMCLang_enUS);
+        locales.push_back(eMCLang_null);
+        for (auto &l : locales)
+            vecWstrLocales.push_back(m_localeA[l]);
+        return;
+    }
+}
+#endif
 	vector<eMCLang> locales;
 
 	DWORD dwSystemLanguage = XGetLanguage( );

@@ -635,7 +635,21 @@ void UIScene_PauseMenu::handlePress(F64 controlId, F64 childId)
 		}
 		break;
 #endif
+			case BUTTON_PAUSE_ACHIEVEMENTS:
 
+		// guests can't look at achievements
+		/*if(ProfileManager.IsGuest(pNotifyPressData->UserIndex))
+		{
+			UINT uiIDA[1];
+			uiIDA[0]=IDS_OK;
+			ui.RequestAlertMessage(IDS_PRO_GUESTPROFILE_TITLE, IDS_PRO_GUESTPROFILE_TEXT, uiIDA, 1, ProfileManager.GetPrimaryPad());
+		}
+		else
+		{
+			XShowAchievementsUI( pNotifyPressData->UserIndex );
+		}*/
+		ui.NavigateToScene(m_iPad, eUIScene_AchievementsMenu);
+		break;
 	case BUTTON_PAUSE_HELPANDOPTIONS:
 		ui.NavigateToScene(m_iPad,eUIScene_HelpAndOptionsMenu);	
 		break;
@@ -992,6 +1006,7 @@ int UIScene_PauseMenu::UnlockFullSaveReturned(void *pParam,int iPad,C4JStorage::
 				ProfileManager.DisplayFullVersionPurchase(false,pMinecraft->player->GetXboxPad(),eSen_UpsellID_Full_Version_Of_Game);
 			}
 		}
+		pMinecraft->forceStatsSave(pMinecraft->player->GetXboxPad());
 	}
 	else
 	{

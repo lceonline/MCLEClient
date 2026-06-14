@@ -12,7 +12,6 @@ endif()
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
   message(FATAL_ERROR "Use a 64-bit generator/toolchain (x64).")
 endif()
-
 set(CMAKE_CONFIGURATION_TYPES
   "Debug"
   "Release"
@@ -21,7 +20,7 @@ set(CMAKE_CONFIGURATION_TYPES
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 function(configure_compiler_target target)
-  # MSVC and compatible compilers (like Clang-cl)
+  # MSVC and compatible compilers (like Clang-cl) !
   if (MSVC)
     target_compile_options(${target} PRIVATE
       $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:C,CXX>>:/W3>

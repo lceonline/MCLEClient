@@ -21,9 +21,11 @@ set(MINECRAFT_CLIENT_SOURCES
   $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${MINECRAFT_CLIENT_WINDOWS}>
   $<$<STREQUAL:${PLATFORM_NAME},Xbox>:${MINECRAFT_CLIENT_XBOX360}>
   ${SOURCES_COMMON}
+
+  "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/StringUtils.cpp"
 )
 
-add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES})
+add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES}  "Common/UI/UIScene_AchievementsMenu.cpp" "Common/UI/UIScene_AchievementsMenu.h" "Common/UI/UIControl_AchievementsList.cpp" "Common/UI/UIControl_AchievementsList.h" "Windows64/NetworkHelpers.h" "Windows64/NetworkHelpers.cpp")
 
 # Only define executable on windows
 if(PLATFORM_NAME STREQUAL "Windows64")

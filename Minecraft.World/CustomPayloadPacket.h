@@ -30,6 +30,7 @@ public:
 	// Fork extensions: server capability and player lifecycle
 	static const wstring FORK_HELLO_CHANNEL;         // server->client: identifies fork server (empty payload)
 	static const wstring FORK_PLAYER_LEAVE_CHANNEL;  // server->client: player disconnected (payload: UTF gamertag)
+	static const wstring LCEN_HELLO_CHANNEL;
 
 	wstring identifier;
 	int length;

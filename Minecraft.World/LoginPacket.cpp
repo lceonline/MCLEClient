@@ -42,6 +42,7 @@ LoginPacket::LoginPacket(const wstring& userName, int clientVersion, PlayerUID o
 {
 	this->userName = userName;
 	this->clientVersion = clientVersion;
+	lcenToken = "";
 	this->seed = 0;
 	this->dimension = 0;
 	this->gameType = 0;
@@ -100,7 +101,34 @@ LoginPacket::LoginPacket(const wstring& userName, int clientVersion, LevelType *
 void LoginPacket::read(DataInputStream *dis) //throws IOException
 {
 	clientVersion = dis->readInt();
-	userName = readUtf(dis, Player::MAX_NAME_LENGTH);
+	{
+		wstring rawName = readUtf(dis, Player::MAX_NAME_LENGTH);
+		const wstring prefix = L"LCEN:";
+		if (rawName.size() > prefix.size() && rawName.substr(0, prefix.size()) == prefix)
+		{
+			wstring rest = rawName.substr(prefix.size());
+			size_t sep = rest.find(L'|');
+			if (sep != wstring::npos)
+			{
+				wstring wtoken = rest.substr(0, sep);
+				userName = rest.substr(sep + 1);
+				int len = WideCharToMultiByte(CP_UTF8, 0, wtoken.c_str(), -1, nullptr, 0, nullptr, nullptr);
+				if (len > 1)
+				{
+					lcenToken.resize(len - 1);
+					WideCharToMultiByte(CP_UTF8, 0, wtoken.c_str(), -1, &lcenToken[0], len, nullptr, nullptr);
+				}
+			}
+			else
+			{
+				userName = rawName;
+			}
+		}
+		else
+		{
+			userName = rawName;
+		}
+	}
 	wstring typeName = readUtf(dis, 16);
 	m_pLevelType = LevelType::getLevelType(typeName);
 	if (m_pLevelType == nullptr)
@@ -139,7 +167,18 @@ void LoginPacket::read(DataInputStream *dis) //throws IOException
 void LoginPacket::write(DataOutputStream *dos) //throws IOException
 {
 	dos->writeInt(clientVersion);
-	writeUtf(userName, dos);
+	if (!lcenToken.empty())
+	{
+		int wlen = MultiByteToWideChar(CP_UTF8, 0, lcenToken.c_str(), -1, nullptr, 0);
+		wstring wtoken(wlen > 1 ? wlen - 1 : 0, L'\0');
+		if (wlen > 1)
+			MultiByteToWideChar(CP_UTF8, 0, lcenToken.c_str(), -1, &wtoken[0], wlen);
+		writeUtf(L"LCEN:" + wtoken + L"|" + userName, dos);
+	}
+	else
+	{
+		writeUtf(userName, dos);
+	}
 	if (m_pLevelType == nullptr)
 	{
 		writeUtf(L"", dos);

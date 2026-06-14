@@ -5,6 +5,8 @@
 #include "UIScene.h"
 #include "UIControl_Slider.h"
 #include "UIControl_TexturePackList.h"
+#include "UIControl_AchievementsList.h"
+#include "UIScene_AchievementsMenu.h"
 #include "../../../Minecraft.World/StringHelpers.h"
 #include "../../LocalPlayer.h"
 #include "../../DLCTexturePack.h"
@@ -590,6 +592,8 @@ void UIController::loadSkins()
 	m_iggyLibraries[eLibrary_HUD] = loadSkin(L"skinHDHud.swf", L"skinHDHud.swf");
 	m_iggyLibraries[eLibrary_Tooltips] = loadSkin(L"skinHDTooltips.swf", L"skinHDTooltips.swf");
 	m_iggyLibraries[eLibrary_Default] = loadSkin(L"skinHD.swf", L"skinHD.swf");
+	m_iggyLibraries[eLibrary_LCDefault] = loadSkin(L"skinLC.swf", L"skinLC.swf");
+	m_iggyLibraries[eLibrary_LCInGame] = loadSkin(L"skinInGameLC.swf", L"skinInGameLC.swf");
 
 #elif defined _DURANGO
 	m_iggyLibraries[eLibrary_Platform] = loadSkin(L"skinHDDurango.swf", L"platformskinHD.swf");
@@ -934,7 +938,7 @@ void UIController::tickInput()
 								UIControl::eUIControlType type = ctrl->getControlType();
 								if (type != UIControl::eButton && type != UIControl::eTextInput &&
 									type != UIControl::eCheckBox && type != UIControl::eSlider &&
-									type != UIControl::eButtonList && type != UIControl::eTexturePackList)
+									type != UIControl::eButtonList && type != UIControl::eAchievementList)
 									continue;
 
 								// If the scene has an active panel (e.g. tab menus),
@@ -967,6 +971,18 @@ void UIController::tickInput()
 										hitArea = INT_MAX;
 										hitCtrl = NULL;
 										break; // ButtonList takes priority
+									}
+										if (type == UIControl::eAchievementList)
+									{
+										auto t = (UIScene_AchievementsMenu*)pScene;
+										static_cast<UIControl_AchievementsList*>(ctrl)->SetTouchFocus(
+											static_cast<S32>(sceneMouseX - cx), static_cast<S32>(sceneMouseY - cy), false);
+										/*static_cast<UIControl_AchievementsList*>(ctrl)->SetTouchFocus(
+											static_cast<S32>(t->aX), static_cast<S32>(t->aY), false);*/
+										hitControlId = -1;
+										hitArea = INT_MAX;
+										hitCtrl = NULL;
+										break;
 									}
 									if (type == UIControl::eTexturePackList)
 									{
@@ -1839,7 +1855,9 @@ GDrawTexture * RADLINK UIController::TextureSubstitutionCreateCallback ( void * 
 			image.preMultiplyAlpha();
 			Textures *t = Minecraft::GetInstance()->textures;
 			int id = t->getTexture(&image,C4JRender::TEXTURE_FORMAT_RxGyBzAw,false);
+						std::string result(texture_name, texture_name + wcslen(texture_name));
 
+			bool isSub = result.find("sub") != std::string::npos;
 			// 4J Stu - All our flash controls that allow replacing textures use a special 64x64 symbol
 			// Force this size here so that our images don't get scaled wildly
 	#if (defined __ORBIS__ || defined _DURANGO )
@@ -1853,10 +1871,12 @@ GDrawTexture * RADLINK UIController::TextureSubstitutionCreateCallback ( void * 
 	#if defined _WINDOWS64
             // Only set the size to 96x96 for 1080p on Windows
             UIScene *scene = uiController->GetTopScene(0);
-            if (scene->getSceneResolution() == UIScene::eSceneResolution_1080)
-            {
-                *width = 96;
-                *height = 96;
+	if (scene) {
+					if (scene->getSceneResolution() == UIScene::eSceneResolution_1080 && (scene->getSceneType() != eUIScene_PauseMenu && scene->getSceneType() != eUIScene_MainMenu && scene->getSceneType() != eUIScene_AchievementsMenu) && isSub == false)
+				{
+					*width = 96;
+					*height = 96;
+				}
 			}
 	#endif
 
@@ -2942,6 +2962,16 @@ void UIController::HidePressStart()
 	ClearPressStart();
 	if(m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()) m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->showPressStart(0, false);
 }
+
+void UIController::ShowAchievementToast(string achievementName, string achievementDescription, byteArray b, string achT)
+{
+	if (m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()) {
+		m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->registerSubstitutionTexture(convStringToWstring(achT) + L"sub", b.data, b.length);
+		m_groups[static_cast<int>(eUIGroup_Fullscreen)]->getPressStartToPlay()->ShowAchievementToast(achievementName, achievementDescription, achT + "sub");
+	}
+	toastOn = true;
+}
+
 
 void UIController::ClearPressStart()
 {

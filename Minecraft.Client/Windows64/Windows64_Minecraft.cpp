@@ -52,6 +52,8 @@
 #include "Windows64_Xuid.h"
 #include "Common/UI/UI.h"
 #include "stb_image_write.h"
+#include <wininet.h>
+#pragma comment(lib, "wininet.lib")
 
 // Forward-declare the internal Renderer class and its global instance from 4J_Render_PC_d.lib.
 // C4JRender (RenderManager) is a stateless wrapper — all D3D state lives in InternalRenderManager.
@@ -116,14 +118,15 @@ int g_iScreenHeight = 1080;
 
 // Real window dimensions — updated on every WM_SIZE so the 3D perspective
 // always matches the current window, even after a resize.
-int g_rScreenWidth = 1920;
-int g_rScreenHeight = 1080;
+int g_rScreenWidth = 1280;
+int g_rScreenHeight = 720;
 static bool f3ComboUsed = false;
 
 float g_iAspectRatio = static_cast<float>(g_iScreenWidth) / g_iScreenHeight;
 static bool g_bResizeReady = false;
 
 char g_Win64Username[17] = { 0 };
+char g_LCENToken[512] = { 0 };
 wchar_t g_Win64UsernameW[17] = { 0 };
 
 // Fullscreen toggle state
@@ -238,6 +241,10 @@ static Win64LaunchOptions ParseLaunchOptions()
 		if (_wcsicmp(argv[i], L"-name") == 0 && (i + 1) < argc)
 		{
 			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
+		}
+		else if (_wcsicmp(argv[i], L"--lcen-token") == 0 && (i + 1) < argc)
+		{
+			CopyWideArgToAnsi(argv[++i], g_LCENToken, sizeof(g_LCENToken));
 		}
 		else if (_wcsicmp(argv[i], L"-ip") == 0 && (i + 1) < argc)
 		{
@@ -1569,6 +1576,57 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Load stuff from launch options, including username
 	const Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
+
+	if (g_LCENToken[0] != '\0')
+{
+    HINTERNET hNet = InternetOpenA("openLCE", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    if (hNet)
+    {
+        char authHeader[560];
+        _snprintf_s(authHeader, sizeof(authHeader), _TRUNCATE, "Authorization: Bearer %s", g_LCENToken);
+        HINTERNET hReq = InternetOpenUrlA(hNet, "https://network-server-7kuc.onrender.com/auth/validate", authHeader, (DWORD)strlen(authHeader), INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, 0);
+        if (hReq)
+        {
+            char buf[1024] = {};
+            DWORD read = 0;
+            InternetReadFile(hReq, buf, sizeof(buf) - 1, &read);
+            InternetCloseHandle(hReq);
+            if (read > 0)
+            {
+                auto extractField = [](const char* json, const char* key, char* out, size_t outSize) -> bool {
+                    char search[64];
+                    _snprintf_s(search, sizeof(search), _TRUNCATE, "\"%s\":\"", key);
+                    const char* p = strstr(json, search);
+                    if (!p) return false;
+                    p += strlen(search);
+                    const char* end = strchr(p, '"');
+                    if (!end) return false;
+                    size_t len = min((size_t)(end - p), outSize - 1);
+                    strncpy_s(out, outSize, p, len);
+                    out[len] = '\0';
+                    return true;
+                };
+                char lcenGamertag[64] = {};
+                char lcenXuid[32] = {};
+                bool gotTag  = extractField(buf, "gamertag", lcenGamertag, sizeof(lcenGamertag));
+                bool gotXuid = extractField(buf, "xuid",     lcenXuid,     sizeof(lcenXuid));
+                if (gotTag && lcenGamertag[0] != '\0')
+                {
+                    strncpy_s(g_Win64Username, sizeof(g_Win64Username), lcenGamertag, _TRUNCATE);
+                    MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
+                }
+                if (gotXuid && lcenXuid[0] != '\0')
+                {
+                    uint64_t xuidVal = _strtoui64(lcenXuid, nullptr, 16);
+                    if (xuidVal != 0)
+                        Win64Xuid::WriteUid((PlayerUID)xuidVal);
+                }
+                Win64Xuid::ResolvePersistentXuid(true);
+            }
+        }
+        InternetCloseHandle(hNet);
+    }
+}
 
 	// Ensure uid.dat exists from startup (before any multiplayer/login path).
 	Win64Xuid::ResolvePersistentXuid();

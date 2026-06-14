@@ -27,7 +27,6 @@ UIScene_DeathMenu::UIScene_DeathMenu(int iPad, void *initData, UILayer *parentLa
 
 	if (isHardcore)
 	{
-		m_buttonRespawn.init(app.GetString(IDS_HARDCORE_DEATH_MESSAGE), eControl_Respawn);
 		m_buttonRespawn.setVisible(false);
 	}
 	else

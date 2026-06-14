@@ -589,7 +589,7 @@ void PendingConnection::onDisconnect(DisconnectPacket::eDisconnectReason reason,
 void PendingConnection::handleGetInfo(shared_ptr<GetInfoPacket> packet)
 {
 	//try {
-	//String message = server->motd + "�" + server->players->getPlayerCount() + "�" + server->players->getMaxPlayers();
+	//String message = server->motd + "<22>" + server->players->getPlayerCount() + "<22>" + server->players->getMaxPlayers();
 	//connection->send(new DisconnectPacket(message));
 	connection->send(std::make_shared<DisconnectPacket>(DisconnectPacket::eDisconnect_ServerFull));
 	connection->sendAndQuit();

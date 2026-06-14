@@ -7788,4 +7788,166 @@ Alle Endertruhen in einer Welt sind verknüpft, sodass Gegenstände, die in eine
 	<data name="IDS_TOOLTIPS_CURE">
 		<value>Heilen</value>
 	</data>	
+
+	<data name="IDS_WINDOWS_EXIT">
+		<value>Minecraft verlassen?</value>
+	</data>	
+
+	<data name="IDS_ACHIEVE_NAME_TAKING_INVENTORY"><value>Inventur</value></data>
+	<data name="IDS_ACHIEVE_DESC_TAKING_INVENTORY"><value>Öffne dein Inventar.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_GETTING_WOOD"><value>Dreimal auf Holz geklopft</value></data>
+	<data name="IDS_ACHIEVE_DESC_GETTING_WOOD"><value>Schlage gegen einen Baum, bis ein Holzblock herausspringt.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_BENCHMARKING"><value>Fortgeschrittenes Handwerk</value></data>
+	<data name="IDS_ACHIEVE_DESC_BENCHMARKING"><value>Stell aus vier Blöcken aus Holzbrettern eine Werkbank her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_TIME_TO_MINE"><value>Glück Auf!</value></data>
+	<data name="IDS_ACHIEVE_DESC_TIME_TO_MINE"><value>Stell aus Holz und Stöcken eine Spitzhacke her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_HOT_TOPIC"><value>Heiße Angelegenheit</value></data>
+	<data name="IDS_ACHIEVE_DESC_HOT_TOPIC"><value>Stell aus 8 Bruchstein-Blöcken einen Ofen her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ACQUIRE_HARDWARE"><value>Schmiedekunst</value></data>
+	<data name="IDS_ACHIEVE_DESC_ACQUIRE_HARDWARE"><value>Schmilz einen Eisenbarren.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_TIME_TO_FARM"><value>Fang an zu ackern!</value></data>
+	<data name="IDS_ACHIEVE_DESC_TIME_TO_FARM"><value>Stell aus Holz und Stöcken eine Hacke her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_BAKE_BREAD"><value>Bäcker</value></data>
+	<data name="IDS_ACHIEVE_DESC_BAKE_BREAD"><value>Backe ein Brot aus Weizen.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_THE_LIE"><value>Die Lüge</value></data>
+	<data name="IDS_ACHIEVE_DESC_THE_LIE"><value>Backe einen Kuchen aus Weizen, Zucker, Milch und Eiern!</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_GETTING_AN_UPGRADE"><value>Technischer Fortschritt</value></data>
+	<data name="IDS_ACHIEVE_DESC_GETTING_AN_UPGRADE"><value>Stelle eine bessere Spitzhacke her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_DELICIOUS_FISH"><value>Köstlicher Fisch</value></data>
+	<data name="IDS_ACHIEVE_DESC_DELICIOUS_FISH"><value>Fange und brate einen Fisch!</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ON_A_RAIL"><value>Bahn frei!</value></data>
+	<data name="IDS_ACHIEVE_DESC_ON_A_RAIL"><value>Reise mit einer Lore mindestens 500 Meter in eine Richtung.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_TIME_TO_STRIKE"><value>Zu den Waffen!</value></data>
+	<data name="IDS_ACHIEVE_DESC_TIME_TO_STRIKE"><value>Stell aus Holz und Stöcken ein Schwert her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_MONSTER_HUNTER"><value>Monsterjäger</value></data>
+	<data name="IDS_ACHIEVE_DESC_MONSTER_HUNTER"><value>Greif ein Monster an und töte es.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_COW_TIPPER"><value>Kuhschubser</value></data>
+	<data name="IDS_ACHIEVE_DESC_COW_TIPPER"><value>Gewinne Leder.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_WHEN_PIGS_FLY"><value>Wenn Schweine fliegen</value></data>
+	<data name="IDS_ACHIEVE_DESC_WHEN_PIGS_FLY"><value>Reite ein Schwein mit einem Sattel, und füg ihm dann während des Reitens Schaden durch Fallen zu.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_LEADER_OF_THE_PACK"><value>Alphawolf</value></data>
+	<data name="IDS_ACHIEVE_DESC_LEADER_OF_THE_PACK"><value>Freunde dich mit fünf Wölfen an.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_MOAR_TOOLS"><value>Bestens ausgerüstet</value></data>
+	<data name="IDS_ACHIEVE_DESC_MOAR_TOOLS"><value>Stell ein Exemplar von jedem Werkzeug her (1 Spitzhacke, 1 Spaten, 1 Axt und 1 Hacke).</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_DISPENSE_WITH_THIS"><value>Zum Verschießen</value></data>
+	<data name="IDS_ACHIEVE_DESC_DISPENSE_WITH_THIS"><value>Baue einen Spender.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_INTO_THE_NETHER"><value>In den Nether</value></data>
+	<data name="IDS_ACHIEVE_DESC_INTO_THE_NETHER"><value>Stell ein Netherportal her.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_EAT_PORKCHOP"><value>Schweinekotelett</value></data>
+	<data name="IDS_ACHIEVE_DESC_EAT_PORKCHOP"><value>Koche und iss ein Stück Schweinekotelett.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_PLAY_100_DAYS"><value>Wie die Zeit vergeht</value></data>
+	<data name="IDS_ACHIEVE_DESC_PLAY_100_DAYS"><value>Spiele 100 Tage lang.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ARROW_KILL_CREEPER"><value>Bogenschütze</value></data>
+	<data name="IDS_ACHIEVE_DESC_ARROW_KILL_CREEPER"><value>Töte einen Creeper mit Pfeilen.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_SNIPESKELETON"><value>Scharfschützenduell</value></data>
+	<data name="IDS_ACHIEVE_DESC_SNIPESKELETON"><value>Töte ein Skelett mit einem Pfeil aus über 50 Meter Entfernung.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_DIAMONDS"><value>DIAMANTEN!</value></data>
+	<data name="IDS_ACHIEVE_DESC_DIAMONDS"><value>Beschaffe mithilfe deiner Eisenwerkzeuge Diamanten.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_GHAST"><value>Zurück zum Absender</value></data>
+	<data name="IDS_ACHIEVE_DESC_GHAST"><value>Zerstöre einen Ghast mit einem Feuerball.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_BLAZEROD"><value>Spiel mit dem Feuer</value></data>
+	<data name="IDS_ACHIEVE_DESC_BLAZEROD"><value>Erleichtere eine Lohe um ihre Rute.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_POTION"><value>Alchemie</value></data>
+	<data name="IDS_ACHIEVE_DESC_POTION"><value>Braue einen Trank.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_THE_END"><value>Das Ende?</value></data>
+	<data name="IDS_ACHIEVE_DESC_THE_END"><value>Betritt ein Endportal.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_WINGAME"><value>Das Ende.</value></data>
+	<data name="IDS_ACHIEVE_DESC_WINGAME"><value>Den Enderdrachen getötet.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ENCHANTMENTS"><value>Zauberer</value></data>
+	<data name="IDS_ACHIEVE_DESC_ENCHANTMENTS"><value>Baue einen Zaubertisch.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_OVERKILL"><value>Meister des Kampfes</value></data>
+	<data name="IDS_ACHIEVE_DESC_OVERKILL"><value>Verursache neun Herzen Schaden mit einem einzigen Schlag.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_BOOKCASE"><value>Bibliothekar</value></data>
+	<data name="IDS_ACHIEVE_DESC_BOOKCASE"><value>Baue Bücherregale, um deinen Zaubertisch zu verbessern.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ADVENTURING_TIME"><value>Abenteurerzeit</value></data>
+	<data name="IDS_ACHIEVE_DESC_ADVENTURING_TIME"><value>Entdecke 17 der 40 Biome.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_REPOPULATION"><value>Nachzucht</value></data>
+	<data name="IDS_ACHIEVE_DESC_REPOPULATION"><value>Züchte zwei Kühe mit Weizen.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_DIAMONDS_TO_YOU"><value>Diamanten für dich!</value></data>
+	<data name="IDS_ACHIEVE_DESC_DIAMONDS_TO_YOU"><value>Wirf mit Diamanten nach einem anderen Spieler.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_THE_HAGGLER"><value>Der Feilscher</value></data>
+	<data name="IDS_ACHIEVE_DESC_THE_HAGGLER"><value>Erhalte 30 Smaragde durch Handel mit Dorfbewohnern oder Bergbau.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_POT_PLANTER"><value>Topfbepflanzer</value></data>
+	<data name="IDS_ACHIEVE_DESC_POT_PLANTER"><value>Stell einen Blumentopf her und platziere ihn.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ITS_A_SIGN"><value>Schilderwald</value></data>
+	<data name="IDS_ACHIEVE_DESC_ITS_A_SIGN"><value>Stelle ein Schild her und platziere es.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_IRON_BELLY"><value>Starker Magen</value></data>
+	<data name="IDS_ACHIEVE_DESC_IRON_BELLY"><value>Halte den Hungertod mit verrottetem Fleisch auf.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_HAVE_A_SHEARFUL_DAY"><value>Scher dich zum Schaf</value></data>
+	<data name="IDS_ACHIEVE_DESC_HAVE_A_SHEARFUL_DAY"><value>Verwende eine Schere, um Wolle von einem Schaf zu erhalten.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_RAINBOW_COLLECTION"><value>Regenbogensammlung</value></data>
+	<data name="IDS_ACHIEVE_DESC_RAINBOW_COLLECTION"><value>Sammle Wolle in allen 16 Farben.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_STAYING_FROSTY"><value>Cool bleiben</value></data>
+	<data name="IDS_ACHIEVE_DESC_STAYING_FROSTY"><value>Schwimme in Lava, während du den Feuerwiderstand-Effekt hast.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_CHESTFUL_OF_COBBLESTONE"><value>Bruchsteinreich</value></data>
+	<data name="IDS_ACHIEVE_DESC_CHESTFUL_OF_COBBLESTONE"><value>Baue 1.728 Bruchsteine ab und lege sie in eine Truhe.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_RENEWABLE_ENERGY"><value>Erneuerbare Energie</value></data>
+	<data name="IDS_ACHIEVE_DESC_RENEWABLE_ENERGY"><value>Verkohle Baumstämme mit Holzkohle, um mehr Holzkohle herzustellen.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_MUSIC_TO_MY_EARS"><value>Musik in meinen Ohren</value></data>
+	<data name="IDS_ACHIEVE_DESC_MUSIC_TO_MY_EARS"><value>Spiele eine Schallplatte in einem Plattenspieler ab.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_BODYGUARD"><value>Leibwächter</value></data>
+	<data name="IDS_ACHIEVE_DESC_BODYGUARD"><value>Erschaffe einen Eisengolem.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_IRON_MAN"><value>Eisenmann</value></data>
+	<data name="IDS_ACHIEVE_DESC_IRON_MAN"><value>Trage eine komplette Eisenrüstung.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_ZOMBIE_DOCTOR"><value>Zombie-Doktor</value></data>
+	<data name="IDS_ACHIEVE_DESC_ZOMBIE_DOCTOR"><value>Heile einen Zombie-Dorfbewohner.</value></data>
+
+	<data name="IDS_ACHIEVE_NAME_LION_TAMER"><value>Löwenjäger</value></data>
+	<data name="IDS_ACHIEVE_DESC_LION_TAMER"><value>Gewinne das Vertrauen eines Ozelots.</value></data>
+
+	<data name="IDS_ACHIEVEMENT_VIEW"><value>Halte {*CONTROLLER_VK_Y*} gedrückt</value></data>
+
+	<!-- START LCE Network Specific Strings-->
+	<data name="IDS_CONNECTION_LOST_LCEN"><value>Die Verbindung zu LCEN wurde unterbrochen. Zurück zum Hauptmenü.</value></data>
+	<data name="IDS_LCEN_BANNED"><value>Dein Konto von LCEN wurde gesperrt.</value></data>
+	<data name="IDS_LCEN_NO_CONNECTION"><value>Verbindung zu LCEN wurde verloren.</value></data>
+	<!-- END : LCE Network Specific Strings-->
 </root>

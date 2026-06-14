@@ -89,9 +89,9 @@ public:
 #ifdef _DEBUG
 	void WipeLeaderboards();
 #endif
+	bool isLargeStat(Stat* stat);
 
 private:
-	bool isLargeStat(Stat* stat);
 	void dumpStatsToTTY();
 
 #ifdef _XBOX

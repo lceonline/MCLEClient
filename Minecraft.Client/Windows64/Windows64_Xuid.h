@@ -209,29 +209,31 @@ namespace Win64Xuid
 		return xuid;
 	}
 
-	inline PlayerUID ResolvePersistentXuid()
-	{
-		// Process-local cache: uid.dat is immutable during runtime and this path is hot.
-		static bool s_cached = false;
-		static PlayerUID s_xuid = INVALID_XUID;
+inline PlayerUID ResolvePersistentXuid(bool forceReload = false)
+{
+    static bool s_cached = false;
+    static PlayerUID s_xuid = INVALID_XUID;
 
-		if (s_cached)
-			return s_xuid;
+    if (s_cached && !forceReload)
+        return s_xuid;
 
-		PlayerUID fileXuid = INVALID_XUID;
-		if (ReadUid(&fileXuid))
-		{
-			s_xuid = fileXuid;
-			s_cached = true;
-			return s_xuid;
-		}
+    PlayerUID fileXuid = INVALID_XUID;
+    if (ReadUid(&fileXuid))
+    {
+        s_xuid = fileXuid;
+        s_cached = true;
+        return s_xuid;
+    }
 
-		// First launch on this client: generate once and persist to uid.dat.
-		s_xuid = GeneratePersistentUid();
-		WriteUid(s_xuid);
-		s_cached = true;
-		return s_xuid;
-	}
+    if (!s_cached) // only generate on true first launch, not a failed reload
+    {
+        s_xuid = GeneratePersistentUid();
+        WriteUid(s_xuid);
+        s_cached = true;
+    }
+    return s_xuid;
+}
+
 }
 
 #endif

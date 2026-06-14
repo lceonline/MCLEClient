@@ -13,10 +13,9 @@ class ClientConstants
 	// INTERNAL DEVELOPMENT SETTINGS
 public:
 	static const wstring VERSION_STRING;
-	static const wstring BRANCH_STRING;
-
-	// Toggle to show/hide the version/branch watermark in the debug overlay
-	static const bool SHOW_VERSION_WATERMARK;
+	static const wstring LCEN_STRING;
+	static const wchar_t* LCEN_HOST;
+	static std::wstring GetLCENString();
 
 	static const bool DEADMAU5_CAMERA_CHEATS = false;
 };

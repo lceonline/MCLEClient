@@ -923,7 +923,9 @@ void CPlatformNetworkManagerStub::SearchForGames()
 					strncpy_s(info->data.hostIP, sizeof(info->data.hostIP), ipBuf, _TRUNCATE);
 					info->data.hostPort = port;
 					info->sessionId = static_cast<uint64_t>(inet_addr(ipBuf)) | static_cast<uint64_t>(port) << 32;
-					friendsSessions[0].push_back(info);
+											if (info) {
+						friendsSessions[0].push_back(info);
+					}
 				}
 			}
 		}

@@ -1,36 +1,61 @@
 #pragma once
-
 #include "Common/Leaderboards/LeaderboardManager.h"
 
 class WindowsLeaderboardManager : public LeaderboardManager
 {
 public:
-	virtual void Tick() {}
+    virtual void Tick() override {}
+    virtual bool OpenSession()   override { return true; }
+    virtual void CloseSession()  override {}
+    virtual void DeleteSession() override {}
 
-	//Open a session
-	virtual bool OpenSession() { return true; }
+    virtual bool WriteStats(unsigned int viewCount, ViewIn views) override;
 
-	//Close a session
-	virtual void CloseSession() {}
+    virtual bool ReadStats_Friends(
+        LeaderboardReadListener* callback,
+        int difficulty,
+        EStatsType type,
+        PlayerUID myUID,
+        unsigned int startIndex,
+        unsigned int readCount) override;
 
-	//Delete a session
-	virtual void DeleteSession() {}
+    virtual bool ReadStats_MyScore(
+        LeaderboardReadListener* callback,
+        int difficulty,
+        EStatsType type,
+        PlayerUID myUID,
+        unsigned int readCount) override;
 
-	//Write the given stats
-	//This is called synchronously and will not free any memory allocated for views when it is done
+    virtual bool ReadStats_TopRank(
+        LeaderboardReadListener* callback,
+        int difficulty,
+        EStatsType type,
+        unsigned int startIndex,
+        unsigned int readCount) override;
 
-	virtual bool WriteStats(unsigned int viewCount, ViewIn views) { return false; }
+    virtual void FlushStats()      override {}
+    virtual void CancelOperation() override {}
+    virtual bool isIdle() override { return true; }
 
-	virtual bool ReadStats_Friends(LeaderboardReadListener *callback, int difficulty, EStatsType type, PlayerUID myUID) { return false; }
-	virtual bool ReadStats_MyScore(LeaderboardReadListener *callback, int difficulty, EStatsType type, PlayerUID myUID, unsigned int readCount) { return false; }
-	virtual bool ReadStats_TopRank(LeaderboardReadListener *callback, int difficulty, EStatsType type, unsigned int startIndex, unsigned int readCount) { return false; }
+private:
+    bool ReadNetworkStats(
+        LeaderboardReadListener* callback,
+        int difficulty,
+        EStatsType type,
+        PlayerUID myUID,
+        EFilterMode filterMode,
+        unsigned int startIndex,
+        unsigned int readCount);
 
-	//Perform a flush of the stats
-	virtual void FlushStats() {}
+    struct ValidatedIdentity
+    {
+        char         tokenSnapshot[512];
+        std::string  xuidHex;
+        std::wstring gamertag;
+        bool         valid;
+    };
 
-	//Cancel the current operation
-	virtual void CancelOperation() {}
+    static ValidatedIdentity s_identity;
 
-	//Is the leaderboard manager idle.
-	virtual bool isIdle() { return true; }
+    static bool ResolveIdentity();
 };
