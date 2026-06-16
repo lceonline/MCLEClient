@@ -25,6 +25,8 @@
 float g_sleepPercentage = 100;
 int g_autosaveInterval = 120;
 
+wchar_t g_Win64AuthURL[256] = L"auth.mclegacyedition.xyz";
+
 std::string g_discordUserId = "";
 
 bool g_doBoatBreak = true;
@@ -658,7 +660,7 @@ int Windows64Launcher::API_GetAccountInfo(const std::string token) {
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/accountinfo", L"POST", token, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64AuthURL, L"/accountinfo", L"POST", token, headers);
 
 	if (response.status == 0) return -1;
 
@@ -677,7 +679,7 @@ int Windows64Launcher::API_AttemptAccountRegister(const std::string _username, c
 
 	std::string data = _username + ":" + password;
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/register", L"POST", data, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64AuthURL, L"/register", L"POST", data, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
@@ -698,7 +700,7 @@ int Windows64Launcher::API_AttemptAccountLogin(const std::string _username, cons
 
 	std::string data = _username + ":" + password;
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/login", L"POST", data, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64AuthURL, L"/login", L"POST", data, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
@@ -716,7 +718,7 @@ int Windows64Launcher::API_AttemptDiscordLogin(const std::string& ticket, std::s
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/discordlogin", L"POST", ticket, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64AuthURL, L"/discordlogin", L"POST", ticket, headers);
 
 	if (response.status == 0) return -1;
 	if (response.status != 200) return (20000 + response.status);

@@ -148,7 +148,7 @@ static bool FetchSessionInfo() {
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/accountinfo", L"POST", Windows64Minecraft::GetAuthenticationTicket(), headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"auth.mclegacyedition.xyz", L"/accountinfo", L"POST", Windows64Minecraft::GetAuthenticationTicket(), headers);
 
 	if (response.status == 0) return false;
 

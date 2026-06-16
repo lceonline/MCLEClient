@@ -1735,7 +1735,7 @@ DWORD WINAPI WinsockNetLayer::DiscoveryThreadProc(LPVOID param)
 	return 0;
 }
 
-HttpResponse WinsockNetLayer::DoWinHttpRequest(const std::wstring& path, const wchar_t* method, const std::string& requestData, const std::vector<std::wstring>& headers)
+HttpResponse WinsockNetLayer::DoWinHttpRequest(const std::wstring& url, const std::wstring& path, const wchar_t* method, const std::string& requestData, const std::vector<std::wstring>& headers)
 {
 	HttpResponse response;
 	response.status = 0;
@@ -1743,7 +1743,7 @@ HttpResponse WinsockNetLayer::DoWinHttpRequest(const std::wstring& path, const w
 	HINTERNET hSession = WinHttpOpen(L"Minecraft Client", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	if (!hSession) return response;
 
-	HINTERNET hConnect = WinHttpConnect(hSession, g_Win64AuthIP, 443, 0);
+	HINTERNET hConnect = WinHttpConnect(hSession, url.c_str(), 443, 0);
 	if (!hConnect) { WinHttpCloseHandle(hSession); return response; }
 
 	HINTERNET hRequest = WinHttpOpenRequest(hConnect, method, path.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
