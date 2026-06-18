@@ -100,7 +100,7 @@ public:
 	static bool FinalizeJoin();
 
 	// HTTP helper (auth server requests)
-	static HttpResponse DoWinHttpRequest(const std::wstring& path, const wchar_t* method, const std::string& requestData, const std::vector<std::wstring>& headers);
+	static HttpResponse DoWinHttpRequest(const std::wstring& url, const std::wstring& path, const wchar_t* method, const std::string& requestData, const std::vector<std::wstring>& headers);
 
 	static bool SendToSmallId(BYTE targetSmallId, const void* data, int dataSize);
 	static bool SendOnSocket(SOCKET sock, const void* data, int dataSize);
