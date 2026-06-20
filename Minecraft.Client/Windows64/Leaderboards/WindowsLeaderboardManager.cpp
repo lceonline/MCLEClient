@@ -165,78 +165,38 @@ LeaderboardManager* LeaderboardManager::m_instance = new WindowsLeaderboardManag
 
 bool WindowsLeaderboardManager::WriteStats(unsigned int viewCount, ViewIn views)
 {
-    if (views == nullptr || viewCount == 0)
-        return true;
+    return false; // Since WriteStats is useless we just do this, exact same thing is done in DurangoLeaderboardManager
+}
 
-    for (unsigned int i = 0; i < viewCount; ++i)
+bool WindowsLeaderboardManager::SendStats(EStatsType type, int diff)
+{
+    if (!Windows64Launcher::IsInOfflineMode || Windows64Minecraft::IsOfflineMode)
     {
-        const RegisterScore& src = views[i];
-
-        int diff = ClampDifficulty(src.m_difficulty);
-        if (src.m_commentData.m_statsType == eStatsType_Kills && diff == 0)
-            diff = 1;
-
-        int type = static_cast<int>(src.m_commentData.m_statsType);
-        if (type < 0 || type >= static_cast<int>(eStatsType_MAX)) continue;
-
-        json statsArr = json::array();
-        unsigned long long total = 0;
-
-        switch (src.m_commentData.m_statsType)
+        Minecraft* mc = Minecraft::GetInstance();
+        const int pad = ProfileManager.GetPrimaryPad();
+        if (mc && pad >= 0 && pad < XUSER_MAX_COUNT)
         {
-        case eStatsType_Travelling:
-            statsArr = { src.m_commentData.m_travelling.m_walked,
-                         src.m_commentData.m_travelling.m_fallen,
-                         src.m_commentData.m_travelling.m_minecart,
-                         src.m_commentData.m_travelling.m_boat };
-            break;
-        case eStatsType_Mining:
-            statsArr = { src.m_commentData.m_mining.m_dirt,
-                         src.m_commentData.m_mining.m_cobblestone,
-                         src.m_commentData.m_mining.m_sand,
-                         src.m_commentData.m_mining.m_stone,
-                         src.m_commentData.m_mining.m_gravel,
-                         src.m_commentData.m_mining.m_clay,
-                         src.m_commentData.m_mining.m_obsidian };
-            break;
-        case eStatsType_Farming:
-            statsArr = { src.m_commentData.m_farming.m_eggs,
-                         src.m_commentData.m_farming.m_wheat,
-                         src.m_commentData.m_farming.m_mushroom,
-                         src.m_commentData.m_farming.m_sugarcane,
-                         src.m_commentData.m_farming.m_milk,
-                         src.m_commentData.m_farming.m_pumpkin };
-            break;
-        case eStatsType_Kills:
-            statsArr = { src.m_commentData.m_kills.m_zombie,
-                         src.m_commentData.m_kills.m_skeleton,
-                         src.m_commentData.m_kills.m_creeper,
-                         src.m_commentData.m_kills.m_spider,
-                         src.m_commentData.m_kills.m_spiderJockey,
-                         src.m_commentData.m_kills.m_zombiePigman,
-                         src.m_commentData.m_kills.m_slime };
-            break;
-        default:
-            continue;
+            StatsCounter* stats = mc->stats[pad];
+            if (stats)
+            {
+                LeaderboardManager::ReadScore localScore = {};
+                if (BuildLocalScore(localScore, stats, type, diff))
+                {
+                    json statsArr = json::array();
+                    for (unsigned int i = 0; i < localScore.m_statsSize; ++i)
+                        statsArr.push_back(localScore.m_statsData[i]);
+
+                    json submitBody;
+                    submitBody["type"]       = static_cast<int>(type);
+                    submitBody["difficulty"] = static_cast<int>(diff);
+                    submitBody["stats"]      = statsArr;
+                    submitBody["totalScore"] = static_cast<unsigned long long>(localScore.m_totalScore);
+
+                    sendScores(submitBody.dump());
+                }
+            }
         }
-
-        for (auto& v : statsArr) total += v.get<unsigned int>();
-
-        unsigned long long serverTotal = total;
-        if (src.m_score > 0 && static_cast<unsigned long long>(src.m_score) > serverTotal)
-            serverTotal = static_cast<unsigned long long>(src.m_score);
-
-        json body;
-        body["type"]       = type;
-        body["difficulty"] = diff;
-        body["stats"]      = statsArr;
-        body["totalScore"] = serverTotal;
-
-        sendScores(body.dump());
     }
-
-    delete[] views;
-    return true;
 }
 
 bool WindowsLeaderboardManager::ReadStats_Friends(LeaderboardReadListener* callback,
@@ -278,30 +238,7 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
     // Submit live score only when authenticated.
     if (!Windows64Launcher::IsInOfflineMode || Windows64Minecraft::IsOfflineMode)
     {
-        Minecraft* mc = Minecraft::GetInstance();
-        const int pad = ProfileManager.GetPrimaryPad();
-        if (mc && pad >= 0 && pad < XUSER_MAX_COUNT)
-        {
-            StatsCounter* stats = mc->stats[pad];
-            if (stats)
-            {
-                LeaderboardManager::ReadScore localScore = {};
-                if (BuildLocalScore(localScore, stats, type, diff))
-                {
-                    json statsArr = json::array();
-                    for (unsigned int i = 0; i < localScore.m_statsSize; ++i)
-                        statsArr.push_back(localScore.m_statsData[i]);
-
-                    json submitBody;
-                    submitBody["type"]       = static_cast<int>(type);
-                    submitBody["difficulty"] = static_cast<int>(diff);
-                    submitBody["stats"]      = statsArr;
-                    submitBody["totalScore"] = static_cast<unsigned long long>(localScore.m_totalScore);
-
-                    sendScores(submitBody.dump());
-                }
-            }
-        }
+        WindowsLeaderboardManager::SendStats(type, diff);
     }
 
     std::vector<LeaderboardManager::ReadScore> allRows;

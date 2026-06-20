@@ -9,6 +9,7 @@ public:
     virtual void CloseSession()  override {}
     virtual void DeleteSession() override {}
 
+    virtual bool SendStats(EStatsType type, int diff);
     virtual bool WriteStats(unsigned int viewCount, ViewIn views) override;
 
     virtual bool ReadStats_Friends(
