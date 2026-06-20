@@ -658,9 +658,10 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 
 int Windows64Launcher::API_GetAccountInfo(const std::string token) {
 	std::vector<std::wstring> headers;
+    headers.push_back(L"Authorization: " + token);
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64AuthURL, L"/accountinfo", L"POST", token, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64AuthURL, L"/accountinfo", L"POST", "", headers);
 
 	if (response.status == 0) return -1;
 

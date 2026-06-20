@@ -146,9 +146,10 @@ std::string Windows64Minecraft::GetAuthenticationTicket() {
 
 static bool FetchSessionInfo() {
 	std::vector<std::wstring> headers;
+	headers.push_back(L"Authorization:" + Windows64Minecraft::GetAuthenticationTicket())
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"auth.mclegacyedition.xyz", L"/accountinfo", L"POST", Windows64Minecraft::GetAuthenticationTicket(), headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"auth.mclegacyedition.xyz", L"/accountinfo", L"POST", "", headers);
 
 	if (response.status == 0) return false;
 
