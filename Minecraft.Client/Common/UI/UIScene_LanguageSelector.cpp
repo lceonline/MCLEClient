@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_LanguageSelector.h"
-
+// pasted from lcen client aswell
 // strings for buttons in the list				  
 const unsigned int UIScene_LanguageSelector::m_uiHTPButtonNameA[]=
 {
@@ -125,5 +125,8 @@ void UIScene_LanguageSelector::handlePress(F64 controlId, F64 childId)
 		app.SetMinecraftLocale(m_iPad, newLocale);
 
 		app.CheckGameSettingsChanged(true, m_iPad);
+
+		app.loadStringTable();
+		app.SetAction(m_iPad, eAppAction_ReloadFont);
 	}
 }

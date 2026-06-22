@@ -9692,9 +9692,51 @@ bool CMinecraftApp::IsLocalMultiplayerAvailable()
 
 
 // 4J-PB - language and locale function
-
+// getLocale from LCEN Client pasted ig
 void CMinecraftApp::getLocale(vector<wstring> &vecWstrLocales)
 {
+	#ifdef _WINDOWS64
+{
+    int iPad = ProfileManager.GetPrimaryPad();
+    if (iPad >= 0 && GameSettingsA[iPad] != nullptr &&
+        GameSettingsA[iPad]->ucLanguage != MINECRAFT_LANGUAGE_DEFAULT)
+    {
+        DWORD lang   = GameSettingsA[iPad]->ucLanguage;
+        DWORD locale = GameSettingsA[iPad]->ucLocale;
+        vector<eMCLang> locales;
+        switch(lang)
+        {
+        case XC_LANGUAGE_GERMAN:     locales.push_back(eMCLang_deDE); break;
+        case XC_LANGUAGE_FRENCH:     locales.push_back(eMCLang_frFR); break;
+        case XC_LANGUAGE_ITALIAN:    locales.push_back(eMCLang_itIT); break;
+        case XC_LANGUAGE_JAPANESE:   locales.push_back(eMCLang_jaJP); break;
+        case XC_LANGUAGE_KOREAN:     locales.push_back(eMCLang_koKR); break;
+        case XC_LANGUAGE_POLISH:     locales.push_back(eMCLang_plPL); break;
+        case XC_LANGUAGE_RUSSIAN:    locales.push_back(eMCLang_ruRU); break;
+        case XC_LANGUAGE_DUTCH:      locales.push_back(eMCLang_nlNL); break;
+        case XC_LANGUAGE_DANISH:     locales.push_back(eMCLang_daDA); break;
+        case XC_LANGUAGE_FINISH:     locales.push_back(eMCLang_fiFI); break;
+        case XC_LANGUAGE_SWEDISH:    locales.push_back(eMCLang_svSV); break;
+        case XC_LANGUAGE_BNORWEGIAN: locales.push_back(eMCLang_nbNO); break;
+        case XC_LANGUAGE_GREEK:      locales.push_back(eMCLang_elGR); break;
+        case XC_LANGUAGE_TCHINESE:   locales.push_back(eMCLang_zhCHT); break;
+        case XC_LANGUAGE_PORTUGUESE:
+            if(locale == XC_LOCALE_BRAZIL) locales.push_back(eMCLang_ptBR);
+            locales.push_back(eMCLang_ptPT);
+            break;
+        case XC_LANGUAGE_SPANISH:
+            if(locale == XC_LOCALE_LATIN_AMERICA) locales.push_back(eMCLang_esMX);
+            locales.push_back(eMCLang_esES);
+            break;
+        }
+        locales.push_back(eMCLang_enUS);
+        locales.push_back(eMCLang_null);
+        for (auto &l : locales)
+            vecWstrLocales.push_back(m_localeA[l]);
+        return;
+    }
+}
+#endif
 	vector<eMCLang> locales;
 
 	DWORD dwSystemLanguage = XGetLanguage( );

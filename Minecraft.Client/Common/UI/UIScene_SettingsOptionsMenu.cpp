@@ -1,10 +1,8 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_SettingsOptionsMenu.h"
-
-#if defined(_XBOX_ONE)
+// pasted legit out of lcen client lol
 #define _ENABLE_LANGUAGE_SELECT
-#endif
 
 int UIScene_SettingsOptionsMenu::m_iDifficultySettingA[4]=
 {
@@ -137,26 +135,21 @@ UIScene_SettingsOptionsMenu::UIScene_SettingsOptionsMenu(int iPad, void *initDat
 	// MGH - disabled the language select for the patch build, we'll re-enable afterwards
 	// 4J Stu - Removed it with a preprocessor def as we turn this off in various places
 #ifdef _ENABLE_LANGUAGE_SELECT
-	if (app.GetGameStarted())	
-	{
-		removeControl( &m_buttonLanguageSelect, false );
-	}
-	else						
-	{
-		m_buttonLanguageSelect.init(IDS_LANGUAGE_SELECTOR, eControl_Languages);
-	}
+
+if (app.GetGameStarted())
+{
+    removeControl(&m_buttonLanguageSelect, false);
+}
+else
+{
+    m_buttonLanguageSelect.init(IDS_LANGUAGE_SELECTOR, eControl_Languages);
+}
+
 #else
-	removeControl( &m_buttonLanguageSelect, false );
-#endif
 
-	doHorizontalResizeCheck();
+removeControl(&m_buttonLanguageSelect, false);
 
-	if(app.GetLocalPlayerCount()>1)
-	{
-#if TO_BE_IMPLEMENTED
-		app.AdjustSplitscreenScene(m_hObj,&m_OriginalPosition,m_iPad);
 #endif
-	}
 
 	m_labelDifficultyText.disableReinitialisation();
 }
