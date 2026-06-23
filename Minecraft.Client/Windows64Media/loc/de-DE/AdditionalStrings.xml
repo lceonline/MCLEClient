@@ -7,7 +7,7 @@
 		<value>Ausblenden</value>
 	</data>
 	<data name="IDS_GAMENAME">
-		<value>Minecraft: PlayStation®3 Edition</value>
+		<value>Minecraft: Legacy Console Edition</value>
 	</data>
 	<data name="IDS_OPTIONSFILE">
 		<value>Optionen</value>
@@ -25,19 +25,19 @@
 		<value>Ein Netzwerkfehler ist aufgetreten. Zurück zum Hauptmenü.</value>
 	</data>
 	<data name="IDS_CHAT_RESTRICTION_UGC">
-		<value>Online-Dienste sind aufgrund von Chat-Beschränkungen deines Sony Entertainment Network-Kontos deaktiviert.</value>
+		<value>Online-Dienste sind aufgrund von Chat-Beschränkungen deines LCE Online-Kontos deaktiviert.</value>
 	</data>
 	<data name="IDS_CONTENT_RESTRICTION">
-		<value>Online-Dienste sind aufgrund von Kindersicherungseinstellungen deines Sony Entertainment Network-Kontos deaktiviert.</value>
+		<value>Online-Dienste sind aufgrund von Kindersicherungseinstellungen deines LCE Online-Kontos deaktiviert.</value>
 	</data>
 	<data name="IDS_ONLINE_SERVICE_TITLE">
 		<value>Online-Dienste</value>
 	</data>
-	<data name="IDS_ERROR_PSN_SIGN_OUT">
-		<value>Du wurdest von "PSN" abgemeldet. Die Online-Funktionen des Spiels stehen nicht zur Verfügung, bis du dich wieder bei "PSN" angemeldet hast.</value>
+	<data name="IDS_ERROR_LCEN_SIGN_OUT">
+		<value>Du wurdest von "LCEN" abgemeldet. Die Online-Funktionen des Spiels stehen nicht zur Verfügung, bis du dich wieder bei "LCEN" angemeldet hast.</value>
 	</data>
-	<data name="IDS_ERROR_PSN_SIGN_OUT_EXIT">
-		<value>Du wurdest von "PSN" abgemeldet. Die Online-Funktionen des Spiels stehen nicht zur Verfügung, bis du dich wieder bei "PSN" angemeldet hast. Zurück zum Hauptmenü.</value>
+	<data name="IDS_ERROR_LCEN_SIGN_OUT_EXIT">
+		<value>Du wurdest von "LCEN" abgemeldet. Die Online-Funktionen des Spiels stehen nicht zur Verfügung, bis du dich wieder bei "LCEN" angemeldet hast. Zurück zum Hauptmenü.</value>
 	</data>
 	<data name="IDS_PLAYER_LIST_TITLE">
 		<value>Benutzer als Spieler %d auswählen (oder abbrechen, um als Gast zu spielen).</value>
@@ -73,7 +73,7 @@
 		<value>Die Verbindung zu deinem Controller wurde getrennt. Bitte schließe den Controller an.</value>
 	</data>
 	<data name="IDS_CONTENT_RESTRICTION_MULTIPLAYER">
-		<value>Online-Dienste sind für dein Sony Entertainment Network-Konto aufgrund von Kindersicherungseinstellungen für einen deiner lokalen Spieler deaktiviert.</value>
+		<value>Online-Dienste sind für dein LCE Online-Konto aufgrund von Kindersicherungseinstellungen für einen deiner lokalen Spieler deaktiviert.</value>
 	</data>
 	<data name="IDS_NO_DLCCATEGORIES">
 		<value>Für diesen Titel sind momentan keine herunterladbaren Inhalte im Angebot.</value>

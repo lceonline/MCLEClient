@@ -8,7 +8,7 @@
 	</data>	
 
 	<data name="IDS_GAMENAME">
-		<value>Minecraft: PlayStation®3 Edition</value>
+		<value>Minecraft: Legacy Console Edition</value>
 	</data>	
 
 	<data name="IDS_OPTIONSFILE">
@@ -32,23 +32,23 @@
 	</data>	
 
 	<data name="IDS_CHAT_RESTRICTION_UGC">
-		<value>Online service is disabled on your Sony Entertainment Network account due to chat restrictions.</value>
+		<value>Online service is disabled on your LCE Online account due to chat restrictions.</value>
 	</data>	
 
 	<data name="IDS_CONTENT_RESTRICTION">
-		<value>Online service is disabled on your Sony Entertainment Network account due to parental control settings.</value>
+		<value>Online service is disabled on your LCE Online account due to parental control settings.</value>
 	</data>	
 
 	<data name="IDS_ONLINE_SERVICE_TITLE">
 		<value>Online Service</value>
 	</data>	
 
-	<data name="IDS_ERROR_PSN_SIGN_OUT">
-		<value>You have been signed out from the "PSN". Online features of the game will not be available until you sign back into the "PSN".</value>
+	<data name="IDS_ERROR_LCEN_SIGN_OUT">
+		<value>You have been signed out from the "LCEN". Online features of the game will not be available until you sign back into the "LCEN".</value>
 	</data>	
 
-	<data name="IDS_ERROR_PSN_SIGN_OUT_EXIT">
-		<value>You have been signed out from the "PSN". Online features of the game will not be available until you sign back into the "PSN". Exiting to Main Menu.</value>
+	<data name="IDS_ERROR_LCEN_SIGN_OUT_EXIT">
+		<value>You have been signed out from the "LCEN". Online features of the game will not be available until you sign back into the "LCEN". Exiting to Main Menu.</value>
 	</data>	
 
 	<data name="IDS_PLAYER_LIST_TITLE">
@@ -104,7 +104,7 @@
 	</data>	
 
 	<data name="IDS_CONTENT_RESTRICTION_MULTIPLAYER">
-		<value>Online service is disabled on your Sony Entertainment Network account due to parental control settings for one of your local players.</value>
+		<value>Online service is disabled on your LCE Online account due to parental control settings for one of your local players.</value>
 	</data>
   <data name="IDS_CONTENT_RESTRICTION_PATCH_AVAILABLE">
     <value>Online features are disabled due to a game update being available.</value>

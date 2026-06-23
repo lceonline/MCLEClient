@@ -4,7 +4,7 @@
 class WindowsLeaderboardManager : public LeaderboardManager
 {
 public:
-    virtual void Tick() override {}
+    virtual void Tick() override;
     virtual bool OpenSession()   override { return true; }
     virtual void CloseSession()  override {}
     virtual void DeleteSession() override {}
@@ -39,6 +39,7 @@ public:
     virtual bool isIdle() override { return true; }
 
 private:
+    int m_tickCount = 0;
     bool ReadNetworkStats(
         LeaderboardReadListener* callback,
         int difficulty,

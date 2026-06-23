@@ -242,7 +242,7 @@ void ItemEntity::playerTouch(shared_ptr<Player> player)
 		{
 			player->awardStat(GenericStats::diamonds(), GenericStats::param_diamonds());
 
-#ifdef _EXTENDED_ACHIEVEMENTS
+
 			if ( getItem()->getItem()->id )
 			{
 				shared_ptr<Player> pThrower = level->getPlayerByName(getThrower());
@@ -251,7 +251,6 @@ void ItemEntity::playerTouch(shared_ptr<Player> player)
 					pThrower->awardStat(GenericStats::diamondsToYou(), GenericStats::param_diamondsToYou());
 				}
 			}
-#endif
 		}
 		if (item->id == Item::blazeRod_Id)
 			player->awardStat(GenericStats::blazeRod(), GenericStats::param_blazeRod());

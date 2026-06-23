@@ -839,6 +839,11 @@ void CMinecraftApp::InitGameSettings()
 		memset(pProfileSettings,0,sizeof(C_4JProfile::PROFILESETTINGS));
 		SetDefaultOptions(pProfileSettings,i);
 		Win64_LoadSettings(GameSettingsA[i]);
+		app.DebugPrintf("Loaded language: %d\n", GameSettingsA[i]->ucLanguage);
+		app.SetMinecraftLanguage(i, GameSettingsA[i]->ucLanguage);
+app.SetMinecraftLocale(i, GameSettingsA[i]->ucLocale);
+
+app.loadStringTable();
 		ApplyGameSettingsChanged(i);
 #elif defined __PS3__ || defined __ORBIS__ || defined _DURANGO  || defined __PSVITA__
 		C4JStorage::PROFILESETTINGS *pProfileSettings=StorageManager.GetDashboardProfileSettings(i);
@@ -855,6 +860,7 @@ int CMinecraftApp::SetDefaultOptions(C4JStorage::PROFILESETTINGS *pSettings,cons
 int CMinecraftApp::SetDefaultOptions(C_4JProfile::PROFILESETTINGS *pSettings,const int iPad)
 #endif
 {
+	app.DebugPrintf("SetDefaultOptions language BEFORE: %d\n", GameSettingsA[iPad]->ucLanguage);
 	SetGameSettings(iPad,eGameSetting_MusicVolume,DEFAULT_VOLUME_LEVEL);
 	SetGameSettings(iPad,eGameSetting_SoundFXVolume,DEFAULT_VOLUME_LEVEL);
 	SetGameSettings(iPad,eGameSetting_RenderDistance,16);
@@ -939,6 +945,7 @@ int CMinecraftApp::SetDefaultOptions(C_4JProfile::PROFILESETTINGS *pSettings,con
 	if (!app.GetGameStarted())
 	{
 		GameSettingsA[iPad]->ucLanguage = MINECRAFT_LANGUAGE_DEFAULT; // use the system language
+		app.DebugPrintf("SetDefaultOptions language AFTER: %d\n", GameSettingsA[iPad]->ucLanguage);
 		GameSettingsA[iPad]->ucLocale = MINECRAFT_LANGUAGE_DEFAULT; // use the system locale
 	}
 
@@ -6469,7 +6476,7 @@ int CMinecraftApp::GetHTMLFontSize(EHTMLFontSize size)
 	return s_iHTMLFontSizesA[size];
 }
 
-wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shadowColour /*= 0xFFFFFFFF*/)
+wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shadowColour /*= 0xFFFFFFFF*/, bool override)
 {
 	wstring text(desc);
 
@@ -6552,7 +6559,7 @@ wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shado
 	text = replaceAll(text, L"{*CONTROLLER_VK_A*}",					GetVKReplacement(VK_PAD_A) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_B*}",					GetVKReplacement(VK_PAD_B) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_X*}",					GetVKReplacement(VK_PAD_X) );
-	text = replaceAll(text, L"{*CONTROLLER_VK_Y*}",					GetVKReplacement(VK_PAD_Y) );
+	text = replaceAll(text, L"{*CONTROLLER_VK_Y*}",					GetVKReplacement(VK_PAD_Y, override) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_LB*}",				GetVKReplacement(VK_PAD_LSHOULDER) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_RB*}",				GetVKReplacement(VK_PAD_RSHOULDER) );
 	text = replaceAll(text, L"{*CONTROLLER_VK_LS*}",				GetVKReplacement(VK_PAD_LTHUMB_UP) );
@@ -6790,7 +6797,7 @@ wstring CMinecraftApp::GetActionReplacement(int iPad, unsigned char ucAction)
 #endif
 }
 
-wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey)
+wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey, bool override)
 {
 #ifdef _XBOX
 	switch(uiVKey)
@@ -6908,7 +6915,7 @@ wstring CMinecraftApp::GetVKReplacement(unsigned int uiVKey)
 	int size = 30;
 #elif defined _WIN64
 	int size = 45;
-	if(ui.getScreenHeight() < 1080) size = 30;
+	if(ui.getScreenHeight() < 1080 || override == true) size = 30;
 #else
 	int size = 45;
 #endif

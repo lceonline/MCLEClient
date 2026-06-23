@@ -152,7 +152,7 @@ void AchievementScreen::renderLabels()
 
 //        font.draw(xScrollP + ", " + yScrollP, xo + 5, yo + 5 + BIGMAP_HEIGHT + 18, 0x404040);
 //        font.drawWordWrap("Ride a pig off a cliff.", xo + 5, yo + 5 + BIGMAP_HEIGHT + 16, BIGMAP_WIDTH, 0x404040);
-
+    
 }
 
 void AchievementScreen::renderBg(int xm, int ym, float a)

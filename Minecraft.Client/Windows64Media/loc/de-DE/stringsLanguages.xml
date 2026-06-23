@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="IDS_LANG_SYSTEM">					<value>Systemsprache</value>					</data>
+	<data name="IDS_LANG_ENGLISH">					<value>Englisch</value>						</data>
+	
+	<data name="IDS_LANG_GERMAN">					<value>Deutsch</value>						</data>
+	
+	<data name="IDS_LANG_SPANISH">					<value>Spanisch</value>						</data>
+	<data name="IDS_LANG_SPANISH_SPAIN">			<value>Spanisch (Spanien)</value>			</data>
+	<data name="IDS_LANG_SPANISH_LATIN_AMERICA">	<value>Spanisch (Lateinamerika)</value>		</data>
+	
+	<data name="IDS_LANG_FRENCH">					<value>Französisch</value>					</data>
+	
+	<data name="IDS_LANG_ITALIAN">					<value>Italienisch</value>					</data>
+	
+	<data name="IDS_LANG_PORTUGUESE">				<value>Portugiesisch</value>				</data>
+	<data name="IDS_LANG_PORTUGUESE_PORTUGAL">		<value>Portugiesisch (Portugal)</value>		</data>
+	<data name="IDS_LANG_PORTUGUESE_BRAZIL">		<value>Portugiesisch (Brasilien)</value>	</data>
+	
+	<data name="IDS_LANG_JAPANESE">					<value>Japanisch</value>					</data>
+
+    <data name="IDS_LANG_KOREAN">					<value>Koreanisch</value>					</data>
+
+	<data name="IDS_LANG_CHINESE_TRADITIONAL">		<value>Chinesisch (Traditionell)</value>	</data>
+	<data name="IDS_LANG_CHINESE_SIMPLIFIED">		<value>Chinesisch (Vereinfacht)</value>		</data>
+
+	<data name="IDS_LANG_DANISH">					<value>Dänisch</value>						</data>
+    <data name="IDS_LANG_FINISH">					<value>Finnisch</value>						</data>
+	
+	<data name="IDS_LANG_DUTCH">					<value>Niederländisch</value>				</data>
+	
+    <data name="IDS_LANG_POLISH">					<value>Polnisch</value>						</data>
+    <data name="IDS_LANG_RUSSIAN">					<value>Russisch</value>						</data>
+    <data name="IDS_LANG_SWEDISH">					<value>Schwedisch</value>					</data>
+    <data name="IDS_LANG_NORWEGIAN">				<value>Norwegisch</value>					</data>
+	
+    <data name="IDS_LANG_GREEK">					<value>Griechisch</value>					</data>
+	
+	<data name="IDS_LANG_TURKISH">					<value>Türkisch</value>						</data>
+</root>

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <thread>
 
 #include "../Network/json.hpp"
 using json = nlohmann::json;
@@ -166,6 +167,31 @@ LeaderboardManager* LeaderboardManager::m_instance = new WindowsLeaderboardManag
 bool WindowsLeaderboardManager::WriteStats(unsigned int viewCount, ViewIn views)
 {
     return false; // Since WriteStats is useless we just do this, exact same thing is done in DurangoLeaderboardManager
+}
+
+// ByteBukkit: Tick function
+void WindowsLeaderboardManager::Tick()
+{
+    if (++m_tickCount < 1000)
+        return;
+
+    m_tickCount = 0;
+
+    std::thread([this]()
+    {
+        static const EStatsType types[] = {
+            eStatsType_Travelling,
+            eStatsType_Mining,
+            eStatsType_Farming,
+            eStatsType_Kills,
+        };
+
+        for (EStatsType t : types)
+        {
+            for (int diff = 0; diff <= 3; ++diff)
+                SendStats(t, diff);
+        }
+    }).detach();
 }
 
 bool WindowsLeaderboardManager::SendStats(EStatsType type, int diff)

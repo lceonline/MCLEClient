@@ -8,26 +8,34 @@
 void Achievement::_init()
 {
 	isGoldenVar = false;
-
 	if (x < Achievements::xMin) Achievements::xMin = x;
 	if (y < Achievements::yMin) Achievements::yMin = y;
 	if (x > Achievements::xMax) Achievements::xMax = x;
 	if (y > Achievements::yMax) Achievements::yMax = y;
 }
 
-Achievement::Achievement(int id, const wstring& name, int x, int y, Item *icon, Achievement *reqs)
+Achievement::Achievement(int id, const wstring& name, int x, int y, Item *icon, Achievement *reqs, string iconI, int nameID1, int descID1)
 	: Stat( Achievements::ACHIEVEMENT_OFFSET + id, I18n::get(wstring(L"achievement.").append(name)) ), desc( I18n::get(wstring(L"achievement.").append(name).append(L".desc"))), icon( new ItemInstance(icon) ), x(x), y(y), reqs(reqs)
 {
+	iconInt = iconI;
+	nameID = nameID1;
+	descID = descID1;
 }
 
-Achievement::Achievement(int id, const wstring& name, int x, int y, Tile *icon, Achievement *reqs)
+Achievement::Achievement(int id, const wstring& name, int x, int y, Tile *icon, Achievement *reqs, string iconI, int nameID1, int descID1)
 	: Stat( Achievements::ACHIEVEMENT_OFFSET + id, I18n::get(wstring(L"achievement.").append(name)) ), desc( I18n::get(wstring(L"achievement.").append(name).append(L".desc"))), icon( new ItemInstance(icon) ), x(x), y(y), reqs(reqs)
 {
+	iconInt = iconI;
+	nameID = nameID1;
+	descID = descID1;
 }
 
-Achievement::Achievement(int id, const wstring& name, int x, int y, shared_ptr<ItemInstance> icon, Achievement *reqs)
+Achievement::Achievement(int id, const wstring& name, int x, int y, shared_ptr<ItemInstance> icon, Achievement *reqs, string iconI, int nameID1, int descID1)
 	: Stat( Achievements::ACHIEVEMENT_OFFSET + id, I18n::get(wstring(L"achievement.").append(name)) ), desc( I18n::get(wstring(L"achievement.").append(name).append(L".desc"))), icon(icon), x(x), y(y), reqs(reqs)
 {
+	iconInt = iconI;
+	nameID = nameID1;
+	descID = descID1;
 }
 
 Achievement *Achievement::setAwardLocallyOnly()
@@ -45,9 +53,7 @@ Achievement *Achievement::setGolden()
 Achievement *Achievement::postConstruct()
 {
 	Stat::postConstruct();
-
 	Achievements::achievements->push_back(this);
-
 	return this;
 }
 

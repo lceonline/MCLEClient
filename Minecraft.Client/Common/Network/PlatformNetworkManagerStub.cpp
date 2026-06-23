@@ -868,7 +868,10 @@ void CPlatformNetworkManagerStub::SearchForGames()
         info->sessionId = static_cast<uint64_t>(inet_addr(lanSessions[i].hostIP)) |
                           static_cast<uint64_t>(lanSessions[i].hostPort) << 32;
 
-		friendsSessions[0].push_back(info);
+								//Fix null crash? I think its here...
+					if (info) {
+						friendsSessions[0].push_back(info);
+					}
 	}
 
 	m_searchResultsCount[0] = static_cast<int>(friendsSessions[0].size());
