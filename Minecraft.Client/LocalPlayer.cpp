@@ -978,7 +978,7 @@ void LocalPlayer::awardStat(Stat *stat, byteArray param)
 		// AWARD : Porkchop, cook and eat a porkchop.
 		{
 			Stat *cookPorkchop, *eatPorkchop;
-			cookPorkchop = GenericStats::itemsCrafted(Item::porkChop_cooked_Id);
+			cookPorkchop = GenericStats::itemsSmelted(Item::porkChop_cooked_Id);
 			eatPorkchop = GenericStats::itemsUsed(Item::porkChop_cooked_Id);
 
 			if ( stat == cookPorkchop || stat == eatPorkchop )
