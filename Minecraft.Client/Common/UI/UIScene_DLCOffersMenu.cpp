@@ -2,13 +2,44 @@
 #include "UI.h"
 #include "UIScene_DLCOffersMenu.h"
 #include "../../../Minecraft.World/StringHelpers.h"
-#include <wininet.h>
+#include <winhttp.h>
+#pragma comment(lib, "winhttp.lib")
+
+#pragma pack(push,1)
+struct LCEZipLocalHeader
+{
+	DWORD sig;
+	WORD  verNeeded;
+	WORD  flags;
+	WORD  method;
+	WORD  modTime;
+	WORD  modDate;
+	DWORD crc32;
+	DWORD compSize;
+	DWORD uncompSize;
+	WORD  fileNameLen;
+	WORD  extraLen;
+};
+#pragma pack(pop)
+
+struct LCEZipEntry
+{
+	std::string  fname;
+	WORD         method;
+	DWORD        compSize;
+	DWORD        uncompSize;
+	const BYTE*  fileData;
+};
+
 #include "miniz.h"
 #include "miniz.c"
-#pragma comment(lib, "wininet.lib")
 
-static const char* WORKSHOP_REGISTRY_URL = "https://network-server-7kuc.onrender.com/workshop/registry.json";
-static const char* WORKSHOP_RAW_BASE     = "https://network-server-7kuc.onrender.com/workshop";
+static const char* WORKSHOP_REGISTRY_URL     = "https://network-server-7kuc.onrender.com/workshop/registry.json";
+static const char* WORKSHOP_RAW_BASE         = "https://network-server-7kuc.onrender.com/workshop";
+static const char* COMMUNITY_REGISTRY_LOCAL  = "http://localhost:7601/registry.json";
+static const char* COMMUNITY_RAW_BASE_LOCAL  = "http://localhost:7601";
+static const char* COMMUNITY_REGISTRY_REMOTE = "https://raw.githubusercontent.com/LCE-Hub/LCE-Workshop/refs/heads/main/registry.json";
+static const char* COMMUNITY_RAW_BASE_REMOTE = "https://github.com/LCE-Hub/LCE-Workshop/raw/refs/heads/main";
 
 const char* UIScene_DLCOffersMenu::CategoryForIndex(int index)
 {
@@ -17,7 +48,7 @@ const char* UIScene_DLCOffersMenu::CategoryForIndex(int index)
 	case 1: return "Skin";
 	case 2: return "Texture";
 	case 3: return "Mashup";
-	case 4: return "Mod";
+	case 4: return nullptr;
 	default: return nullptr;
 	}
 }
@@ -25,17 +56,51 @@ const char* UIScene_DLCOffersMenu::CategoryForIndex(int index)
 bool UIScene_DLCOffersMenu::FetchURL(const std::string& url, std::vector<BYTE>& outData)
 {
 	outData.clear();
-	HINTERNET hInet = InternetOpenA("LCEWorkshop/1.0", INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
-	if(!hInet) return false;
-	HINTERNET hUrl = InternetOpenUrlA(hInet, url.c_str(), nullptr, 0,
-		INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_SECURE, 0);
-	if(!hUrl) { InternetCloseHandle(hInet); return false; }
-	BYTE buf[8192];
+
+	bool isHttps = (url.size() >= 8 && _strnicmp(url.c_str(), "https://", 8) == 0);
+	const char* hostStart = url.c_str() + (isHttps ? 8 : 7);
+	const char* pathStart = strchr(hostStart, '/');
+
+	std::string host = pathStart ? std::string(hostStart, pathStart - hostStart) : std::string(hostStart);
+	std::string path = pathStart ? std::string(pathStart) : "/";
+
+	int port = isHttps ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
+
+	std::wstring wHost(host.begin(), host.end());
+	std::wstring wPath(path.begin(), path.end());
+
+	HINTERNET hSession = WinHttpOpen(L"LCEWorkshop/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+	if(!hSession) return false;
+
+	HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), static_cast<INTERNET_PORT>(port), 0);
+	if(!hConnect) { WinHttpCloseHandle(hSession); return false; }
+
+	DWORD flags = isHttps ? WINHTTP_FLAG_SECURE : 0;
+	HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", wPath.c_str(), nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+	if(!hRequest) { WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession); return false; }
+
+	DWORD redirectPolicy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+	WinHttpSetOption(hRequest, WINHTTP_OPTION_REDIRECT_POLICY, &redirectPolicy, sizeof(redirectPolicy));
+
+	bool sent = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) != FALSE;
+	if(sent) sent = WinHttpReceiveResponse(hRequest, nullptr) != FALSE;
+
+	if(!sent) { WinHttpCloseHandle(hRequest); WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession); return false; }
+
+	DWORD statusCode = 0;
+	DWORD statusSize = sizeof(statusCode);
+	WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX, &statusCode, &statusSize, WINHTTP_NO_HEADER_INDEX);
+
+	if(statusCode != 200) { WinHttpCloseHandle(hRequest); WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession); return false; }
+
+	BYTE buf[65536];
 	DWORD dwRead = 0;
-	while(InternetReadFile(hUrl, buf, sizeof(buf), &dwRead) && dwRead > 0)
+	while(WinHttpReadData(hRequest, buf, sizeof(buf), &dwRead) && dwRead > 0)
 		outData.insert(outData.end(), buf, buf + dwRead);
-	InternetCloseHandle(hUrl);
-	InternetCloseHandle(hInet);
+
+	WinHttpCloseHandle(hRequest);
+	WinHttpCloseHandle(hConnect);
+	WinHttpCloseHandle(hSession);
 	return !outData.empty();
 }
 
@@ -68,31 +133,14 @@ static void EnsureDirExists(const std::string& path)
 	CreateDirectoryA(path.c_str(), nullptr);
 }
 
-#pragma pack(push,1)
-struct ZipLocalHeader
-{
-	DWORD sig;
-	WORD  verNeeded;
-	WORD  flags;
-	WORD  method;
-	WORD  modTime;
-	WORD  modDate;
-	DWORD crc32;
-	DWORD compSize;
-	DWORD uncompSize;
-	WORD  fileNameLen;
-	WORD  extraLen;
-};
-#pragma pack(pop)
-
 static bool InflateBuffer(const BYTE* in, DWORD inSize, std::vector<BYTE>& out, DWORD uncompSize)
 {
 	out.resize(uncompSize);
-	mz_stream strm  = {};
-	strm.next_in    = in;
-	strm.avail_in   = inSize;
-	strm.next_out   = out.data();
-	strm.avail_out  = uncompSize;
+	mz_stream strm = {};
+	strm.next_in   = reinterpret_cast<const unsigned char*>(in);
+	strm.avail_in  = static_cast<mz_uint32>(inSize);
+	strm.next_out  = reinterpret_cast<unsigned char*>(out.data());
+	strm.avail_out = static_cast<mz_uint32>(uncompSize);
 	if(mz_inflateInit2(&strm, -15) != MZ_OK) return false;
 	int ret = mz_inflate(&strm, MZ_FINISH);
 	mz_inflateEnd(&strm);
@@ -100,48 +148,102 @@ static bool InflateBuffer(const BYTE* in, DWORD inSize, std::vector<BYTE>& out, 
 	return ret == MZ_STREAM_END;
 }
 
-bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const std::string& packName)
+static std::vector<LCEZipEntry> CollectEntries(const std::vector<BYTE>& zipData)
+{
+	std::vector<LCEZipEntry> entries;
+	const BYTE* base = zipData.data();
+	const BYTE* p    = base;
+	const BYTE* end  = base + zipData.size();
+
+	while(p + sizeof(LCEZipLocalHeader) <= end)
+	{
+		const LCEZipLocalHeader* hdr = reinterpret_cast<const LCEZipLocalHeader*>(p);
+		if(hdr->sig == 0x02014b50 || hdr->sig == 0x06054b50) break;
+		if(hdr->sig != 0x04034b50) break;
+
+		WORD   flags      = hdr->flags;
+		WORD   method     = hdr->method;
+		DWORD  compSize   = hdr->compSize;
+		DWORD  uncompSize = hdr->uncompSize;
+		WORD   fnLen      = hdr->fileNameLen;
+		WORD   exLen      = hdr->extraLen;
+
+		p += sizeof(LCEZipLocalHeader);
+		if(p + fnLen + exLen > end) break;
+
+		LCEZipEntry e;
+		e.fname.assign(reinterpret_cast<const char*>(p), fnLen);
+		p += fnLen + exLen;
+
+		e.method     = method;
+		e.compSize   = compSize;
+		e.uncompSize = uncompSize;
+		e.fileData   = p;
+
+		if(flags & 0x0008)
+		{
+			if(method == 0)
+			{
+				compSize   = uncompSize;
+				e.compSize = compSize;
+			}
+			else
+			{
+				const BYTE* scan = p;
+				while(scan + 4 <= end)
+				{
+					DWORD sig = *reinterpret_cast<const DWORD*>(scan);
+					if(sig == 0x08074b50 || sig == 0x04034b50 || sig == 0x02014b50)
+					{
+						compSize   = static_cast<DWORD>(scan - p);
+						e.compSize = compSize;
+						break;
+					}
+					++scan;
+				}
+			}
+		}
+
+		if(p + e.compSize > end) break;
+		p += e.compSize;
+
+		if(flags & 0x0008)
+		{
+			if(p + 4 <= end && *reinterpret_cast<const DWORD*>(p) == 0x08074b50)
+				p += 16;
+			else if(p + 12 <= end)
+				p += 12;
+		}
+
+		for(size_t i = 0; i < e.fname.size(); i++)
+			if(e.fname[i] == '/') e.fname[i] = '\\';
+
+		if(!e.fname.empty())
+			entries.push_back(e);
+	}
+	return entries;
+}
+
+bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const std::string& packName, bool isCommunity)
 {
 	if(zipData.empty()) return false;
 
-	std::string baseDir = GetGameDir() + "Windows64Media\\DLC\\" + packName + "\\";
-	EnsureDirExists(baseDir);
+	std::string outDir = isCommunity
+		? GetGameDir() + "Windows64Media\\DLC\\"
+		: GetGameDir() + "Windows64Media\\DLC\\" + packName + "\\";
+	EnsureDirExists(outDir);
 
-	const BYTE* p   = zipData.data();
-	const BYTE* end = p + zipData.size();
-	int extracted   = 0;
+	std::vector<LCEZipEntry> entries = CollectEntries(zipData);
+	if(entries.empty()) return false;
 
-	while(p + sizeof(ZipLocalHeader) <= end)
+	int extracted = 0;
+
+	for(size_t i = 0; i < entries.size(); i++)
 	{
-		const ZipLocalHeader* hdr = reinterpret_cast<const ZipLocalHeader*>(p);
+		const LCEZipEntry& e = entries[i];
+		if(e.fname.empty() || e.fname[e.fname.size() - 1] == '\\') continue;
 
-		if(hdr->sig == 0x02014b50 || hdr->sig == 0x06054b50)
-			break;
-		if(hdr->sig != 0x04034b50)
-			break;
-
-		p += sizeof(ZipLocalHeader);
-		if(p + hdr->fileNameLen + hdr->extraLen > end) break;
-
-		std::string fname(reinterpret_cast<const char*>(p), hdr->fileNameLen);
-		p += hdr->fileNameLen + hdr->extraLen;
-
-		if(p + hdr->compSize > end) break;
-		const BYTE* fileData = p;
-		p += hdr->compSize;
-
-		if(fname.empty() || fname.back() == '/' || fname.back() == '\\')
-			continue;
-
-		for(char& c : fname) if(c == '/') c = '\\';
-
-		size_t firstSlash = fname.find('\\');
-		if(firstSlash != std::string::npos)
-			fname = fname.substr(firstSlash + 1);
-
-		if(fname.empty()) continue;
-
-		std::string outPath = baseDir + fname;
+		std::string outPath = outDir + e.fname;
 
 		size_t lastSlash = outPath.rfind('\\');
 		if(lastSlash != std::string::npos)
@@ -150,14 +252,14 @@ bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const 
 		std::vector<BYTE> outBuf;
 		bool ok = false;
 
-		if(hdr->method == 0)
+		if(e.method == 0)
 		{
-			outBuf.assign(fileData, fileData + hdr->compSize);
+			outBuf.assign(e.fileData, e.fileData + e.compSize);
 			ok = true;
 		}
-		else if(hdr->method == 8)
+		else if(e.method == 8)
 		{
-			ok = InflateBuffer(fileData, hdr->compSize, outBuf, hdr->uncompSize);
+			ok = InflateBuffer(e.fileData, e.compSize, outBuf, e.uncompSize);
 		}
 
 		if(ok && !outBuf.empty())
@@ -229,7 +331,7 @@ static void SkipValue(const char*& p)
 	while(*p && *p != ',' && *p != '}' && *p != ']') ++p;
 }
 
-bool UIScene_DLCOffersMenu::ParseRegistry(const std::string& json)
+bool UIScene_DLCOffersMenu::ParseRegistry(const std::string& json, const std::string& rawBase)
 {
 	m_packs.clear();
 	const char* p = json.c_str();
@@ -308,8 +410,14 @@ bool UIScene_DLCOffersMenu::ParseRegistry(const std::string& json)
 		}
 		if(*p == '}') ++p;
 
+		bool allDLC = !pack.zips.empty();
+		for(int i = 0; i < (int)pack.zips.size(); i++)
+			if(pack.zips[i].destToken != "{DLCDir}") { allDLC = false; break; }
+
+		if(!allDLC) continue;
+
 		if(!pack.id.empty() && !thumbFile.empty())
-			pack.thumbnailUrl = std::string(WORKSHOP_RAW_BASE) + "/" + pack.id + "/" + thumbFile;
+			pack.thumbnailUrl = rawBase + "/" + pack.id + "/" + thumbFile;
 
 		if(!pack.id.empty())
 			m_packs.push_back(pack);
@@ -321,6 +429,7 @@ bool UIScene_DLCOffersMenu::ParseRegistry(const std::string& json)
 UIScene_DLCOffersMenu::UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* parentLayer)
 	: UIScene(iPad, parentLayer)
 	, m_eFetchState(eFetch_Idle)
+	, m_bIsCommunity(false)
 	, m_iCurrentPack(0)
 	, m_iProductInfoIndex(0)
 	, m_bIsSD(false)
@@ -329,6 +438,7 @@ UIScene_DLCOffersMenu::UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* 
 {
 	DLCOffersParam* param = static_cast<DLCOffersParam*>(initData);
 	m_iProductInfoIndex   = param ? param->iType : 0;
+	m_bIsCommunity        = (m_iProductInfoIndex == 4);
 
 	initialiseMovie();
 	app.SetLiveLinkRequired(true);
@@ -362,13 +472,42 @@ void UIScene_DLCOffersMenu::tick()
 
 	m_eFetchState = eFetch_Error;
 
-	char urlWithBust[512];
-	snprintf(urlWithBust, sizeof(urlWithBust), "%s?_=%llu",
-		WORKSHOP_REGISTRY_URL,
-		static_cast<unsigned long long>(GetTickCount64()));
-
 	std::string jsonStr;
-	if(!FetchURLString(urlWithBust, jsonStr) || !ParseRegistry(jsonStr))
+
+	if(m_bIsCommunity)
+	{
+		if(FetchURLString(COMMUNITY_REGISTRY_LOCAL, jsonStr))
+		{
+			m_rawBase = COMMUNITY_RAW_BASE_LOCAL;
+		}
+		else
+		{
+			if(!FetchURLString(COMMUNITY_REGISTRY_REMOTE, jsonStr))
+			{
+				m_labelOffers.setLabel(app.GetString(IDS_NO_DLCCATEGORIES));
+				m_Timer.setVisible(false);
+				return;
+			}
+			m_rawBase = COMMUNITY_RAW_BASE_REMOTE;
+		}
+	}
+	else
+	{
+		char urlWithBust[512];
+		snprintf(urlWithBust, sizeof(urlWithBust), "%s?_=%llu",
+			WORKSHOP_REGISTRY_URL,
+			static_cast<unsigned long long>(GetTickCount64()));
+
+		if(!FetchURLString(urlWithBust, jsonStr))
+		{
+			m_labelOffers.setLabel(app.GetString(IDS_NO_DLCCATEGORIES));
+			m_Timer.setVisible(false);
+			return;
+		}
+		m_rawBase = WORKSHOP_RAW_BASE;
+	}
+
+	if(!ParseRegistry(jsonStr, m_rawBase))
 	{
 		m_labelOffers.setLabel(app.GetString(IDS_NO_DLCCATEGORIES));
 		m_Timer.setVisible(false);
@@ -500,7 +639,7 @@ void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
 	m_Timer.setVisible(true);
 
 	const WorkshopZip& zip = pk->zips[0];
-	std::string zipUrl = std::string(WORKSHOP_RAW_BASE) + "/" + pk->id + "/" + zip.filename;
+	std::string zipUrl = m_rawBase + "/" + pk->id + "/" + zip.filename;
 
 	std::vector<BYTE> zipData;
 	if(!FetchURL(zipUrl, zipData) || zipData.empty())
@@ -509,7 +648,7 @@ void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
 		return;
 	}
 
-	bool installed = InstallPack(zipData, packName);
+	bool installed = InstallPack(zipData, packName, m_bIsCommunity);
 	m_Timer.setVisible(false);
 
 	if(installed)
