@@ -13,6 +13,7 @@ public:
         int screenMode;
         bool fullscreen;
         bool username;
+        bool password;
         bool token;
     };
 };

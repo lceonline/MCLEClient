@@ -126,6 +126,8 @@ static bool g_bResizeReady = false;
 char g_Win64Username[17] = { 0 };
 wchar_t g_Win64UsernameW[17] = { 0 };
 
+char g_Win64Password[17] = { 0 };
+
 char g_Win64SessionTicket[256];
 
 bool s_externalLauncher = false;
@@ -281,6 +283,10 @@ static Win64LaunchOptions ParseLaunchOptions()
 			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
 			options.username = true;
 		}
+		else if (_wcsicmp(argv[i], L"-password") == 0 && (i + 1) < argc) {
+             CopyWideArgToAnsi(argv[++i], g_Win64Password, sizeof(g_Win64Password));
+             options.password = true;
+        }
 		else if (_wcsicmp(argv[i], L"-token") == 0 && (i + 1) < argc) {
 			CopyWideArgToAnsi(argv[++i], g_Win64SessionTicket, sizeof(g_Win64SessionTicket));
 			options.token = true;
@@ -1374,13 +1380,18 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 		MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
 		FetchSessionInfo();
 		StartGame(launchOptions, nCmdShow);
-	}
-	else if (Windows64Minecraft::IsOfflineMode()) {
+	} else if (launchOptions.username && launchOptions.password) {
+		std::string authToken;
+        int result = Windows64Launcher::API_AttemptAccountLogin(g_Win64Username, g_Win64Password, authToken);
+        if (result != 0) { return 0; }
+		const char* username = Windows64Launcher::GetUsername().c_str();
+		strncpy_s(g_Win64Username, sizeof(g_Win64Username), username, _TRUNCATE);
+        MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, ARRAYSIZE(g_Win64UsernameW));
+        StartGame(launchOptions, nCmdShow);
+	} else if (Windows64Minecraft::IsOfflineMode()) {
 		MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
 		StartGame(launchOptions, nCmdShow);
-	}
-	else
-	{
+	} else {
 		Windows64Launcher::CreateLauncherWindow(hInstance, [launchOptions, nCmdShow]() {
 			const char* username = Windows64Launcher::GetUsername().c_str();
 			strncpy_s(g_Win64Username, sizeof(g_Win64Username), username, _TRUNCATE);
@@ -1574,7 +1585,7 @@ void StartGame(Win64LaunchOptions launchOptions, int nCmdShow) {
 
 		if (!g_KBMInput.IsMouseGrabbed())
 		{
-			if (!g_KBMInput.IsKBMActive() && ui.FindScene(eUIScene_AchievementsMenu) == nullptr)
+			if (!g_KBMInput.IsKBMActive())
 				g_KBMInput.SetCursorHiddenForUI(true);
 			else if (!g_KBMInput.IsScreenCursorHidden())
 				g_KBMInput.SetCursorHiddenForUI(false);
