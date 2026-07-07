@@ -240,13 +240,17 @@ void UIScene_DebugOverlay::handlePress(F64 controlId, F64 childId)
 	case eControl_SetDay:
 		{
 			ClientConnection *conn = Minecraft::GetInstance()->getConnection(ProfileManager.GetPrimaryPad());
-			conn->send( TimeCommand::preparePacket(false) );
+			conn->send(
+	TimeCommand::preparePacket(L"set", L"day")
+);
 		}
 		break;
 	case eControl_SetNight:
 		{
 			ClientConnection *conn = Minecraft::GetInstance()->getConnection(ProfileManager.GetPrimaryPad());
-			conn->send( TimeCommand::preparePacket(true) );
+			conn->send(
+	TimeCommand::preparePacket(L"set", L"night")
+);
 		}
 		break;
 	};

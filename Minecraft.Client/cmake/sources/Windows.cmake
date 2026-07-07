@@ -349,8 +349,27 @@ set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS64
   "${BASE_DIR}/Minecraft_Macros.h"
   "${BASE_DIR}/PostProcesser.cpp"
   "${BASE_DIR}/Windows64_Minecraft.cpp"
+  "${BASE_DIR}/ExtraLibs/webview2/build/native/include/WebView2.h"
 )
 source_group("Windows64" FILES ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64})
+
+set(_MINECRAFT_CLIENT_WINDOWS64_DISCORDSDK
+  "${BASE_DIR}/ExtraLibs/discordsdk/achievement_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/activity_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/application_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/core.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/image_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/lobby_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/network_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/overlay_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/relationship_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/storage_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/store_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/types.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/user_manager.cpp"
+  "${BASE_DIR}/ExtraLibs/discordsdk/voice_manager.cpp"
+)
+source_group("Windows64/discordsdk" FILES ${_MINECRAFT_CLIENT_WINDOWS64_DISCORDSDK})
 
 set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_4JLIBS_INC
   "${BASE_DIR}/4JLibs/inc/4J_Input.h"
@@ -485,6 +504,7 @@ set(MINECRAFT_CLIENT_WINDOWS
   ${_MINECRAFT_CLIENT_WINDOWS_SOURCE_FILES}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64}
+  ${_MINECRAFT_CLIENT_WINDOWS64_DISCORDSDK}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_4JLIBS_INC}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_GAMECONFIG}
   ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64_IGGY_GDRAW}

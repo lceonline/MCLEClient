@@ -1,10 +1,12 @@
 #pragma once
 #include "UIScene.h"
+
 struct WorkshopZip
 {
 	std::string filename;
 	std::string destToken;
 };
+
 struct WorkshopPack
 {
 	std::string              id;
@@ -17,21 +19,27 @@ struct WorkshopPack
 	std::string              version;
 	std::vector<BYTE>        thumbnailData;
 	bool                     thumbnailLoaded;
+
 	WorkshopPack() : thumbnailLoaded(false) {}
 };
+
 class UIScene_DLCOffersMenu : public UIScene
 {
 private:
-	enum EControls { eControl_OffersList };
+	enum EControls   { eControl_OffersList };
 	enum EFetchState { eFetch_Idle, eFetch_Ready, eFetch_Error };
+
 	bool                       m_bIsSD;
 	bool                       m_bHasPurchased;
 	bool                       m_bIsSelected;
+	bool                       m_bIsCommunity;
+
 	UIControl_DLCList          m_buttonListOffers;
 	UIControl_Label            m_labelOffers, m_labelPriceTag, m_labelXboxStore;
 	UIControl_HTMLLabel        m_labelHTMLSellText;
 	UIControl_BitmapIcon       m_bitmapIconOfferImage;
 	UIControl                  m_Timer;
+
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT(m_buttonListOffers,     "OffersList")
 		UI_MAP_ELEMENT(m_labelOffers,          "OffersList_Title")
@@ -44,28 +52,35 @@ private:
 			UI_MAP_ELEMENT(m_labelXboxStore, "XboxLabel")
 		}
 	UI_END_MAP_ELEMENTS_AND_NAMES()
+
 	EFetchState                m_eFetchState;
+	std::string                m_rawBase;
 	std::vector<WorkshopPack>  m_packs;
 	std::vector<WorkshopPack*> m_filteredPacks;
 	int                        m_iCurrentPack;
 	int                        m_iProductInfoIndex;
+
 	static const char* CategoryForIndex(int index);
 	static bool        FetchURL(const std::string& url, std::vector<BYTE>& outData);
 	static bool        FetchURLString(const std::string& url, std::string& outStr);
-	bool               ParseRegistry(const std::string& json);
+	bool               ParseRegistry(const std::string& json, const std::string& rawBase);
 	void               PopulateList();
 	void               UpdateDetailPanel();
-	static bool        InstallPack(const std::vector<BYTE>& zipData, const std::string& packName);
+	static bool        InstallPack(const std::vector<BYTE>& zipData, const std::string& packName, bool isCommunity);
 	static bool        IsPackInstalled(const std::string& packName);
+
 public:
 	UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* parentLayer);
 	~UIScene_DLCOffersMenu();
+
 	static int       ExitDLCOffersMenu(void* pParam, int iPad, C4JStorage::EMessageResult result);
 	virtual EUIScene getSceneType() { return eUIScene_DLCOffersMenu; }
 	virtual void     tick();
 	virtual void     updateTooltips();
+
 protected:
 	virtual wstring getMoviePath();
+
 public:
 	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool& handled);
 	virtual void handlePress(F64 controlId, F64 childId);

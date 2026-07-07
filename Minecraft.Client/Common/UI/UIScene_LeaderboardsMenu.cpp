@@ -424,8 +424,12 @@ void UIScene_LeaderboardsMenu::handleInput(int iPad, int key, bool repeat, bool 
 
 void UIScene_LeaderboardsMenu::ReadStats(int startIndex)
 {
-		m_labelInfo.setLabel(app.GetString(IDS_LEADERBOARD_LOADING));
+#ifdef _WINDOWS64
+	// load before so real stats cant get overwritten afterwards
+	m_labelInfo.setLabel(app.GetString(IDS_LEADERBOARD_LOADING));
 	m_labelInfo.setVisible(true);
+#endif
+
 	//If startIndex == -1, then use default values
 	if( startIndex == -1 )
 	{
@@ -492,6 +496,12 @@ void UIScene_LeaderboardsMenu::ReadStats(int startIndex)
 		}
 		break;
 	}
+
+#if defined(_DURANGO) || defined(__ORBIS__) || defined(__PS3__) || defined(__PSVITA__) || defined(_XBOX)
+	//Show the loading message
+	m_labelInfo.setLabel(app.GetString(IDS_LEADERBOARD_LOADING));
+	m_labelInfo.setVisible(true);
+#endif
 }
 
 bool UIScene_LeaderboardsMenu::OnStatsReadComplete(LeaderboardManager::eStatsReturn retIn, int numResults, LeaderboardManager::ViewOut results)

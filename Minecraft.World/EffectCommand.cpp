@@ -1,86 +1,87 @@
 #include "stdafx.h"
 #include "net.minecraft.commands.common.h"
+#include "net.minecraft.world.effect.h"
 #include "../Minecraft.Client/MinecraftServer.h"
+#include "../Minecraft.Client/ServerPlayer.h"
+#include "../Minecraft.Client/PlayerList.h"
+#include "SharedConstants.h"
+#include "net.minecraft.network.packet.h"
+#include "EffectCommand.h"
 
 EGameCommand EffectCommand::getId()
 {
-	return eGameCommand_Effect;
+    return eGameCommand_Effect;
 }
 
 int EffectCommand::getPermissionLevel()
 {
-	return LEVEL_GAMEMASTERS;
+    return LEVEL_GAMEMASTERS;
 }
 
 wstring EffectCommand::getUsage(CommandSender *source)
 {
-	return L"commands.effect.usage";
+    return L"commands.effect.usage";
 }
 
 void EffectCommand::execute(shared_ptr<CommandSender> source, byteArray commandData)
 {
-	//if (args.length >= 2)
-	//{
-	//	Player player = convertToPlayer(source, args[0]);
+    ByteArrayInputStream bais(commandData);
+    DataInputStream dis(&bais);
 
-	//	if (args[1].equals("clear")) {
-	//		if (player.getActiveEffects().isEmpty()) {
-	//			throw new CommandException("commands.effect.failure.notActive.all", player.getAName());
-	//		} else {
-	//			player.removeAllEffects();
-	//			logAdminAction(source, "commands.effect.success.removed.all", player.getAName());
-	//		}
-	//	} else {
-	//		int effectId = convertArgToInt(source, args[1], 1);
-	//		int duration = SharedConstants.TICKS_PER_SECOND * 30;
-	//		int seconds = 30;
-	//		int amplifier = 0;
+    wstring targetName = dis.readUTF();
+    int effectId       = dis.readInt();
+    int duration       = dis.readInt();
+    int amplifier      = dis.readInt();
+    bool clear         = dis.readBoolean();
 
-	//		if (effectId < 0 || effectId >= MobEffect.effects.length || MobEffect.effects[effectId] == null) {
-	//			throw new InvalidNumberException("commands.effect.notFound", effectId);
-	//		}
+    shared_ptr<ServerPlayer> target =
+        MinecraftServer::getInstance()->getPlayers()->getPlayer(targetName);
+    if (target == nullptr)
+        return;
 
-	//		if (args.length >= 3) {
-	//			seconds = convertArgToInt(source, args[2], 0, 1000000);
-	//			if (MobEffect.effects[effectId].isInstantenous()) {
-	//				duration = seconds;
-	//			} else {
-	//				duration = seconds * SharedConstants.TICKS_PER_SECOND;
-	//			}
-	//		} else if (MobEffect.effects[effectId].isInstantenous()) {
-	//			duration = 1;
-	//		}
+    if (clear)
+    {
+        target->removeAllEffects();
+        return;
+    }
 
-	//		if (args.length >= 4) {
-	//			amplifier = convertArgToInt(source, args[3], 0, 255);
-	//		}
+    if (effectId < 1 || effectId >= MobEffect::NUM_EFFECTS || MobEffect::effects[effectId] == nullptr)
+        return;
 
-	//		if (seconds == 0) {
-	//			if (player.hasEffect(effectId)) {
-	//				player.removeEffect(effectId);
-	//				logAdminAction(source, "commands.effect.success.removed", ChatMessageComponent.forTranslation(MobEffect.effects[effectId].getDescriptionId()), player.getAName());
-	//			} else {
-	//				throw new CommandException("commands.effect.failure.notActive", ChatMessageComponent.forTranslation(MobEffect.effects[effectId].getDescriptionId()), player.getAName());
-	//			}
-	//		} else {
-	//			MobEffectInstance instance = new MobEffectInstance(effectId, duration, amplifier);
-	//			player.addEffect(instance);
-	//			logAdminAction(source, "commands.effect.success", ChatMessageComponent.forTranslation(instance.getDescriptionId()), effectId, amplifier, player.getAName(), seconds);
-	//		}
-	//	}
+    if (duration == 0)
+    {
+        if (target->hasEffect(effectId))
+            target->removeEffect(effectId);
+        return;
+    }
 
-	//	return;
-	//}
+    MobEffectInstance *instance = new MobEffectInstance(effectId, duration, amplifier);
+    target->addEffect(instance);
+}
 
-	//throw new UsageException("commands.effect.usage");
+shared_ptr<GameCommandPacket> EffectCommand::preparePacket(
+    const wstring& targetName,
+    int effectId,
+    int duration,
+    int amplifier,
+    bool clear)
+{
+    ByteArrayOutputStream baos;
+    DataOutputStream dos(&baos);
+    dos.writeUTF(targetName);
+    dos.writeInt(effectId);
+    dos.writeInt(duration);
+    dos.writeInt(amplifier);
+    dos.writeBoolean(clear);
+    return std::make_shared<GameCommandPacket>(eGameCommand_Effect, baos.toByteArray());
 }
 
 wstring EffectCommand::getPlayerNames()
 {
-	return L""; //MinecraftServer::getInstance()->getPlayerNames();
+    return L"";
 }
 
 bool EffectCommand::isValidWildcardPlayerArgument(wstring args, int argumentIndex)
 {
-	return argumentIndex == 0;
+    return argumentIndex == 0;
 }

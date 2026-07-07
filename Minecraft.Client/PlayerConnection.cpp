@@ -18,6 +18,7 @@
 #include "../Minecraft.World/net.minecraft.world.entity.animal.h"
 #include "../Minecraft.World/net.minecraft.network.h"
 #include "../Minecraft.World/net.minecraft.world.food.h"
+#include "../Minecraft.World/net.minecraft.world.effect.h"
 #include "../Minecraft.World/AABB.h"
 #include "../Minecraft.World/Pos.h"
 #include "../Minecraft.World/SharedConstants.h"
@@ -35,6 +36,17 @@
 // 4J Added
 #include "../Minecraft.World/net.minecraft.world.item.crafting.h"
 #include "Options.h"
+
+#include "TeleportCommand.h"
+#include "../Minecraft.World/GiveItemCommand.h"
+#include "../Minecraft.World/TimeCommand.h"
+#include "../Minecraft.World/KillCommand.h"
+#include "../Minecraft.World/GameModeCommand.h"
+#include "../Minecraft.World/ToggleDownfallCommand.h"
+#include "../Minecraft.World/EffectCommand.h"
+
+#include <sstream>
+
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
 #include "../Minecraft.Server/ServerLogManager.h"
 #include "../Minecraft.Server/Access/Access.h"
@@ -991,6 +1003,240 @@ void PlayerConnection::handleCommand(const wstring& message)
 #if 0
 	server.getCommandDispatcher().performCommand(player, message);
 #endif
+	wstringstream ss(message.substr(1));
+	wstring cmd;
+	ss >> cmd;
+	if (cmd == L"tp" || cmd == L"teleport")
+	{
+		wstring arg1, arg2;
+		ss >> arg1 >> arg2;
+		shared_ptr<ServerPlayer> target;
+		shared_ptr<ServerPlayer> destination;
+		if (arg1.empty())
+		{
+			warn(L"Usage: /tp [target player] <destination player> OR /tp [target player] <x> <y> <z>");
+			return;
+		}
+
+		if (arg2.empty())
+		{
+			target = player;
+			destination = server->getPlayers()->getPlayer(arg1);
+		}
+		else
+		{
+			target = server->getPlayers()->getPlayer(arg1);
+			destination = server->getPlayers()->getPlayer(arg2);
+		}
+
+		if (target && destination)
+		{
+			shared_ptr<GameCommandPacket> packet = TeleportCommand::preparePacket(target->getXuid(), destination->getXuid());
+			server->getCommandDispatcher()->performCommand(player, eGameCommand_Teleport, packet->data);
+		}
+		else
+		{
+			warn(L"That player cannot be found");
+		}
+	}
+else if (cmd == L"time")
+{
+    wstring action;
+    ss >> action;
+
+    if (action == L"set")
+    {
+        wstring timeVal;
+        ss >> timeVal;
+
+        int value = 0;
+        bool valid = false;
+        if (timeVal == L"day")        { value = 0;     valid = true; }
+        else if (timeVal == L"night") { value = 12500; valid = true; }
+        else
+        {
+            try   { value = std::stoi(timeVal); valid = true; }
+            catch (...) { valid = false; }
+        }
+
+        if (!valid)
+        {
+            warn(L"'" + timeVal + L"' is not a valid number");
+            return;
+        }
+
+        auto packet = TimeCommand::preparePacket(L"set", timeVal);
+        byteArray dataCopy = byteArray(packet->data.length);
+        if (packet->data.data && packet->data.length > 0)
+            memcpy(dataCopy.data, packet->data.data, packet->data.length);
+        server->getCommandDispatcher()->performCommand(player, eGameCommand_Time, dataCopy);
+        send(std::make_shared<ChatPacket>(L"Set the time to " + std::to_wstring(value)));
+    }
+    else if (action == L"add")
+    {
+        wstring amount;
+        ss >> amount;
+
+        int value = 0;
+        bool valid = false;
+        try   { value = std::stoi(amount); valid = true; }
+        catch (...) { valid = false; }
+
+        if (!valid)
+        {
+            warn(L"'" + amount + L"' is not a valid number");
+            return;
+        }
+
+        auto packet = TimeCommand::preparePacket(L"add", amount);
+        byteArray dataCopy = byteArray(packet->data.length);
+        if (packet->data.data && packet->data.length > 0)
+            memcpy(dataCopy.data, packet->data.data, packet->data.length);
+        server->getCommandDispatcher()->performCommand(player, eGameCommand_Time, dataCopy);
+
+        // Get the resulting time to display in the message
+        ServerLevel* level = server->getLevel(player->dimension);
+        int newTime = static_cast<int>(level->getDayTime());
+        send(std::make_shared<ChatPacket>(L"Set the time to " + std::to_wstring(newTime)));
+    }
+    else
+    {
+        warn(L"Usage: /time <set|add> <value>");
+    }
+}	else if (cmd == L"kill")
+	{
+		server->getCommandDispatcher()->performCommand(player, eGameCommand_Kill, byteArray());
+	}
+	else if (cmd == L"toggledownfall")
+	{
+		shared_ptr<GameCommandPacket> packet = ToggleDownfallCommand::preparePacket();
+		server->getCommandDispatcher()->performCommand(player, eGameCommand_ToggleDownfall, packet->data);
+	} else if (cmd == L"gamemode")
+{
+    wstring modeStr, targetName;
+    ss >> modeStr >> targetName;
+    if (modeStr.empty())
+    {
+        warn(L"Usage: /gamemode <mode> [player]");
+        return;
+    }
+
+    int mode = -1;
+    if      (modeStr == L"0" || modeStr == L"s" || modeStr == L"survival")  mode = 0;
+    else if (modeStr == L"1" || modeStr == L"c" || modeStr == L"creative")  mode = 1;
+    else if (modeStr == L"2" || modeStr == L"a" || modeStr == L"adventure") mode = 2;
+    else
+    {
+        warn(L"'" + modeStr + L"' is not a valid game mode");
+        return;
+    }
+
+    shared_ptr<ServerPlayer> target;
+    if (targetName.empty())
+        target = player;
+    else
+    {
+        target = server->getPlayers()->getPlayer(targetName);
+        if (!target) { warn(L"That player cannot be found"); return; }
+    }
+
+    auto packet = GameModeCommand::preparePacket(target, mode);
+    byteArray dataCopy = byteArray(packet->data.length);
+    if (packet->data.data && packet->data.length > 0)
+        memcpy(dataCopy.data, packet->data.data, packet->data.length);
+    server->getCommandDispatcher()->performCommand(player, eGameCommand_GameMode, dataCopy);
+	// not needed, mc handles this already differently
+    //send(std::make_shared<ChatPacket>(L"Set " + target->name + L"'s game mode to " + modeStr));
+} else if (cmd == L"give") {
+    	wstring targetName, itemStr, amountStr, auxStr;
+    	ss >> targetName >> itemStr >> amountStr >> auxStr;
+    	if (targetName.empty() || itemStr.empty()) {
+        	warn(L"Usage: /give <player> <item> [amount] [data]");
+        	return;
+    	}
+
+    	shared_ptr<ServerPlayer> target = server->getPlayers()->getPlayer(targetName);
+    	if (!target) {
+        	warn(L"That player acnnot be found");
+        	return;
+    	}
+
+    	int item, amount = 1, aux = 0;
+    	try {
+        	item = std::stoi(itemStr);
+        	if (!amountStr.empty()) amount = std::stoi(amountStr);
+        	if (!auxStr.empty()) aux = std::stoi(auxStr);
+    	} catch (...) {
+        	warn(L"Invalid ID or number");
+        	return;
+    	}
+
+    	shared_ptr<GameCommandPacket> packet = GiveItemCommand::preparePacket(target, item, amount, aux);
+    	server->getCommandDispatcher()->performCommand(player, eGameCommand_Give, packet->data);
+	}
+else if (cmd == L"effect")
+{
+    wstring targetName, effectStr, durationStr, amplifierStr;
+    ss >> targetName >> effectStr >> durationStr >> amplifierStr;
+
+    if (targetName.empty() || effectStr.empty())
+    {
+        warn(L"Usage: /effect <player> <effect> [seconds] [amplifier]");
+        return;
+    }
+
+    shared_ptr<ServerPlayer> target = server->getPlayers()->getPlayer(targetName);
+    if (!target) { warn(L"That player cannot be found"); return; }
+
+    // Handle "clear" keyword
+    if (effectStr == L"clear")
+    {
+        auto packet = EffectCommand::preparePacket(targetName, 0, 0, 0, true);
+        byteArray dataCopy = byteArray(packet->data.length);
+        if (packet->data.data && packet->data.length > 0)
+            memcpy(dataCopy.data, packet->data.data, packet->data.length);
+        server->getCommandDispatcher()->performCommand(player, eGameCommand_Effect, dataCopy);
+        send(std::make_shared<ChatPacket>(L"Removed all effects from " + targetName));
+        return;
+    }
+
+    int effectId = 0;
+    try { effectId = std::stoi(effectStr); } catch (...) { warn(L"'" + effectStr + L"' is not a valid number"); return; }
+
+    if (effectId < 1 || effectId >= MobEffect::NUM_EFFECTS || MobEffect::effects[effectId] == nullptr)
+    {
+        warn(L"'" + effectStr + L"' is not a valid effect ID");
+        return;
+    }
+
+    int seconds   = 30;
+    int amplifier = 0;
+
+    if (!durationStr.empty())
+    {
+        try { seconds = std::stoi(durationStr); } catch (...) { warn(L"'" + durationStr + L"' is not a valid number"); return; }
+        if (seconds < 0 || seconds > 1000000) { warn(L"The duration must be between 0 and 1000000"); return; }
+    }
+    if (!amplifierStr.empty())
+    {
+        try { amplifier = std::stoi(amplifierStr); } catch (...) { warn(L"'" + amplifierStr + L"' is not a valid number"); return; }
+        if (amplifier < 0 || amplifier > 255) { warn(L"The amplifier must be between 0 and 255"); return; }
+    }
+
+    bool isInstant = MobEffect::effects[effectId]->isInstantenous();
+    int duration = isInstant ? seconds : seconds * SharedConstants::TICKS_PER_SECOND;
+
+    auto packet = EffectCommand::preparePacket(targetName, effectId, duration, amplifier, false);
+    byteArray dataCopy = byteArray(packet->data.length);
+    if (packet->data.data && packet->data.length > 0)
+        memcpy(dataCopy.data, packet->data.data, packet->data.length);
+    server->getCommandDispatcher()->performCommand(player, eGameCommand_Effect, dataCopy);
+
+    if (seconds == 0)
+        send(std::make_shared<ChatPacket>(L"Took " + std::wstring(app.GetString(MobEffect::effects[effectId]->getDescriptionId())) + L" from " + targetName));
+    else
+        send(std::make_shared<ChatPacket>(L"Given " + std::wstring(app.GetString(MobEffect::effects[effectId]->getDescriptionId())) + L" (ID " + effectStr + L") * " + std::to_wstring(amplifier + 1) + L" to " + targetName + L" for " + std::to_wstring(seconds) + L" seconds"));
+}
 }
 
 void PlayerConnection::handleAnimate(shared_ptr<AnimatePacket> packet)
@@ -1094,8 +1340,7 @@ void PlayerConnection::info(const wstring& string)
 
 void PlayerConnection::warn(const wstring& string)
 {
-	// 4J-PB - removed, since it needs to be localised in the language the client is in
-	//send( shared_ptr<ChatPacket>( new ChatPacket(L"<22>9" + string) ) );
+	send( shared_ptr<ChatPacket>( new ChatPacket(L"\u00A7c" + string) ) );
 }
 
 wstring PlayerConnection::getConsoleName()

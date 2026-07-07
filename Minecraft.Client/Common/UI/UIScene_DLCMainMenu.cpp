@@ -3,7 +3,7 @@
 #include "UIScene_DLCMainMenu.h"
 
 UIScene_DLCMainMenu::UIScene_DLCMainMenu(int iPad, void* initData, UILayer* parentLayer)
-	: UIScene(iPad, parentLayer)
+: UIScene(iPad, parentLayer)
 {
 	initialiseMovie();
 	app.SetLiveLinkRequired(true);
@@ -14,10 +14,11 @@ UIScene_DLCMainMenu::UIScene_DLCMainMenu(int iPad, void* initData, UILayer* pare
 	if(m_loadedResolution == eSceneResolution_1080)
 		m_labelXboxStore.init(L"");
 
-	m_buttonListOffers.addItem(L"All Packs",     0);
-	m_buttonListOffers.addItem(L"Skin Packs",    1);
-	m_buttonListOffers.addItem(L"Texture Packs", 2);
-	m_buttonListOffers.addItem(L"Mash-up Packs", 3);
+	m_buttonListOffers.addItem(L"All Packs",            0);
+	m_buttonListOffers.addItem(L"Skin Packs",           1);
+	m_buttonListOffers.addItem(L"Texture Packs",        2);
+	m_buttonListOffers.addItem(L"Mash-up Packs",        3);
+	m_buttonListOffers.addItem(L"Community-Made Packs", 4);
 	m_buttonListOffers.setFocus(true);
 
 	m_Timer.setVisible(false);
@@ -70,6 +71,7 @@ void UIScene_DLCMainMenu::handlePress(F64 controlId, F64 childId)
 	DLCOffersParam* param = new DLCOffersParam();
 	param->iPad  = m_iPad;
 	param->iType = static_cast<int>(childId);
+
 	ui.NavigateToScene(m_iPad, eUIScene_DLCOffersMenu, param);
 }
 

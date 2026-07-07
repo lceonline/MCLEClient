@@ -4,11 +4,12 @@
 class WindowsLeaderboardManager : public LeaderboardManager
 {
 public:
-    virtual void Tick() override {}
+    virtual void Tick() override;
     virtual bool OpenSession()   override { return true; }
     virtual void CloseSession()  override {}
     virtual void DeleteSession() override {}
 
+    virtual bool SendStats(EStatsType type, int diff);
     virtual bool WriteStats(unsigned int viewCount, ViewIn views) override;
 
     virtual bool ReadStats_Friends(
@@ -38,24 +39,17 @@ public:
     virtual bool isIdle() override { return true; }
 
 private:
+    int m_tickCount = 0;
     bool ReadNetworkStats(
         LeaderboardReadListener* callback,
         int difficulty,
         EStatsType type,
-        PlayerUID myUID,
         EFilterMode filterMode,
         unsigned int startIndex,
         unsigned int readCount);
 
-    struct ValidatedIdentity
-    {
-        char         tokenSnapshot[512];
-        std::string  xuidHex;
-        std::wstring gamertag;
-        bool         valid;
-    };
-
-    static ValidatedIdentity s_identity;
-
-    static bool ResolveIdentity();
+    int sendScores(const std::string& data);
+    std::string fetchOverall(int type, int difficulty, int offset, int limit);
+    std::string fetchFriends(int type, int difficulty, int offset, int limit);
+    std::string fetchMyscore(int type, int difficulty, int offset, int limit);
 };

@@ -1,0 +1,132 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.view {
+    width: 280px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    color: #7eb8f7;
+}
+
+.form-group {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+    .form-group label {
+        font-size: 0.85rem;
+        color: #aaa;
+    }
+
+    .form-group input {
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: #2a2a3e;
+        color: #eee;
+        font-size: 0.95rem;
+        outline: none;
+    }
+
+        .form-group input:focus {
+            border-color: #7eb8f7;
+        }
+
+.btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    background: #3a3a5e;
+    color: #eee;
+    transition: background 0.15s;
+}
+
+    button:hover {
+        background: #4a4a7e;
+    }
+
+    button.primary {
+        background: #2d6a4f;
+    }
+
+        button.primary:hover {
+            background: #3a8a60;
+        }
+
+    button.danger {
+        background: #6a2d2d;
+    }
+
+        button.danger:hover {
+            background: #8a3a3a;
+        }
+
+    button.discord-btn {
+        background: #5865f2;
+    }
+
+        button.discord-btn:hover {
+            background: #4752c4;
+        }
+
+    button.secondary {
+        background: #333;
+    }
+
+        button.secondary:hover {
+            background: #444;
+        }
+
+#status-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #111;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    color: #888;
+}

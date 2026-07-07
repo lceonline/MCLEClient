@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="login-view" class="view">
+            <h2>LCEN Launcher</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" maxlength="31" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" maxlength="63" autocomplete="off">
+            </div>
+            <div class="btn-row">
+                <button onclick="doLogin()">Login</button>
+                <button onclick="doRegister()">Register</button>
+                <button class="discord-btn" onclick="doDiscordLogin()">Discord Login</button>
+            </div>
+            <div class="btn-row">
+                <button class="secondary" onclick="window.chrome.webview.postMessage({type:'discord'})">Join Discord</button>
+            </div>
+        </div>
+
+        <div id="loggedin-view" class="view hidden">
+            <h2 id="welcome-label">Welcome!</h2>
+            <div class="btn-row">
+                <button class="primary" onclick="doLaunch()">Launch</button>
+                <button class="secondary" onclick="doOffline()">Play Offline</button>
+                <button class="danger" onclick="doLogout()">Logout</button>
+            </div>
+        </div>
+
+        <div id="status-bar">LCEN Launcher</div>
+    </div>
+
+    <script>
+    window.chrome.webview.addEventListener('message', e => {
+      const msg = e.data;
+      if (msg.type === 'loggedin') {
+        document.getElementById('welcome-label').textContent = 'Welcome, ' + msg.username + '!';
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('loggedin-view').classList.remove('hidden');
+      } else if (msg.type === 'loggedout') {
+        document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('loggedin-view').classList.add('hidden');
+      } else if (msg.type === 'error') {
+        alert(msg.message);
+      } else if (msg.type === 'status') {
+        document.getElementById('status-bar').textContent = msg.message;
+      }
+    });
+
+    function doLogin() {
+      window.chrome.webview.postMessage({
+        type: 'login',
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      });
+    }
+    function doRegister() {
+      window.chrome.webview.postMessage({
+        type: 'register',
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      });
+    }
+    function doLogout()       { window.chrome.webview.postMessage({ type: 'logout' }); }
+    function doLaunch()       { window.chrome.webview.postMessage({ type: 'launch' }); }
+    function doOffline()      { window.chrome.webview.postMessage({ type: 'offline' }); }
+    function doDiscordLogin() { window.chrome.webview.postMessage({ type: 'discordlogin' }); }
+    </script>
+</body>
+</html>

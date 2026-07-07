@@ -842,6 +842,8 @@ void CMinecraftApp::InitGameSettings()
 		memset(pProfileSettings,0,sizeof(C_4JProfile::PROFILESETTINGS));
 		SetDefaultOptions(pProfileSettings,i);
 		Win64_LoadSettings(GameSettingsA[i]);
+		app.SetMinecraftLocale(i, GameSettingsA[i]->ucLocale);
+		app.loadStringTable();
 		ApplyGameSettingsChanged(i);
 #elif defined __PS3__ || defined __ORBIS__ || defined _DURANGO  || defined __PSVITA__
 		C4JStorage::PROFILESETTINGS *pProfileSettings=StorageManager.GetDashboardProfileSettings(i);
@@ -4651,15 +4653,6 @@ int CMinecraftApp::SignoutExitWorldThreadProc( void* lpParameter )
 			case DisconnectPacket::eDisconnect_OutdatedClient:
 				exitReasonStringId = IDS_DISCONNECTED_CLIENT_OLD;
 				break;
-				case DisconnectPacket::eDisconnect_LCENAuth:
-    exitReasonStringId = IDS_CONNECTION_LOST_LCEN;
-    break;
-case DisconnectPacket::eDisconnect_LCENBanned:
-    exitReasonStringId = IDS_LCEN_BANNED;
-    break;
-case DisconnectPacket::eDisconnect_LCENServiceUnavailable:
-    exitReasonStringId = IDS_LCEN_NO_CONNECTION;
-    break;
 			default:
 				exitReasonStringId = IDS_DISCONNECTED;
 			}
@@ -4720,15 +4713,6 @@ case DisconnectPacket::eDisconnect_LCENServiceUnavailable:
 				break;
 			case DisconnectPacket::eDisconnect_OutdatedClient:
 				exitReasonStringId = IDS_DISCONNECTED_CLIENT_OLD;
-				break;
-			case DisconnectPacket::eDisconnect_LCENAuth:
-				exitReasonStringId = IDS_CONNECTION_LOST_LCEN;
-				break;
-			case DisconnectPacket::eDisconnect_LCENBanned:
-				exitReasonStringId = IDS_LCEN_BANNED;
-				break;
-			case DisconnectPacket::eDisconnect_LCENServiceUnavailable:
-				exitReasonStringId = IDS_LCEN_NO_CONNECTION;
 				break;
 			default:
 				exitReasonStringId = IDS_DISCONNECTED;

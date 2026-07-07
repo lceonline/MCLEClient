@@ -1,33 +1,31 @@
 ﻿#include "stdafx.h"
+
 #include "WindowsLeaderboardManager.h"
+
 #include <algorithm>
 #include <vector>
-#include <string>
-#include <sstream>
+#include <thread>
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <windows.h>
-#include <wininet.h>
-#pragma comment(lib, "wininet.lib")
-
-#include "../json.hpp"
+#include "../Network/json.hpp"
 using json = nlohmann::json;
 
 #include "../../Minecraft.h"
 #include "../../StatsCounter.h"
-#include "../../../Minecraft.World/StringHelpers.h"
+#ifndef MINECRAFT_SERVER_BUILD
+#include "../Windows64_Launcher.h"
+#endif
+#include "../Windows64_Minecraft.h"
+#include "../Network/WinsockNetLayer.h"
+
 #include "../../../Minecraft.World/Stats.h"
+#include "../../../Minecraft.World/StringHelpers.h"
 #include "../../../Minecraft.World/net.minecraft.world.item.h"
 #include "../../../Minecraft.World/net.minecraft.world.level.tile.h"
 
-extern char g_LCENToken[512];
+wchar_t g_Win64LeaderboardURL[256] = L"leaderboard.mclegacyedition.xyz";
 
 namespace
 {
-    static const char* kBaseUrl = "https://network-server-7kuc.onrender.com";
-
     static int ClampDifficulty(int d)
     {
         if (d < 0) return 0;
@@ -41,12 +39,10 @@ namespace
         return static_cast<unsigned long>(v);
     }
 
-    static std::string UidToHex(PlayerUID uid)
+    static unsigned int CombinePigmanKills(StatsCounter* stats, unsigned int difficulty)
     {
-        unsigned long long raw = static_cast<unsigned long long>(uid);
-        char buf[17] = {};
-        _snprintf_s(buf, sizeof(buf), _TRUNCATE, "%016llX", raw);
-        return std::string(buf);
+        if (!stats) return 0;
+        return stats->getValue(Stats::killsZombiePigman, difficulty) + stats->getValue(Stats::killsNetherZombiePigman, difficulty);
     }
 
     static PlayerUID HexToUid(const std::string& hex)
@@ -55,122 +51,6 @@ namespace
         unsigned long long raw = 0;
         sscanf_s(hex.c_str(), "%llX", &raw);
         return static_cast<PlayerUID>(raw);
-    }
-
-    static unsigned int CombinePigmanKills(StatsCounter* stats, unsigned int difficulty)
-    {
-        if (!stats) return 0;
-        return stats->getValue(Stats::killsZombiePigman, difficulty)
-             + stats->getValue(Stats::killsNetherZombiePigman, difficulty);
-    }
-
-    static std::string WstrToUtf8(const std::wstring& w)
-    {
-        if (w.empty()) return {};
-        int len = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, nullptr, 0, nullptr, nullptr);
-        if (len <= 1) return {};
-        std::string s(len - 1, '\0');
-        WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, &s[0], len, nullptr, nullptr);
-        return s;
-    }
-
-    static std::string HttpRequest(const std::string& method,
-                                   const std::string& url,
-                                   const std::string& body = "")
-    {
-        std::string result;
-
-        HINTERNET hNet = InternetOpenA("openLCE", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-        if (!hNet) return result;
-
-        std::string headers;
-        if (g_LCENToken[0] != '\0')
-        {
-            headers  = "Authorization: Bearer ";
-            headers += g_LCENToken;
-            headers += "\r\n";
-        }
-
-        DWORD flags = INTERNET_FLAG_RELOAD
-                    | INTERNET_FLAG_NO_CACHE_WRITE
-                    | INTERNET_FLAG_SECURE
-                    | INTERNET_FLAG_IGNORE_CERT_CN_INVALID
-                    | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
-
-        HINTERNET hReq = NULL;
-
-        if (method == "POST")
-        {
-            headers += "Content-Type: application/json\r\n";
-
-            URL_COMPONENTSA uc = {};
-            uc.dwStructSize       = sizeof(uc);
-            char host[256]  = {};
-            char path[1024] = {};
-            uc.lpszHostName     = host;
-            uc.dwHostNameLength = sizeof(host);
-            uc.lpszUrlPath      = path;
-            uc.dwUrlPathLength  = sizeof(path);
-
-            if (InternetCrackUrlA(url.c_str(), 0, 0, &uc))
-            {
-                HINTERNET hConn = InternetConnectA(
-                    hNet, host,
-                    uc.nPort ? uc.nPort : INTERNET_DEFAULT_HTTPS_PORT,
-                    NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
-
-                if (hConn)
-                {
-                    DWORD reqFlags = INTERNET_FLAG_RELOAD
-                                   | INTERNET_FLAG_NO_CACHE_WRITE
-                                   | INTERNET_FLAG_SECURE
-                                   | INTERNET_FLAG_IGNORE_CERT_CN_INVALID
-                                   | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
-
-                    hReq = HttpOpenRequestA(hConn, "POST", path, NULL, NULL, NULL, reqFlags, 0);
-                    if (hReq)
-                    {
-                        HttpSendRequestA(hReq,
-                            headers.c_str(), static_cast<DWORD>(headers.size()),
-                            const_cast<char*>(body.c_str()), static_cast<DWORD>(body.size()));
-                    }
-                    InternetCloseHandle(hConn);
-                }
-            }
-        }
-        else
-        {
-            hReq = InternetOpenUrlA(hNet, url.c_str(),
-                headers.empty() ? NULL : headers.c_str(),
-                headers.empty() ? 0    : static_cast<DWORD>(headers.size()),
-                flags, 0);
-        }
-
-        if (hReq)
-        {
-            char buf[4096] = {};
-            DWORD read = 0;
-            while (InternetReadFile(hReq, buf, sizeof(buf) - 1, &read) && read > 0)
-            {
-                buf[read] = '\0';
-                result.append(buf, read);
-                read = 0;
-            }
-            InternetCloseHandle(hReq);
-        }
-
-        InternetCloseHandle(hNet);
-        return result;
-    }
-
-    static std::string HttpGet(const std::string& url)
-    {
-        return HttpRequest("GET", url);
-    }
-
-    static std::string HttpPost(const std::string& url, const std::string& jsonBody)
-    {
-        return HttpRequest("POST", url, jsonBody);
     }
 
     static void ParseServerEntries(const std::string& jsonText,
@@ -187,11 +67,11 @@ namespace
                 score.m_rank            = 1;
                 score.m_idsErrorMessage = 0;
 
-                if (entry.contains("uid") && entry["uid"].is_string())
-                    score.m_uid = HexToUid(entry["uid"].get<std::string>());
+                if (entry.contains("uuid") && entry["uuid"].is_string())
+                    score.m_uid = HexToUid(entry["uuid"].get<std::string>());
 
-                if (entry.contains("gamertag") && entry["gamertag"].is_string())
-                    score.m_name = convStringToWstring(entry["gamertag"].get<std::string>());
+                if (entry.contains("username") && entry["username"].is_string())
+                    score.m_name = convStringToWstring(entry["username"].get<std::string>());
 
                 if (entry.contains("totalScore") && entry["totalScore"].is_number())
                     score.m_totalScore = ClampToULong(
@@ -220,31 +100,14 @@ namespace
             scores[i].m_rank = static_cast<unsigned long>(i + 1);
     }
 
-    static int FindPlayerIndex(const std::vector<LeaderboardManager::ReadScore>& scores,
-                               PlayerUID myUID, const std::wstring& myName)
-    {
-        for (int i = 0; i < static_cast<int>(scores.size()); ++i)
-        {
-            const auto& s = scores[i];
-            if (myUID != INVALID_XUID && s.m_uid == myUID) return i;
-            if (!myName.empty() && !s.m_name.empty() &&
-                _wcsicmp(s.m_name.c_str(), myName.c_str()) == 0) return i;
-        }
-        return -1;
-    }
-
     static bool BuildLocalScore(LeaderboardManager::ReadScore& out,
                                 StatsCounter* stats,
                                 LeaderboardManager::EStatsType type,
-                                unsigned int diff,
-                                PlayerUID uid,
-                                const std::wstring& name)
+                                unsigned int diff)
     {
         ZeroMemory(&out, sizeof(out));
-        out.m_uid             = uid;
         out.m_rank            = 1;
         out.m_idsErrorMessage = 0;
-        out.m_name            = name;
 
         unsigned long long total = 0;
         auto col = [&](unsigned int idx, unsigned int val)
@@ -299,206 +162,45 @@ namespace
         out.m_totalScore = ClampToULong(total);
         return true;
     }
-
-}
-
-WindowsLeaderboardManager::ValidatedIdentity WindowsLeaderboardManager::s_identity = {};
-
-bool WindowsLeaderboardManager::ResolveIdentity()
-{
-    if (g_LCENToken[0] == '\0')
-    {
-        s_identity = {};
-        return false;
-    }
-
-    if (s_identity.valid &&
-        strncmp(g_LCENToken, s_identity.tokenSnapshot, sizeof(s_identity.tokenSnapshot)) == 0)
-    {
-        return true;
-    }
-
-    s_identity = {};
-
-    std::string resp = HttpGet(std::string(kBaseUrl) + "/auth/validate");
-    if (resp.empty()) return false;
-
-    try
-    {
-        json j = json::parse(resp);
-
-        if (j.contains("banned") && j["banned"].get<bool>()) return false;
-        if (j.contains("error"))                             return false;
-        if (!j.contains("xuid") || !j.contains("gamertag")) return false;
-
-        strncpy_s(s_identity.tokenSnapshot, g_LCENToken, _TRUNCATE);
-        s_identity.xuidHex  = j["xuid"].get<std::string>();
-        s_identity.gamertag = convStringToWstring(j["gamertag"].get<std::string>());
-        s_identity.valid    = true;
-        return true;
-    }
-    catch (...) { return false; }
 }
 
 LeaderboardManager* LeaderboardManager::m_instance = new WindowsLeaderboardManager();
 
 bool WindowsLeaderboardManager::WriteStats(unsigned int viewCount, ViewIn views)
 {
-    if (views == nullptr || viewCount == 0)
-        return true;
+    return false; // Since WriteStats is useless we just do this, exact same thing is done in DurangoLeaderboardManager
+}
 
-    if (!ResolveIdentity())
+// ByteBukkit: Tick function
+void WindowsLeaderboardManager::Tick()
+{
+    if (++m_tickCount < 1000)
+        return;
+
+    m_tickCount = 0;
+
+    std::thread([this]()
     {
-        delete[] views;
-        return true;
-    }
+        static const EStatsType types[] = {
+            eStatsType_Travelling,
+            eStatsType_Mining,
+            eStatsType_Farming,
+            eStatsType_Kills,
+        };
 
-    std::string gamertag = WstrToUtf8(s_identity.gamertag);
-    if (gamertag.empty()) gamertag = "Player";
-
-    for (unsigned int i = 0; i < viewCount; ++i)
-    {
-        const RegisterScore& src = views[i];
-
-        int diff = ClampDifficulty(src.m_difficulty);
-        if (src.m_commentData.m_statsType == eStatsType_Kills && diff == 0)
-            diff = 1;
-
-        int type = static_cast<int>(src.m_commentData.m_statsType);
-        if (type < 0 || type >= static_cast<int>(eStatsType_MAX)) continue;
-
-        json statsArr = json::array();
-        unsigned long long total = 0;
-
-        switch (src.m_commentData.m_statsType)
+        for (EStatsType t : types)
         {
-        case eStatsType_Travelling:
-            statsArr = { src.m_commentData.m_travelling.m_walked,
-                         src.m_commentData.m_travelling.m_fallen,
-                         src.m_commentData.m_travelling.m_minecart,
-                         src.m_commentData.m_travelling.m_boat };
-            break;
-        case eStatsType_Mining:
-            statsArr = { src.m_commentData.m_mining.m_dirt,
-                         src.m_commentData.m_mining.m_cobblestone,
-                         src.m_commentData.m_mining.m_sand,
-                         src.m_commentData.m_mining.m_stone,
-                         src.m_commentData.m_mining.m_gravel,
-                         src.m_commentData.m_mining.m_clay,
-                         src.m_commentData.m_mining.m_obsidian };
-            break;
-        case eStatsType_Farming:
-            statsArr = { src.m_commentData.m_farming.m_eggs,
-                         src.m_commentData.m_farming.m_wheat,
-                         src.m_commentData.m_farming.m_mushroom,
-                         src.m_commentData.m_farming.m_sugarcane,
-                         src.m_commentData.m_farming.m_milk,
-                         src.m_commentData.m_farming.m_pumpkin };
-            break;
-        case eStatsType_Kills:
-            statsArr = { src.m_commentData.m_kills.m_zombie,
-                         src.m_commentData.m_kills.m_skeleton,
-                         src.m_commentData.m_kills.m_creeper,
-                         src.m_commentData.m_kills.m_spider,
-                         src.m_commentData.m_kills.m_spiderJockey,
-                         src.m_commentData.m_kills.m_zombiePigman,
-                         src.m_commentData.m_kills.m_slime };
-            break;
-        default:
-            continue;
+            for (int diff = 0; diff <= 3; ++diff)
+                SendStats(t, diff);
         }
-
-        for (auto& v : statsArr) total += v.get<unsigned int>();
-
-        unsigned long long serverTotal = total;
-        if (src.m_score > 0 && static_cast<unsigned long long>(src.m_score) > serverTotal)
-            serverTotal = static_cast<unsigned long long>(src.m_score);
-
-        json body;
-        body["uid"]        = s_identity.xuidHex;
-        body["gamertag"]   = gamertag;
-        body["type"]       = type;
-        body["difficulty"] = diff;
-        body["stats"]      = statsArr;
-        body["totalScore"] = serverTotal;
-
-        HttpPost(std::string(kBaseUrl) + "/leaderboard/submit", body.dump());
-    }
-
-    delete[] views;
-    return true;
+    }).detach();
 }
 
-bool WindowsLeaderboardManager::ReadStats_Friends(LeaderboardReadListener* callback,
-    int difficulty, EStatsType type, PlayerUID myUID,
-    unsigned int startIndex, unsigned int readCount)
+
+bool WindowsLeaderboardManager::SendStats(EStatsType type, int diff)
 {
-    if (!LeaderboardManager::ReadStats_Friends(callback, difficulty, type, myUID, startIndex, readCount))
-        return false;
-    return ReadNetworkStats(callback, difficulty, type, myUID, eFM_Friends, startIndex, readCount);
-}
-
-bool WindowsLeaderboardManager::ReadStats_MyScore(LeaderboardReadListener* callback,
-    int difficulty, EStatsType type, PlayerUID myUID, unsigned int readCount)
-{
-    if (!LeaderboardManager::ReadStats_MyScore(callback, difficulty, type, myUID, readCount))
-        return false;
-    return ReadNetworkStats(callback, difficulty, type, myUID, eFM_MyScore, 1, readCount);
-}
-
-bool WindowsLeaderboardManager::ReadStats_TopRank(LeaderboardReadListener* callback,
-    int difficulty, EStatsType type,
-    unsigned int startIndex, unsigned int readCount)
-{
-    if (!LeaderboardManager::ReadStats_TopRank(callback, difficulty, type, startIndex, readCount))
-        return false;
-
-    PlayerUID uid = INVALID_XUID;
-    if (s_identity.valid)
-        uid = HexToUid(s_identity.xuidHex);
-
-    return ReadNetworkStats(callback, difficulty, type, uid, eFM_TopRank, startIndex, readCount);
-}
-
-bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callback,
-    int difficulty, EStatsType type, PlayerUID myUID,
-    EFilterMode filterMode,
-    unsigned int startIndex, unsigned int readCount)
-{
-    if (!callback) return false;
-
-    bool authenticated = ResolveIdentity();
-
-    PlayerUID    resolvedUID  = INVALID_XUID;
-    std::wstring resolvedName;
-    std::string  resolvedHex;
-
-    if (authenticated)
-    {
-        resolvedUID  = HexToUid(s_identity.xuidHex);
-        resolvedName = s_identity.gamertag;
-        resolvedHex  = s_identity.xuidHex;
-    }
-    else
-    {
-        // Unauthenticated: accept passed-in UID for display only; no POSTs.
-        resolvedUID = myUID;
-        const int pad = ProfileManager.GetPrimaryPad();
-        if (pad >= 0 && pad < XUSER_MAX_COUNT)
-        {
-            char* gt = ProfileManager.GetGamertag(pad);
-            if (gt && gt[0]) resolvedName = convStringToWstring(gt);
-            if (resolvedUID == INVALID_XUID)
-                ProfileManager.GetXUID(pad, &resolvedUID, true);
-        }
-        if (resolvedUID != INVALID_XUID) resolvedHex = UidToHex(resolvedUID);
-    }
-
-    unsigned int diff = static_cast<unsigned int>(ClampDifficulty(difficulty));
-    if (type == eStatsType_Kills && diff == 0) diff = 1;
-
-    // Submit live score only when authenticated.
-    if (authenticated && resolvedUID != INVALID_XUID)
+    #ifndef MINECRAFT_SERVER_BUILD
+    if (!Windows64Launcher::IsInOfflineMode() || Windows64Minecraft::IsOfflineMode())
     {
         Minecraft* mc = Minecraft::GetInstance();
         const int pad = ProfileManager.GetPrimaryPad();
@@ -508,129 +210,89 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
             if (stats)
             {
                 LeaderboardManager::ReadScore localScore = {};
-                if (BuildLocalScore(localScore, stats, type, diff, resolvedUID, resolvedName))
+                if (BuildLocalScore(localScore, stats, type, diff))
                 {
                     json statsArr = json::array();
                     for (unsigned int i = 0; i < localScore.m_statsSize; ++i)
                         statsArr.push_back(localScore.m_statsData[i]);
 
-                    std::string gt = WstrToUtf8(resolvedName);
-                    if (gt.empty()) gt = "Player";
-
                     json submitBody;
-                    submitBody["uid"]        = s_identity.xuidHex;
-                    submitBody["gamertag"]   = gt;
                     submitBody["type"]       = static_cast<int>(type);
                     submitBody["difficulty"] = static_cast<int>(diff);
                     submitBody["stats"]      = statsArr;
                     submitBody["totalScore"] = static_cast<unsigned long long>(localScore.m_totalScore);
 
-                    HttpPost(std::string(kBaseUrl) + "/leaderboard/submit", submitBody.dump());
+                    sendScores(submitBody.dump());
                 }
             }
         }
     }
+    #endif
+    return false;
+}
 
+bool WindowsLeaderboardManager::ReadStats_Friends(LeaderboardReadListener* callback,
+    int difficulty, EStatsType type, PlayerUID myUID,
+    unsigned int startIndex, unsigned int readCount)
+{
+    if (!LeaderboardManager::ReadStats_Friends(callback, difficulty, type, startIndex, myUID, readCount))
+        return false;
+    return ReadNetworkStats(callback, difficulty, type, eFM_Friends, startIndex, readCount);
+}
+
+bool WindowsLeaderboardManager::ReadStats_MyScore(LeaderboardReadListener* callback,
+    int difficulty, EStatsType type, PlayerUID myUID, unsigned int readCount)
+{
+    if (!LeaderboardManager::ReadStats_MyScore(callback, difficulty, type, myUID, readCount))
+        return false;
+    return ReadNetworkStats(callback, difficulty, type, eFM_MyScore, 1, readCount);
+}
+
+bool WindowsLeaderboardManager::ReadStats_TopRank(LeaderboardReadListener* callback,
+    int difficulty, EStatsType type,
+    unsigned int startIndex, unsigned int readCount)
+{
+    if (!LeaderboardManager::ReadStats_TopRank(callback, difficulty, type, startIndex, readCount))
+        return false;
+    return ReadNetworkStats(callback, difficulty, type, eFM_TopRank, startIndex, readCount);
+}
+
+bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callback,
+    int difficulty, EStatsType type,
+    EFilterMode filterMode,
+    unsigned int startIndex, unsigned int readCount)
+{
+    if (!callback) return false;
+
+    unsigned int diff = static_cast<unsigned int>(ClampDifficulty(difficulty));
+    if (type == eStatsType_Kills && diff == 0) diff = 1;
+
+    // Submit live score only when authenticated.
+    #ifndef MINECRAFT_SERVER_BUILD
+    if (!Windows64Launcher::IsInOfflineMode() || Windows64Minecraft::IsOfflineMode())
+    {
+        WindowsLeaderboardManager::SendStats(type, diff);
+    }
+    #endif
     std::vector<LeaderboardManager::ReadScore> allRows;
 
     if (filterMode == eFM_Friends)
     {
-        std::string xuidList = resolvedHex;
-
-        if (authenticated && g_LCENToken[0] != '\0')
-        {
-            std::string friendsJson = HttpGet(std::string(kBaseUrl) + "/friends");
-            if (!friendsJson.empty())
-            {
-                try
-                {
-                    json arr = json::parse(friendsJson);
-                    if (arr.is_array())
-                        for (auto& f : arr)
-                            if (f.contains("xuid") && f["xuid"].is_string())
-                            {
-                                if (!xuidList.empty()) xuidList += ',';
-                                xuidList += f["xuid"].get<std::string>();
-                            }
-                }
-                catch (...) {}
-            }
-        }
-
-        if (!xuidList.empty())
-        {
-            std::string url = std::string(kBaseUrl)
-                + "/leaderboard/friends?type=" + std::to_string(static_cast<int>(type))
-                + "&difficulty=" + std::to_string(diff)
-                + "&xuids=" + xuidList;
-            ParseServerEntries(HttpGet(url), allRows);
-        }
+        unsigned int limit  = (readCount > 0) ? (std::min)(readCount, 100u) : 64u;
+        unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
+        ParseServerEntries(fetchFriends(type, diff, offset, limit), allRows);
+    }
+    else if (filterMode == eFM_MyScore)
+    {
+        unsigned int limit  = (readCount > 0) ? (std::min)(readCount, 100u) : 64u;
+        unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
+        ParseServerEntries(fetchMyscore(type, diff, offset, limit), allRows);
     }
     else
     {
         unsigned int limit  = (readCount > 0) ? (std::min)(readCount, 100u) : 64u;
         unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
-
-        if (filterMode == eFM_MyScore) { limit = 100; offset = 0; }
-
-        std::string url = std::string(kBaseUrl)
-            + "/leaderboard?type=" + std::to_string(static_cast<int>(type))
-            + "&difficulty=" + std::to_string(diff)
-            + "&limit=" + std::to_string(limit)
-            + "&offset=" + std::to_string(offset);
-
-        ParseServerEntries(HttpGet(url), allRows);
-    }
-
-    if (FindPlayerIndex(allRows, resolvedUID, resolvedName) < 0 &&
-        resolvedUID != INVALID_XUID && !resolvedHex.empty())
-    {
-        std::string rankUrl = std::string(kBaseUrl)
-            + "/leaderboard/rank?uid=" + resolvedHex
-            + "&type=" + std::to_string(static_cast<int>(type))
-            + "&difficulty=" + std::to_string(diff);
-
-        std::string rankResp = HttpGet(rankUrl);
-        if (!rankResp.empty())
-        {
-            try
-            {
-                json rj = json::parse(rankResp);
-                if (rj.contains("totalScore") && rj["totalScore"].is_number())
-                {
-                    LeaderboardManager::ReadScore ps = {};
-                    ps.m_uid        = resolvedUID;
-                    ps.m_name       = resolvedName;
-                    ps.m_totalScore = ClampToULong(
-                        static_cast<unsigned long long>(rj["totalScore"].get<double>()));
-                    ps.m_rank = static_cast<unsigned long>(
-                        rj.contains("rank") ? rj["rank"].get<int>() : 0);
-
-                    Minecraft* mc2 = Minecraft::GetInstance();
-                    const int pad2 = ProfileManager.GetPrimaryPad();
-                    if (mc2 && pad2 >= 0 && pad2 < XUSER_MAX_COUNT && mc2->stats[pad2])
-                        BuildLocalScore(ps, mc2->stats[pad2], type, diff, resolvedUID, resolvedName);
-
-                    allRows.push_back(ps);
-                }
-            }
-            catch (...) {}
-        }
-        else if (!authenticated)
-        {
-            Minecraft* mc2 = Minecraft::GetInstance();
-            const int pad2 = ProfileManager.GetPrimaryPad();
-            if (mc2 && pad2 >= 0 && pad2 < XUSER_MAX_COUNT)
-            {
-                StatsCounter* stats = mc2->stats[pad2];
-                if (stats)
-                {
-                    LeaderboardManager::ReadScore ps = {};
-                    if (BuildLocalScore(ps, stats, type, diff, resolvedUID, resolvedName))
-                        allRows.push_back(ps);
-                }
-            }
-        }
+        ParseServerEntries(fetchOverall(type, diff, offset, limit), allRows);
     }
 
     std::sort(allRows.begin(), allRows.end(),
@@ -641,7 +303,7 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
             const wchar_t* nb = b.m_name.empty() ? L"" : b.m_name.c_str();
             int cmp = _wcsicmp(na, nb);
             if (cmp != 0) return cmp < 0;
-            return a.m_uid < b.m_uid;
+            return _wcsicmp(na, nb) < 0;
         });
 
     AssignRanks(allRows);
@@ -653,16 +315,10 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
         return true;
     }
 
-    int    playerIdx = FindPlayerIndex(allRows, resolvedUID, resolvedName);
     size_t pageStart = 0;
     size_t pageCount = allRows.size();
 
-    if (filterMode == eFM_MyScore)
-    {
-        pageStart = (playerIdx >= 0) ? static_cast<size_t>(playerIdx) : 0;
-        pageCount = 1;
-    }
-    else if (filterMode == eFM_TopRank)
+    if (filterMode == eFM_TopRank)
     {
         if (startIndex > 1)
             pageStart = (std::min<size_t>)(static_cast<size_t>(startIndex - 1), allRows.size());
@@ -701,4 +357,73 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
 
     callback->OnStatsReadComplete(eStatsReturn_Success, totalResults, view);
     return true;
+}
+
+int WindowsLeaderboardManager::sendScores(const std::string& _data) {
+    std::vector<std::wstring> headers;
+    std::string authToken;
+    #ifndef MINECRAFT_SERVER_BUILD
+    if (Windows64Minecraft::IsExternalLauncher()) {
+        authToken = Windows64Minecraft::GetAuthenticationTicket();
+    } else {
+        authToken = Windows64Launcher::GetAuthenticationToken();
+    }
+    #endif
+    headers.push_back(L"Content-Type: application/json");
+    headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
+
+    HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64LeaderboardURL, L"/sendscores", L"POST", _data, headers);
+    return response.status;
+}
+
+std::string WindowsLeaderboardManager::fetchOverall(int type, int difficulty, int offset, int limit) {
+    std::vector<std::wstring> headers;
+    std::wstring path = L"/overall?type=" + std::to_wstring(type)
+                      + L"&difficulty=" + std::to_wstring(difficulty)
+                      + L"&offset=" + std::to_wstring(offset)
+                      + L"&limit=" + std::to_wstring(limit);
+    HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64LeaderboardURL, path, L"GET", "", headers);
+    return response.body;
+}
+
+std::string WindowsLeaderboardManager::fetchFriends(int type, int difficulty, int offset, int limit) {
+    std::vector<std::wstring> headers;
+
+    std::string authToken;
+    #ifndef MINECRAFT_SERVER_BUILD
+    if (Windows64Minecraft::IsExternalLauncher()) {
+        authToken = Windows64Minecraft::GetAuthenticationTicket();
+    } else {
+        authToken = Windows64Launcher::GetAuthenticationToken();
+    }
+    #endif
+
+    headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
+    std::wstring path = L"/friends?type=" + std::to_wstring(type)
+                      + L"&difficulty=" + std::to_wstring(difficulty)
+                      + L"&offset=" + std::to_wstring(offset)
+                      + L"&limit=" + std::to_wstring(limit);
+    HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64LeaderboardURL, path, L"GET", "", headers);
+    return response.body;
+}
+
+std::string WindowsLeaderboardManager::fetchMyscore(int type, int difficulty, int offset, int limit) {
+    std::vector<std::wstring> headers;
+
+    std::string authToken;
+    #ifndef MINECRAFT_SERVER_BUILD
+    if (Windows64Minecraft::IsExternalLauncher()) {
+        authToken = Windows64Minecraft::GetAuthenticationTicket();
+    } else {
+        authToken = Windows64Launcher::GetAuthenticationToken();
+    }
+    #endif
+
+    headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
+    std::wstring path = L"/myscore?type=" + std::to_wstring(type)
+                      + L"&difficulty=" + std::to_wstring(difficulty)
+                      + L"&offset=" + std::to_wstring(offset)
+                      + L"&limit=" + std::to_wstring(limit);
+    HttpResponse response = WinsockNetLayer::DoWinHttpRequest(g_Win64LeaderboardURL, path, L"GET", "", headers);
+    return response.body;
 }

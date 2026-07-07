@@ -25,7 +25,9 @@ set(MINECRAFT_CLIENT_SOURCES
   "${CMAKE_SOURCE_DIR}/Minecraft.Client/Common/StringUtils.cpp"
 )
 
-add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES}  "Common/UI/UIScene_AchievementsMenu.cpp" "Common/UI/UIScene_AchievementsMenu.h" "Common/UI/UIControl_AchievementsList.cpp" "Common/UI/UIControl_AchievementsList.h" "Windows64/NetworkHelpers.h" "Windows64/NetworkHelpers.cpp")
+
+add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES}  "Common/UI/UIScene_AchievementsMenu.cpp" "Common/UI/UIScene_AchievementsMenu.h" "Common/UI/UIControl_AchievementsList.cpp" "Common/UI/UIControl_AchievementsList.h" "Windows64/NetworkHelpers.h" "Windows64/NetworkHelpers.cpp" "Windows64/Windows64_Launcher.cpp" "Windows64/Windows64_Launcher.h" 
+)
 
 # Only define executable on windows
 if(PLATFORM_NAME STREQUAL "Windows64")
@@ -37,6 +39,7 @@ target_include_directories(Minecraft.Client PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/${PLATFORM_NAME}/Iggy/include"
   "${CMAKE_SOURCE_DIR}/include/"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/webview2/build/native/include"
 )
 target_compile_definitions(Minecraft.Client PRIVATE
   ${MINECRAFT_SHARED_DEFINES}
@@ -63,6 +66,10 @@ target_link_libraries(Minecraft.Client PRIVATE
   4JLibs.${PLATFORM_NAME}.Profile
   4JLibs.${PLATFORM_NAME}.Storage
   4JLibs.${PLATFORM_NAME}.Render
+  $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/discordsdk/discord_game_sdk.dll.lib>
+  $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/webview2/build/native/x64/WebView2LoaderStatic.lib>
+  $<$<STREQUAL:${PLATFORM_NAME},Windows64>:shlwapi>
+  $<$<STREQUAL:${PLATFORM_NAME},Windows64>:ole32>
 )
 
 # Iggy libs

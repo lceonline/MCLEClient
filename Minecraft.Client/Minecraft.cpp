@@ -83,6 +83,8 @@
 #include "Orbis/Network/PsPlusUpsellWrapper_Orbis.h"
 #endif
 
+#include "Common/Leaderboards/LeaderboardManager.h"
+
 // #define DISABLE_SPU_CODE
 // 4J Turning this on will change the graph at the bottom of the debug overlay to show the number of packets of each type added per fram
 //#define DEBUG_RENDER_SHOWS_PACKETS 1
@@ -2306,6 +2308,8 @@ void Minecraft::tick(bool bFirst, bool bUpdateTextures)
 
 	//4J-PB - only tick this player's stats
 	stats[iPad]->tick(iPad);
+	if (iPad == ProfileManager.GetPrimaryPad())
+    LeaderboardManager::Instance()->Tick();
 
 	// Tick the opacity timer (to display the interface at default opacity for a certain time if the user has been navigating it)
 	app.TickOpacityTimer(iPad);

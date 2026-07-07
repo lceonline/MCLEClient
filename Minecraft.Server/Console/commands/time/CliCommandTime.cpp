@@ -12,44 +12,11 @@ namespace ServerRuntime
 {
 	namespace
 	{
-		constexpr const char *kTimeUsage = "time <day|night|set day|set night>";
+		constexpr const char *kTimeUsage = "time <set|add> <day|night|value>";
 
-		static bool TryResolveNightFlag(const std::vector<std::string> &tokens, bool *outNight)
-		{
-			if (outNight == nullptr)
-			{
-				return false;
-			}
-
-			std::string value;
-			if (tokens.size() == 2)
-			{
-				value = StringUtils::ToLowerAscii(tokens[1]);
-			}
-			else if (tokens.size() == 3 && StringUtils::ToLowerAscii(tokens[1]) == "set")
-			{
-				value = StringUtils::ToLowerAscii(tokens[2]);
-			}
-			else
-			{
-				return false;
-			}
-
-			if (value == "day")
-			{
-				*outNight = false;
-				return true;
-			}
-			if (value == "night")
-			{
-				*outNight = true;
-				return true;
-			}
-
-			return false;
-		}
-
-		static void SuggestLiteral(const char *candidate, const ServerCliCompletionContext &context, std::vector<std::string> *out)
+		static void SuggestLiteral(const char *candidate,
+			const ServerCliCompletionContext &context,
+			std::vector<std::string> *out)
 		{
 			if (candidate == nullptr || out == nullptr)
 			{
@@ -76,19 +43,33 @@ namespace ServerRuntime
 
 	const char *CliCommandTime::Description() const
 	{
-		return "Set day or night via Minecraft.World command dispatcher.";
+		return "Set or modify world time.";
 	}
 
 	bool CliCommandTime::Execute(const ServerCliParsedLine &line, ServerCliEngine *engine)
 	{
-		bool night = false;
-		if (!TryResolveNightFlag(line.tokens, &night))
+		if (line.tokens.size() < 2)
 		{
 			engine->LogWarn(std::string("Usage: ") + kTimeUsage);
 			return false;
 		}
 
-		std::shared_ptr<GameCommandPacket> packet = TimeCommand::preparePacket(night);
+		std::string modeStr = StringUtils::ToLowerAscii(line.tokens[0]);
+
+		if (modeStr != "set" && modeStr != "add")
+		{
+			engine->LogWarn(std::string("Usage: ") + kTimeUsage);
+			return false;
+		}
+
+		std::string valueStr = StringUtils::ToLowerAscii(line.tokens[1]);
+
+		std::wstring mode(modeStr.begin(), modeStr.end());
+		std::wstring value(valueStr.begin(), valueStr.end());
+
+		std::shared_ptr<GameCommandPacket> packet =
+			TimeCommand::preparePacket(mode, value);
+
 		if (packet == nullptr)
 		{
 			engine->LogError("Failed to build time command packet.");
@@ -98,18 +79,19 @@ namespace ServerRuntime
 		return engine->DispatchWorldCommand(packet->command, packet->data);
 	}
 
-	void CliCommandTime::Complete(const ServerCliCompletionContext &context, const ServerCliEngine *engine, std::vector<std::string> *out) const
+	void CliCommandTime::Complete(
+		const ServerCliCompletionContext &context,
+		const ServerCliEngine *engine,
+		std::vector<std::string> *out) const
 	{
 		(void)engine;
+
 		if (context.currentTokenIndex == 1)
 		{
-			SuggestLiteral("day", context, out);
-			SuggestLiteral("night", context, out);
 			SuggestLiteral("set", context, out);
+			SuggestLiteral("add", context, out);
 		}
-		else if (context.currentTokenIndex == 2 &&
-			context.parsed.tokens.size() >= 2 &&
-			StringUtils::ToLowerAscii(context.parsed.tokens[1]) == "set")
+		else if (context.currentTokenIndex == 2)
 		{
 			SuggestLiteral("day", context, out);
 			SuggestLiteral("night", context, out);

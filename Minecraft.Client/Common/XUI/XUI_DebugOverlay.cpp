@@ -215,12 +215,16 @@ HRESULT CScene_DebugOverlay::OnNotifyPressEx(HXUIOBJ hObjPressed, XUINotifyPress
 	else if( hObjPressed == m_setDay )
 	{
 		ClientConnection *conn = Minecraft::GetInstance()->getConnection(ProfileManager.GetPrimaryPad());
-		conn->send( TimeCommand::preparePacket(false) );
+		conn->send(
+	TimeCommand::preparePacket(L"set", L"day")
+);
 	}
 	else if( hObjPressed == m_setNight )
 	{
 		ClientConnection *conn = Minecraft::GetInstance()->getConnection(ProfileManager.GetPrimaryPad());
-		conn->send( TimeCommand::preparePacket(true) );
+		conn->send(
+	TimeCommand::preparePacket(L"set", L"night")
+);
 	}
 
     rfHandled = TRUE;

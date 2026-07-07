@@ -43,10 +43,9 @@ jobs:
       shell: pwsh
       run: |
         $source = "./build/windows64/Minecraft.Client/Release"
-        $zip = "LCE-Revelations-Client-Win64.zip"
-        $topLevel = "LCE-Revelations-Client-Win64"
+        $zip = "LCE-Online-Client-Win64.zip"
+        $topLevel = "LCE-Online-Client-Win64"
 
-        # Collect files, excluding unwanted extensions
         $files = Get-ChildItem -Path $source -Recurse -File |
           Where-Object { $_.Extension -notin '.pch', '.pdb', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
 
@@ -58,12 +57,10 @@ jobs:
         try {
           $archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
           try {
-            # Add directories
             Get-ChildItem -Path $basePath -Recurse -Directory | ForEach-Object {
               $rel = $_.FullName.Substring($basePath.Length).TrimStart('\', '/')
               $archive.CreateEntry("$topLevel/$($rel -replace '\\','/')/") | Out-Null
             }
-            # Add files
             foreach ($file in $files) {
               $rel = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
               $entryName = "$topLevel/$($rel -replace '\\','/')"
@@ -81,7 +78,7 @@ jobs:
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path staging
-        Copy-Item LCE-Revelations-Client-Win64.zip staging/
+        Copy-Item LCE-Online-Client-Win64.zip staging/
         Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.exe staging/
         Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.pdb staging/
 
@@ -91,291 +88,9 @@ jobs:
         name: client-build
         path: staging/*
 
-  build-server:
-    name: Build Server
-    runs-on: [self-hosted, windows]
-
-    steps:
-    - name: Checkout
-      uses: https://github.com/actions/checkout@v6
-      with:
-        submodules: recursive
-
-    - name: Setup MSVC
-      uses: https://github.com/ilammy/msvc-dev-cmd@v1
-
-    - name: Setup CMake
-      uses: https://github.com/lukka/get-cmake@latest
-
-    - name: Setup .NET
-      uses: https://github.com/actions/setup-dotnet@v4
-      with:
-        global-json-file: global.json
-
-    - name: Run CMake
-      uses: https://github.com/lukka/run-cmake@v10
-      env:
-        VCPKG_ROOT: ""
-      with:
-        configurePreset: windows64
-        buildPreset: windows64-release
-        buildPresetAdditionalArgs: "['--target', 'Minecraft.Server', '--target', 'Minecraft.Server.FourKit']"
-
-    - name: Zip Build (vanilla)
-      shell: pwsh
-      run: |
-        $source = "./build/windows64/Minecraft.Server/Release"
-        $zip = "LCE-Revelations-Server-Win64.zip"
-        $topLevel = "LCE-Revelations-Server-Win64"
-
-        $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
-
-        Add-Type -AssemblyName System.IO.Compression
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-        $basePath = (Resolve-Path $source).Path
-        $fs = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
-        try {
-          $archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
-          try {
-            Get-ChildItem -Path $basePath -Recurse -Directory | ForEach-Object {
-              $rel = $_.FullName.Substring($basePath.Length).TrimStart('\', '/')
-              $archive.CreateEntry("$topLevel/$($rel -replace '\\','/')/") | Out-Null
-            }
-            foreach ($file in $files) {
-              $rel = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
-              $entryName = "$topLevel/$($rel -replace '\\','/')"
-              [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $archive, $file.FullName, $entryName,
-                [System.IO.Compression.CompressionLevel]::Optimal
-              ) | Out-Null
-            }
-          } finally { $archive.Dispose() }
-        } finally { $fs.Dispose() }
-
-        Write-Host "Created $zip"
-
-    - name: Zip Build (FourKit)
-      shell: pwsh
-      run: |
-        $source = "./build/windows64/Minecraft.Server.FourKit/Release"
-        $zip = "LCE-Revelations-Server-Win64-FourKit.zip"
-        $topLevel = "LCE-Revelations-Server-Win64-FourKit"
-
-        $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
-
-        Add-Type -AssemblyName System.IO.Compression
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-        $basePath = (Resolve-Path $source).Path
-        $fs = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
-        try {
-          $archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
-          try {
-            Get-ChildItem -Path $basePath -Recurse -Directory | ForEach-Object {
-              $rel = $_.FullName.Substring($basePath.Length).TrimStart('\', '/')
-              $archive.CreateEntry("$topLevel/$($rel -replace '\\','/')/") | Out-Null
-            }
-            foreach ($file in $files) {
-              $rel = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
-              $entryName = "$topLevel/$($rel -replace '\\','/')"
-              [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $archive, $file.FullName, $entryName,
-                [System.IO.Compression.CompressionLevel]::Optimal
-              ) | Out-Null
-            }
-          } finally { $archive.Dispose() }
-        } finally { $fs.Dispose() }
-
-        Write-Host "Created $zip"
-
-    - name: Stage artifacts
-      shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Force -Path staging
-        Copy-Item LCE-Revelations-Server-Win64.zip staging/
-        Copy-Item LCE-Revelations-Server-Win64-FourKit.zip staging/
-
-    - name: Upload artifacts
-      uses: https://github.com/actions/upload-artifact@v3
-      with:
-        name: server-build
-        path: staging/*
-
-  docker:
-    name: Build Docker (${{ matrix.variant }})
-    needs: build-server
-    runs-on: [self-hosted, linux]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - variant: vanilla
-            zip: LCE-Revelations-Server-Win64.zip
-            subdir: LCE-Revelations-Server-Win64
-            image: lce-revelations-dedicated-server
-          - variant: fourkit
-            zip: LCE-Revelations-Server-Win64-FourKit.zip
-            subdir: LCE-Revelations-Server-Win64-FourKit
-            image: lce-revelations-dedicated-server-fourkit
-
-    steps:
-    - name: Checkout
-      uses: https://github.com/actions/checkout@v6
-
-    - name: Download server artifacts
-      uses: https://github.com/actions/download-artifact@v3
-      with:
-        name: server-build
-        path: .artifacts/
-
-    - name: Prepare runtime directory
-      shell: bash
-      run: |
-        set -euo pipefail
-        rm -rf runtime .extracted
-        unzip -q ".artifacts/${{ matrix.zip }}" -d .extracted
-        mv ".extracted/${{ matrix.subdir }}" runtime
-        # Strip debug symbols to keep image small (zip includes .pdb).
-        find runtime -name '*.pdb' -delete
-
-    - name: Compute image name
-      id: image
-      shell: bash
-      run: |
-        owner="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
-        echo "image=git.revela.dev/$owner/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
-
-    - name: Extract Docker metadata
-      id: meta
-      uses: https://github.com/docker/metadata-action@v5
-      with:
-        images: ${{ steps.image.outputs.image }}
-        tags: |
-          type=raw,value=nightly
-
-    - name: Login to Forgejo registry
-      uses: https://github.com/docker/login-action@v3
-      with:
-        registry: git.revela.dev
-        username: ${{ github.actor }}
-        password: ${{ secrets.REGISTRY_TOKEN }}
-
-    - name: Build and push image
-      uses: https://github.com/docker/build-push-action@v6
-      with:
-        context: .
-        file: docker/dedicated-server/Dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        build-args: |
-          MC_RUNTIME_DIR=runtime
-
-  release-server:
-    name: Release Server
-    needs: build-server
-    runs-on: [self-hosted, linux]
-
-    steps:
-    - name: Checkout
-      uses: https://github.com/actions/checkout@v6
-
-    - name: Download server artifacts
-      uses: https://github.com/actions/download-artifact@v3
-      with:
-        name: server-build
-        path: artifacts
-
-    - name: Install jq
-      run: apt-get update && apt-get install -y --no-install-recommends jq
-
-    - name: Get short SHA
-      id: sha
-      run: echo "short=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
-
-    - name: Delete old release and tag
-      env:
-        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -euo pipefail
-        TAG="Nightly-Dedicated-Server"
-        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
-        AUTH="Authorization: token $FORGEJO_TOKEN"
-        EXISTING_ID=$(curl -sf -H "$AUTH" "$API/releases/tags/$TAG" 2>/dev/null | jq -r '.id // empty' || true)
-        if [ -n "$EXISTING_ID" ]; then
-          curl -sf -X DELETE -H "$AUTH" "$API/releases/$EXISTING_ID"
-        fi
-        curl -s -X DELETE -H "$AUTH" "$API/tags/$TAG" > /dev/null || true
-
-    - name: Import GPG key
-      uses: https://github.com/crazy-max/ghaction-import-gpg@v6
-      with:
-        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-        passphrase: ${{ secrets.GPG_PASSPHRASE }}
-        git_user_signingkey: true
-        git_tag_gpgsign: true
-
-    - name: Create signed tag
-      run: |
-        git tag -s -f Nightly-Dedicated-Server -m "Nightly server release ${{ steps.sha.outputs.short }}"
-        git push origin Nightly-Dedicated-Server --force
-
-    - name: Create release on Forgejo
-      env:
-        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -euo pipefail
-        TAG="Nightly-Dedicated-Server"
-        TITLE="Server: ${{ steps.sha.outputs.short }}"
-        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
-        AUTH="Authorization: token $FORGEJO_TOKEN"
-
-        NOTES=$(cat <<'EOF'
-        Dedicated Server runtime for Windows64.
-
-        Two flavours are attached:
-        - `LCE-Revelations-Server-Win64.zip`: vanilla server, no plugin support, smallest download.
-        - `LCE-Revelations-Server-Win64-FourKit.zip`: server with the FourKit plugin host, bundled .NET 10 runtime, and an empty `plugins/` folder ready for plugin authors to drop DLLs into.
-
-        Pick the flavour you want and extract it to a folder where you'd like to keep the server runtime.
-        EOF
-        )
-
-        PAYLOAD=$(jq -nc --arg tag "$TAG" --arg name "$TITLE" --arg body "$NOTES" \
-          '{tag_name:$tag, name:$name, body:$body, draft:false, prerelease:false}')
-
-        RID=$(curl -sf -X POST -H "$AUTH" -H "Content-Type: application/json" \
-          -d "$PAYLOAD" "$API/releases" | jq -r '.id')
-
-        if [ -z "$RID" ] || [ "$RID" = "null" ]; then
-          echo "Failed to create release" >&2
-          exit 1
-        fi
-        echo "Created release id=$RID"
-
-        for asset in artifacts/*; do
-          name=$(basename "$asset")
-          size=$(stat -c%s "$asset")
-          echo "Uploading $name ($size bytes)"
-          HTTP=$(curl -sS -w '%{http_code}' -o /tmp/upload-resp -X POST -H "$AUTH" \
-            -F "attachment=@$asset" \
-            "$API/releases/$RID/assets?name=$name")
-          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
-            echo "Upload failed: HTTP $HTTP" >&2
-            echo "--- response body ---" >&2
-            cat /tmp/upload-resp >&2 || true
-            echo "" >&2
-            exit 1
-          fi
-          echo "Uploaded $name OK (HTTP $HTTP)"
-        done
-
   release-client:
     name: Release Client
-    needs: [build-client, release-server]
+    needs: build-client
     runs-on: [self-hosted, linux]
 
     steps:
@@ -427,18 +142,18 @@ jobs:
         cat > notes.md <<'NOTES'
         # Instructions:
         **Newcomers:**
-        - If this is your first time, download `LCE-Revelations-Client-Win64.zip` and extract it wherever you would like to keep it.
+        - If this is your first time, download `LCE-Online-Client-Win64.zip` and extract it wherever you would like to keep it.
         - I would recommend to set your username prior to launch (create a file called `username.txt`, put your desired username into the file, and save).
         - To play, simply run `Minecraft.Client.exe`.
 
         **For those that wish to update their existing installation with the latest build:**
-        - Download `Minecraft.Client.exe` and copy it over to your existing LCE-Revelations-Client-Win64 build (overwrite your old version of Minecraft.Client.exe).
+        - Download `Minecraft.Client.exe` and copy it over to your existing LCE-Online-Client-Win64 build (overwrite your old version of Minecraft.Client.exe).
 
         **For developers:**
         - `Minecraft.Client.pdb` contains debug symbols for crash analysis and development. Place it next to `Minecraft.Client.exe` for stack traces to show function names and line numbers.
 
         **Steam Deck & Linux:**
-        - Y'all know the drill. Download the `LCE-Revelations-Client-Win64.zip`, extract it, add the `Minecraft.Client.exe` as a "Non-Steam Game" within the Steam library, turn on compatibility mode with Proton Experimental, and then run it!
+        - Y'all know the drill. Download the `LCE-Online-Client-Win64.zip`, extract it, add the `Minecraft.Client.exe` as a "Non-Steam Game" within the Steam library, turn on compatibility mode with Proton Experimental, and then run it!
 
         # Multiplayer instructions:
         LAN games are natively supported, and any LAN games will appear automatically on the right. However, if you'd like to play with your friends online (and if you don't want to require them to setup a vpn, and/or if you don't want to port forward), I would recommend the following setup. Please keep in mind, you do NOT need to do this to enjoy the game. This is just how I have it setup for me so my friends can join without any hassle:
@@ -449,7 +164,7 @@ jobs:
 
         How-to:
         - Ensure your playit.gg agent is connected to your playit.gg account
-        - On the playit.gg website, setup a new tunnel (choose TCP). Ensure the configurable settings are set to the below values, assuming your agent is installed on the same computer as your online LCE Revelations game is hosted from.
+        - On the playit.gg website, setup a new tunnel (choose TCP). Ensure the configurable settings are set to the below values, assuming your agent is installed on the same computer as your LCE Online game is hosted from.
         - Configurable settings:
           - Local IP: `127.0.0.1`
           - Local Port: `25565`

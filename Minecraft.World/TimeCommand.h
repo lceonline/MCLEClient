@@ -14,5 +14,5 @@ protected:
 	void doAddTime(shared_ptr<CommandSender> source, int value);
 
 public:
-	static shared_ptr<GameCommandPacket> preparePacket(bool night);
+	static shared_ptr<GameCommandPacket> preparePacket(const std::wstring& mode, const std::wstring& value);
 };
