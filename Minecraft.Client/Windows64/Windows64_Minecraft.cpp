@@ -985,7 +985,9 @@ void CleanupDevice()
 static Minecraft* InitialiseMinecraftRuntime()
 {
 	app.loadMediaArchive();
-	RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
+	// @CDevJoud: No need to call this method as it gets called once in `InitDevice()`
+	// Calling it again and it results of 20MB of memory leak!
+	//RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
 	app.loadStringTable();
 	ui.init(g_pd3dDevice, g_pImmediateContext, g_pRenderTargetView, g_pDepthStencilView, g_rScreenWidth, g_rScreenHeight);
 	InputManager.Initialise(1, 3, MINECRAFT_ACTION_MAX, ACTION_MAX_MENU);
@@ -1133,7 +1135,8 @@ void StartGame(Win64LaunchOptions launchOptions, int nCmdShow)
 	Minecraft* pMinecraft = InitialiseMinecraftRuntime();
 	if (!pMinecraft) { CleanupDevice(); return; }
 	g_bResizeReady = true;
-
+			ShowWindow(g_hWnd, (nCmdShow != SW_HIDE) ? SW_SHOWMAXIMIZED : nCmdShow);
+	UpdateWindow(g_hWnd);
 	MSG msg = {0};
 	while (WM_QUIT != msg.message && !app.m_bShutdown)
 	{
