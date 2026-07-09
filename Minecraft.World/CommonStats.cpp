@@ -109,9 +109,11 @@ Stat *CommonStats::get_itemsUsed(int itemId)
 #if (defined _EXTENDED_ACHIEVEMENTS) && (!defined _XBOX_ONE)
 	// 4J-JEV: I've done the same thing here, we can't place these items anyway.
 	if (itemId == Item::porkChop_cooked_Id)	return Stats::blocksPlaced[itemId];
+	return nullptr;
 #endif
 
 	if (itemId == Item::porkChop_cooked_Id)	return Stats::blocksPlaced[itemId];
+	return nullptr;
 }
 
 Stat *CommonStats::get_itemsBought(int itemId)
