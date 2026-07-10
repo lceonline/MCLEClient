@@ -1223,12 +1223,12 @@ DWORD WINAPI WinsockNetLayer::DiscoveryThreadProc(LPVOID)
 
                 for (auto& el : arr)
                 {
-                    if (!el.contains("sessionId")||!el.contains("playerCount")||
+                    if (!el.contains("username")||!el.contains("playerCount")||
                         !el.contains("maxPlayers")||!el.contains("gameHostSettings")||
                         !el.contains("texturePackParentId")||!el.contains("subTexturePackId")||
                         !el.contains("isJoinable")) continue;
 
-                    std::string sid  =el["sessionId"];
+                    std::string sid  =el["username"];
                     int    players   =el["playerCount"];
                     int    maxPlayers=el["maxPlayers"];
                     unsigned int hs  =el["gameHostSettings"];
