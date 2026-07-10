@@ -1223,23 +1223,25 @@ DWORD WINAPI WinsockNetLayer::DiscoveryThreadProc(LPVOID)
 
                 for (auto& el : arr)
                 {
-                    if (!el.contains("sessionId")||!el.contains("playerCount")||
+                    if (!el.contains("sessionid")||!el.contains("username")||
+                        !el.contains("playerCount")||
                         !el.contains("maxPlayers")||!el.contains("gameHostSettings")||
                         !el.contains("texturePackParentId")||!el.contains("subTexturePackId")||
                         !el.contains("isJoinable")) continue;
 
-                    std::string sid  =el["sessionId"];
-                    int    players   =el["playerCount"];
-                    int    maxPlayers=el["maxPlayers"];
-                    unsigned int hs  =el["gameHostSettings"];
-                    unsigned int tpid=el["texturePackParentId"];
-                    unsigned int stid=el["subTexturePackId"];
-                    bool   joinable  =el["isJoinable"];
+                    std::string sid     = el["sessionid"];
+                    std::string uname   = el["username"];
+                    int    players      = el["playerCount"];
+                    int    maxPlayers   = el["maxPlayers"];
+                    unsigned int hs     = el["gameHostSettings"];
+                    unsigned int tpid   = el["texturePackParentId"];
+                    unsigned int stid   = el["subTexturePackId"];
+                    bool   joinable     = el["isJoinable"];
 
                     Win64LANSession s={};
-                    strncpy_s(s.hostIP,sizeof(s.hostIP),sid.c_str(),_TRUNCATE);
+                    strncpy_s(s.hostIP,sizeof(s.hostIP),uname.c_str(),_TRUNCATE);
                     s.hostPort            =g_Win64RelayServerPort;
-                    MultiByteToWideChar(CP_UTF8,0,sid.c_str(),-1,s.hostName,32);
+                    MultiByteToWideChar(CP_UTF8,0,uname.c_str(),-1,s.hostName,32);
                     s.playerCount         =(BYTE)players;
                     s.maxPlayers          =(BYTE)maxPlayers;
                     s.isJoinable          =joinable;
