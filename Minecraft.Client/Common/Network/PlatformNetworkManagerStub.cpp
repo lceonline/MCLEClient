@@ -197,7 +197,6 @@ void CPlatformNetworkManagerStub::DoWork()
 
 	if (_iQNetStubState == QNET_STATE_GAME_PLAY && m_pIQNet->IsHost())
 	{
-		WinsockNetLayer::ProcessPendingJoins();
 		BYTE disconnectedSmallId;
 		while (WinsockNetLayer::PopDisconnectedSmallId(&disconnectedSmallId))
 		{

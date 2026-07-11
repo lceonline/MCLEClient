@@ -849,6 +849,10 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID)
             else{ LeaveCriticalSection(&s_freeSmallIdLock); SendRejectWithReason(clientSocket,DisconnectPacket::eDisconnect_ServerFull); closesocket(clientSocket); continue; }
             LeaveCriticalSection(&s_freeSmallIdLock);
 
+            BYTE ab[1]={assignedSmallId};
+            if (send(clientSocket,(const char*)ab,1,0)!=1)
+            { app.DebugPrintf("Win64: Failed to send smallId to relay client\n"); closesocket(clientSocket); PushFreeSmallId(assignedSmallId); continue; }
+
             app.DebugPrintf("Win64: Relay client accepted smallId=%d\n",assignedSmallId);
 
             Win64RemoteConnection conn;
@@ -869,10 +873,6 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID)
 
             extern CPlatformNetworkManagerStub* g_pPlatformNetworkManager;
             g_pPlatformNetworkManager->NotifyPlayerJoined(qp);
-
-            BYTE ab[1]={assignedSmallId};
-            if (send(clientSocket,(const char*)ab,1,0)!=1)
-            { app.DebugPrintf("Win64: Failed to send smallId to relay client\n"); closesocket(clientSocket); PushFreeSmallId(assignedSmallId); continue; }
 
             DWORD* param=new DWORD; *param=connIdx;
             HANDLE hThread=CreateThread(nullptr,0,RecvThreadProc,param,0,nullptr);

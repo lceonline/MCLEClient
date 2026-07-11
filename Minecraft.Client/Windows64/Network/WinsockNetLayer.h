@@ -78,10 +78,6 @@ public:
     static bool HostGame(int port, const char* bindIp = nullptr);
     static bool JoinGame(const char* ip, int port);
 
-    static CRITICAL_SECTION s_pendingJoinLock;
-    static std::vector<BYTE> s_pendingJoinSmallIds;
-    static void ProcessPendingJoins();
-
     enum eJoinState
     {
         eJoinState_Idle,
