@@ -1239,7 +1239,7 @@ DWORD WINAPI WinsockNetLayer::DiscoveryThreadProc(LPVOID)
                     bool   joinable     = el["isJoinable"];
 
                     Win64LANSession s={};
-                    strncpy_s(s.hostIP,sizeof(s.hostIP),uname.c_str(),_TRUNCATE);
+                    strncpy_s(s.hostIP, sizeof(s.hostIP), sid.c_str(), _TRUNCATE);
                     s.hostPort            =g_Win64RelayServerPort;
                     MultiByteToWideChar(CP_UTF8,0,uname.c_str(),-1,s.hostName,32);
                     s.playerCount         =(BYTE)players;
