@@ -54,17 +54,19 @@ namespace
     }
 
     static void ParseServerEntries(const std::string& jsonText,
-                                   std::vector<LeaderboardManager::ReadScore>& outScores)
+        std::vector<LeaderboardManager::ReadScore>& outScores)
     {
         if (jsonText.empty()) return;
         try
         {
-            json arr = json::parse(jsonText);
+            json root = json::parse(jsonText);
+
+            json arr = root.contains("entries") ? root["entries"] : root;
             if (!arr.is_array()) return;
             for (auto& entry : arr)
             {
                 LeaderboardManager::ReadScore score = {};
-                score.m_rank            = 1;
+                score.m_rank = 1;
                 score.m_idsErrorMessage = 0;
 
                 if (entry.contains("uuid") && entry["uuid"].is_string())
