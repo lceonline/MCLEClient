@@ -469,7 +469,7 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
     {
         sock=ConnectToRelay();
         if (sock==INVALID_SOCKET){ app.DebugPrintf("Win64: relay connect failed for JOIN\n"); return false; }
-        std::string req="JOIN "+GetAuthToken()+" 0 "+std::string(ip)+" 0\n";
+        std::string req="JOIN "+GetAuthToken()+" 0 "+std::string(ip)+"\n";
         send(sock, req.c_str(), (int)req.size(), 0);
 
         DWORD to=10000; setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(const char*)&to,sizeof(to));
@@ -583,7 +583,7 @@ DWORD WINAPI WinsockNetLayer::JoinThreadProc(LPVOID)
             if (sock==INVALID_SOCKET)
             { app.DebugPrintf("Win64: relay connect failed (attempt %d/%d)\n",attempt+1,JOIN_MAX_ATTEMPTS); for(int w=0;w<4&&!s_joinCancel;w++) Sleep(50); continue; }
 
-            std::string req="JOIN "+GetAuthToken()+" 0 "+std::string(s_joinIP)+" 0\n";
+            std::string req="JOIN "+GetAuthToken()+" 0 "+std::string(s_joinIP)+"\n";
             send(sock,req.c_str(),(int)req.size(),0);
 
             DWORD to=10000; setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(const char*)&to,sizeof(to));
@@ -1045,7 +1045,7 @@ bool WinsockNetLayer::JoinSplitScreen(int padIndex, BYTE* outSmallId)
         sock=ConnectToRelay();
         if (sock==INVALID_SOCKET){ app.DebugPrintf("Win64: split-screen relay connect failed\n"); return false; }
         int nd=1; setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,(const char*)&nd,sizeof(nd));
-        std::string req="JOIN "+GetAuthToken()+" 0 "+std::string(s_joinIP)+" 1\n";
+        std::string req="JOIN "+GetAuthToken()+" 0 "+std::string(s_joinIP)+"\n";
         send(sock,req.c_str(),(int)req.size(),0);
     }
     else
