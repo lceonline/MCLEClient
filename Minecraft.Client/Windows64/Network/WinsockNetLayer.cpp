@@ -784,26 +784,36 @@ void WinsockNetLayer::ClearSocketForSmallId(BYTE smallId)
 
 void WinsockNetLayer::HandleDataReceived(BYTE fromSmallId, BYTE toSmallId, unsigned char* data, unsigned int dataSize)
 {
-    INetworkPlayer* pFrom=g_NetworkManager.GetPlayerBySmallId(fromSmallId);
-    INetworkPlayer* pTo  =g_NetworkManager.GetPlayerBySmallId(toSmallId);
+    INetworkPlayer* pFrom = g_NetworkManager.GetPlayerBySmallId(fromSmallId);
+    INetworkPlayer* pTo   = g_NetworkManager.GetPlayerBySmallId(toSmallId);
 
-    if (!pFrom||!pTo)
+    if (!pFrom || !pTo)
     {
-        app.DebugPrintf("NET RECV: DROPPED %u bytes from=%d to=%d (player NULL)\n",dataSize,fromSmallId,toSmallId);
+        app.DebugPrintf("NET RECV: DROPPED %u bytes from=%d to=%d (player NULL)\n", dataSize, fromSmallId, toSmallId);
         return;
     }
 
     if (s_isHost)
     {
-        ::Socket* pSocket=pFrom->GetSocket();
-        if (pSocket) pSocket->pushDataToQueue(data,dataSize,false);
-        else app.DebugPrintf("NET RECV: DROPPED host pSocket NULL from=%d\n",fromSmallId);
+        ::Socket* pSocket = pFrom->GetSocket();
+        
+        // Fallback to Host's primary socket if the remote wrapper is uninitialized
+        if (!pSocket)
+        {
+            INetworkPlayer* pHost = g_NetworkManager.GetPlayerBySmallId(s_hostSmallId);
+            if (pHost) pSocket = pHost->GetSocket();
+        }
+
+        if (pSocket) 
+            pSocket->pushDataToQueue(data, dataSize, false);
+        else 
+            app.DebugPrintf("NET RECV: DROPPED host pSocket NULL from=%d\n", fromSmallId);
     }
     else
     {
-        ::Socket* pSocket=pTo->GetSocket();
-        if (pSocket) pSocket->pushDataToQueue(data,dataSize,true);
-        else app.DebugPrintf("NET RECV: DROPPED client pSocket NULL to=%d\n",toSmallId);
+        ::Socket* pSocket = pTo->GetSocket();
+        if (pSocket) pSocket->pushDataToQueue(data, dataSize, true);
+        else app.DebugPrintf("NET RECV: DROPPED client pSocket NULL to=%d\n", toSmallId);
     }
 }
 

@@ -14,11 +14,13 @@ UIScene_DLCMainMenu::UIScene_DLCMainMenu(int iPad, void* initData, UILayer* pare
 	if(m_loadedResolution == eSceneResolution_1080)
 		m_labelXboxStore.init(L"");
 
-	m_buttonListOffers.addItem(L"All Packs",            0);
-	m_buttonListOffers.addItem(L"Skin Packs",           1);
-	m_buttonListOffers.addItem(L"Texture Packs",        2);
-	m_buttonListOffers.addItem(L"Mash-up Packs",        3);
-	m_buttonListOffers.addItem(L"Community-Made Packs", 4);
+	m_buttonListOffers.addItem(L"All Packs",        0);
+	m_buttonListOffers.addItem(L"Skin Packs",        1);
+	m_buttonListOffers.addItem(L"Texture Packs",     2);
+	m_buttonListOffers.addItem(L"Mash-up Packs",     3);
+	m_buttonListOffers.addItem(L"Map Packs",         5);
+	m_buttonListOffers.addItem(L"Bundle Packs",      6);
+	m_buttonListOffers.addItem(L"Community Packs",   4);
 	m_buttonListOffers.setFocus(true);
 
 	m_Timer.setVisible(false);

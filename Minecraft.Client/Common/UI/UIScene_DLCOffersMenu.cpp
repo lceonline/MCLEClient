@@ -3,6 +3,8 @@
 #include "UIScene_DLCOffersMenu.h"
 #include "../../../Minecraft.World/StringHelpers.h"
 #include <winhttp.h>
+#include <thread>
+#include <atomic>
 #pragma comment(lib, "winhttp.lib")
 
 #pragma pack(push,1)
@@ -49,6 +51,8 @@ const char* UIScene_DLCOffersMenu::CategoryForIndex(int index)
 	case 2: return "Texture";
 	case 3: return "Mashup";
 	case 4: return nullptr;
+	case 5: return "Map";
+	case 6: return "Bundle";
 	default: return nullptr;
 	}
 }
@@ -224,13 +228,11 @@ static std::vector<LCEZipEntry> CollectEntries(const std::vector<BYTE>& zipData)
 	return entries;
 }
 
-bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const std::string& packName, bool isCommunity)
+bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const std::string& packId, const std::string& packName, bool isCommunity)
 {
 	if(zipData.empty()) return false;
 
-	std::string outDir = isCommunity
-		? GetGameDir() + "Windows64Media\\DLC\\"
-		: GetGameDir() + "Windows64Media\\DLC\\" + packName + "\\";
+	std::string outDir = GetGameDir() + "Windows64Media\\DLC\\" + packId + "\\";
 	EnsureDirExists(outDir);
 
 	std::vector<LCEZipEntry> entries = CollectEntries(zipData);
@@ -277,10 +279,15 @@ bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const 
 	return extracted > 0;
 }
 
-bool UIScene_DLCOffersMenu::IsPackInstalled(const std::string& packName)
+bool UIScene_DLCOffersMenu::IsPackInstalled(const std::string& packId, const std::string& packName)
 {
-	std::string dir = GetGameDir() + "Windows64Media\\DLC\\" + packName;
-	DWORD attr = GetFileAttributesA(dir.c_str());
+	std::string dirById = GetGameDir() + "Windows64Media\\DLC\\" + packId;
+	DWORD attr = GetFileAttributesA(dirById.c_str());
+	if(attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
+		return true;
+
+	std::string dirByName = GetGameDir() + "Windows64Media\\DLC\\" + packName;
+	attr = GetFileAttributesA(dirByName.c_str());
 	return (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
@@ -435,6 +442,8 @@ UIScene_DLCOffersMenu::UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* 
 	, m_bIsSD(false)
 	, m_bHasPurchased(false)
 	, m_bIsSelected(false)
+	, m_bThumbnailDirty(false)
+	, m_bAlive(true)
 {
 	DLCOffersParam* param = static_cast<DLCOffersParam*>(initData);
 	m_iProductInfoIndex   = param ? param->iType : 0;
@@ -460,12 +469,59 @@ UIScene_DLCOffersMenu::UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* 
 
 UIScene_DLCOffersMenu::~UIScene_DLCOffersMenu()
 {
+	m_bAlive.store(false);
 	app.SetLiveLinkRequired(false);
+}
+
+void UIScene_DLCOffersMenu::PreloadAllThumbnails()
+{
+	for(size_t i = 0; i < m_packs.size(); i++)
+	{
+		WorkshopPack* pk = &m_packs[i];
+		if(pk->thumbnailUrl.empty() || pk->thumbnailLoaded.load() || pk->thumbnailFetching.load())
+			continue;
+
+		pk->thumbnailFetching.store(true);
+
+		std::string url        = pk->thumbnailUrl;
+		std::string id         = pk->id;
+		std::atomic<bool>* pLoaded    = &pk->thumbnailLoaded;
+		std::atomic<bool>* pFetching  = &pk->thumbnailFetching;
+		std::vector<BYTE>* pData      = &pk->thumbnailData;
+		std::atomic<bool>* pAlive     = &m_bAlive;
+		std::atomic<bool>* pDirty     = &m_bThumbnailDirty;
+
+		std::thread([url, pLoaded, pFetching, pData, pAlive, pDirty]()
+		{
+			std::vector<BYTE> imgData;
+			if(FetchURL(url, imgData) && !imgData.empty())
+			{
+				if(pAlive->load())
+				{
+					*pData = std::move(imgData);
+					pLoaded->store(true);
+					pDirty->store(true);
+				}
+			}
+			pFetching->store(false);
+		}).detach();
+	}
 }
 
 void UIScene_DLCOffersMenu::tick()
 {
 	UIScene::tick();
+
+	if(m_bThumbnailDirty.load())
+	{
+		m_bThumbnailDirty.store(false);
+		if(m_iCurrentPack >= 0 && m_iCurrentPack < (int)m_filteredPacks.size())
+		{
+			WorkshopPack* pk = m_filteredPacks[m_iCurrentPack];
+			if(pk->thumbnailLoaded.load() && !pk->thumbnailData.empty())
+				ApplyThumbnail(pk);
+		}
+	}
 
 	if(m_eFetchState != eFetch_Idle)
 		return;
@@ -545,6 +601,7 @@ void UIScene_DLCOffersMenu::tick()
 	}
 
 	m_eFetchState = eFetch_Ready;
+	PreloadAllThumbnails();
 	PopulateList();
 }
 
@@ -553,7 +610,12 @@ void UIScene_DLCOffersMenu::PopulateList()
 	m_buttonListOffers.clearList();
 
 	for(int i = 0; i < (int)m_filteredPacks.size(); i++)
-		m_buttonListOffers.addItem(m_filteredPacks[i]->name, false, i);
+	{
+		WorkshopPack* pk = m_filteredPacks[i];
+		std::string packName(pk->name.begin(), pk->name.end());
+		bool installed = IsPackInstalled(pk->id, packName);
+		m_buttonListOffers.addItem(pk->name, installed, i);
+	}
 
 	m_Timer.setVisible(false);
 
@@ -563,6 +625,21 @@ void UIScene_DLCOffersMenu::PopulateList()
 		m_buttonListOffers.setFocus(true);
 		UpdateDetailPanel();
 	}
+}
+
+void UIScene_DLCOffersMenu::ApplyThumbnail(WorkshopPack* pk)
+{
+	std::wstring texName = L"ws_thumb_";
+	texName.append(pk->id.begin(), pk->id.end());
+	if(!hasRegisteredSubstitutionTexture(texName))
+	{
+		registerSubstitutionTexture(
+			texName,
+			const_cast<BYTE*>(pk->thumbnailData.data()),
+			static_cast<int>(pk->thumbnailData.size()),
+			false);
+	}
+	m_bitmapIconOfferImage.setTextureName(texName);
 }
 
 void UIScene_DLCOffersMenu::UpdateDetailPanel()
@@ -578,43 +655,15 @@ void UIScene_DLCOffersMenu::UpdateDetailPanel()
 		desc += L"\n\nVersion: ";
 		desc += std::wstring(pk->version.begin(), pk->version.end());
 	}
-
 	m_labelHTMLSellText.setLabel(desc.c_str());
 
 	std::string packName(pk->name.begin(), pk->name.end());
-	if(IsPackInstalled(packName))
-		m_labelPriceTag.setLabel(L"Installed");
-	else
-		m_labelPriceTag.setLabel(L"Free");
+	m_labelPriceTag.setLabel(IsPackInstalled(pk->id, packName) ? L"Installed" : L"Free");
 
-	if(!pk->thumbnailLoaded && !pk->thumbnailUrl.empty())
-	{
-		std::vector<BYTE> imgData;
-		if(FetchURL(pk->thumbnailUrl, imgData) && !imgData.empty())
-		{
-			pk->thumbnailData   = imgData;
-			pk->thumbnailLoaded = true;
-		}
-	}
-
-	if(pk->thumbnailLoaded && !pk->thumbnailData.empty())
-	{
-		std::wstring texName = L"ws_thumb_";
-		texName.append(pk->id.begin(), pk->id.end());
-		if(!hasRegisteredSubstitutionTexture(texName))
-		{
-			registerSubstitutionTexture(
-				texName,
-				const_cast<BYTE*>(pk->thumbnailData.data()),
-				static_cast<int>(pk->thumbnailData.size()),
-				false);
-		}
-		m_bitmapIconOfferImage.setTextureName(texName);
-	}
+	if(pk->thumbnailLoaded.load() && !pk->thumbnailData.empty())
+		ApplyThumbnail(pk);
 	else
-	{
 		m_bitmapIconOfferImage.setTextureName(L"");
-	}
 }
 
 void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
@@ -628,7 +677,7 @@ void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
 	WorkshopPack* pk = m_filteredPacks[iIndex];
 	std::string packName(pk->name.begin(), pk->name.end());
 
-	if(IsPackInstalled(packName))
+	if(IsPackInstalled(pk->id, packName))
 	{
 		m_buttonListOffers.showTick(iIndex, true);
 		return;
@@ -648,7 +697,7 @@ void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
 		return;
 	}
 
-	bool installed = InstallPack(zipData, packName, m_bIsCommunity);
+	bool installed = InstallPack(zipData, pk->id, packName, m_bIsCommunity);
 	m_Timer.setVisible(false);
 
 	if(installed)

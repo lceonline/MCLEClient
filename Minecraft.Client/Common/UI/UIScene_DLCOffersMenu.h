@@ -1,5 +1,7 @@
 #pragma once
 #include "UIScene.h"
+#include <atomic>
+#include <mutex>
 
 struct WorkshopZip
 {
@@ -18,9 +20,25 @@ struct WorkshopPack
 	std::vector<WorkshopZip> zips;
 	std::string              version;
 	std::vector<BYTE>        thumbnailData;
-	bool                     thumbnailLoaded;
-
-	WorkshopPack() : thumbnailLoaded(false) {}
+	std::atomic<bool>        thumbnailLoaded;
+	std::atomic<bool>        thumbnailFetching;
+	WorkshopPack() : thumbnailLoaded(false), thumbnailFetching(false) {}
+	WorkshopPack(const WorkshopPack& o)
+		: id(o.id), name(o.name), author(o.author), description(o.description)
+		, categories(o.categories), thumbnailUrl(o.thumbnailUrl), zips(o.zips)
+		, version(o.version), thumbnailData(o.thumbnailData)
+		, thumbnailLoaded(o.thumbnailLoaded.load())
+		, thumbnailFetching(o.thumbnailFetching.load())
+	{}
+	WorkshopPack& operator=(const WorkshopPack& o)
+	{
+		id = o.id; name = o.name; author = o.author; description = o.description;
+		categories = o.categories; thumbnailUrl = o.thumbnailUrl; zips = o.zips;
+		version = o.version; thumbnailData = o.thumbnailData;
+		thumbnailLoaded.store(o.thumbnailLoaded.load());
+		thumbnailFetching.store(o.thumbnailFetching.load());
+		return *this;
+	}
 };
 
 class UIScene_DLCOffersMenu : public UIScene
@@ -33,6 +51,8 @@ private:
 	bool                       m_bHasPurchased;
 	bool                       m_bIsSelected;
 	bool                       m_bIsCommunity;
+	std::atomic<bool>          m_bThumbnailDirty;
+	std::atomic<bool>          m_bAlive;
 
 	UIControl_DLCList          m_buttonListOffers;
 	UIControl_Label            m_labelOffers, m_labelPriceTag, m_labelXboxStore;
@@ -66,8 +86,10 @@ private:
 	bool               ParseRegistry(const std::string& json, const std::string& rawBase);
 	void               PopulateList();
 	void               UpdateDetailPanel();
-	static bool        InstallPack(const std::vector<BYTE>& zipData, const std::string& packName, bool isCommunity);
-	static bool        IsPackInstalled(const std::string& packName);
+	void               ApplyThumbnail(WorkshopPack* pk);
+	void               PreloadAllThumbnails();
+	static bool        InstallPack(const std::vector<BYTE>& zipData, const std::string& packId, const std::string& packName, bool isCommunity);
+	static bool        IsPackInstalled(const std::string& packId, const std::string& packName);
 
 public:
 	UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* parentLayer);
