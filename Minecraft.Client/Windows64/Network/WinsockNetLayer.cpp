@@ -414,7 +414,7 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 	}
 #endif
 	std::string hostname(ip);
-	std::string req = "JOIN " + authToken + " 0 " + hostname + " 0\n";
+	std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
 	send(s_hostConnectionSocket, req.c_str(), (int)req.length(), 0);
 
 	BYTE assignBuf[1];
@@ -1256,7 +1256,7 @@ bool WinsockNetLayer::JoinSplitScreen(int padIndex, BYTE* outSmallId)
 	}
 #endif
 	std::string hostname(g_Win64MultiplayerIP);
-	std::string req = "JOIN " + authToken + " 0 " + hostname + " 1\n";
+	std::string req = "JOIN " + authToken + " 0 " + hostname + "\n";
 	app.DebugPrintf("Win64 LAN: Sending JOIN request: %s", req.c_str());
 	send(sock, req.c_str(), (int)req.length(), 0);
 
@@ -1692,8 +1692,8 @@ DWORD WINAPI WinsockNetLayer::DiscoveryThreadProc(LPVOID param)
 
 				for (auto& el : json_array)
 				{
-					std::string sessionId = el["sessionId"];
-					std::string hostName = el["sessionId"];
+					std::string sessionId = el["sessionid"];
+					std::string hostName = el["username"];
 					int currPlayers = el["playerCount"];
 					int maxPlayers = el["maxPlayers"];
 					unsigned int gameHostSettings = el["gameHostSettings"];
