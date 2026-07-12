@@ -649,12 +649,8 @@ void UIScene_DLCOffersMenu::UpdateDetailPanel()
 
 	WorkshopPack* pk = m_filteredPacks[m_iCurrentPack];
 
-	std::wstring desc = pk->description;
-	if(!pk->version.empty())
-	{
-		desc += L"\n\nVersion: ";
-		desc += std::wstring(pk->version.begin(), pk->version.end());
-	}
+	std::wstring desc = L"All DLC Content from LCE Online's 'Skin Packs', 'Texture Packs', 'Mash-up Packs', 'Map Packs' and 'Bundle Packs' are property of 4J Studios, Mojang AB and Microsoft. ";
+	desc += pk->description;
 	m_labelHTMLSellText.setLabel(desc.c_str());
 
 	std::string packName(pk->name.begin(), pk->name.end());

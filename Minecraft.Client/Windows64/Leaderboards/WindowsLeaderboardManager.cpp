@@ -53,18 +53,25 @@ namespace
         return static_cast<PlayerUID>(raw);
     }
 
-    static void ParseServerEntries(const std::string& jsonText,
-                                   std::vector<LeaderboardManager::ReadScore>& outScores)
+    static int ParseServerEntries(const std::string& jsonText,
+        std::vector<LeaderboardManager::ReadScore>& outScores)
     {
-        if (jsonText.empty()) return;
+        if (jsonText.empty()) return 0;
+        int serverTotal = 0;
         try
         {
-            json arr = json::parse(jsonText);
-            if (!arr.is_array()) return;
+            json root = json::parse(jsonText);
+
+            if (root.contains("total") && root["total"].is_number())
+                serverTotal = root["total"].get<int>();
+
+            json arr = root.contains("entries") ? root["entries"] : root;
+            if (!arr.is_array()) return 0;
+
             for (auto& entry : arr)
             {
                 LeaderboardManager::ReadScore score = {};
-                score.m_rank            = 1;
+                score.m_rank = 1;
                 score.m_idsErrorMessage = 0;
 
                 if (entry.contains("uuid") && entry["uuid"].is_string())
@@ -92,12 +99,13 @@ namespace
             }
         }
         catch (...) {}
+        return serverTotal;
     }
 
-    static void AssignRanks(std::vector<LeaderboardManager::ReadScore>& scores)
+    static void AssignRanks(std::vector<LeaderboardManager::ReadScore>& scores, unsigned int offset)
     {
         for (size_t i = 0; i < scores.size(); ++i)
-            scores[i].m_rank = static_cast<unsigned long>(i + 1);
+            scores[i].m_rank = static_cast<unsigned long>(offset + i + 1);
     }
 
     static bool BuildLocalScore(LeaderboardManager::ReadScore& out,
@@ -166,17 +174,30 @@ namespace
 
 LeaderboardManager* LeaderboardManager::m_instance = new WindowsLeaderboardManager();
 
-bool WindowsLeaderboardManager::WriteStats(unsigned int viewCount, ViewIn views)
+WindowsLeaderboardManager::WindowsLeaderboardManager()
+    : m_eStatsState(eStatsState_Idle)
+    , m_tickCount(0)
 {
-    return false; // Since WriteStats is useless we just do this, exact same thing is done in DurangoLeaderboardManager
 }
 
-// ByteBukkit: Tick function
+bool WindowsLeaderboardManager::isIdle()
+{
+    return m_eStatsState == eStatsState_Idle;
+}
+
+void WindowsLeaderboardManager::CancelOperation()
+{
+    m_eStatsState = eStatsState_Idle;
+}
+
+bool WindowsLeaderboardManager::WriteStats(unsigned int viewCount, ViewIn views)
+{
+    return false;
+}
+
 void WindowsLeaderboardManager::Tick()
 {
-    if (++m_tickCount < 1000)
-        return;
-
+    if (++m_tickCount < 1000) return;
     m_tickCount = 0;
 
     std::thread([this]()
@@ -187,12 +208,9 @@ void WindowsLeaderboardManager::Tick()
             eStatsType_Farming,
             eStatsType_Kills,
         };
-
         for (EStatsType t : types)
-        {
             for (int diff = 0; diff <= 3; ++diff)
                 SendStats(t, diff);
-        }
     }).detach();
 }
 
@@ -263,111 +281,73 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
     unsigned int startIndex, unsigned int readCount)
 {
     if (!callback) return false;
+    if (m_eStatsState != eStatsState_Idle) return false;
 
     unsigned int diff = static_cast<unsigned int>(ClampDifficulty(difficulty));
     if (type == eStatsType_Kills && diff == 0) diff = 1;
 
-    // Submit live score only when authenticated.
-    #ifndef MINECRAFT_SERVER_BUILD
-    if (!Windows64Launcher::IsInOfflineMode() || Windows64Minecraft::IsOfflineMode())
-    {
-        WindowsLeaderboardManager::SendStats(type, diff);
-    }
-    #endif
-    std::vector<LeaderboardManager::ReadScore> allRows;
+    m_eStatsState = eStatsState_Getting;
 
-    if (filterMode == eFM_Friends)
-    {
-        unsigned int limit  = (readCount > 0) ? (std::min)(readCount, 100u) : 64u;
-        unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
-        ParseServerEntries(fetchFriends(type, diff, offset, limit), allRows);
-    }
-    else if (filterMode == eFM_MyScore)
-    {
-        unsigned int limit  = (readCount > 0) ? (std::min)(readCount, 100u) : 64u;
-        unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
-        ParseServerEntries(fetchMyscore(type, diff, offset, limit), allRows);
-    }
-    else
-    {
-        unsigned int limit  = (readCount > 0) ? (std::min)(readCount, 100u) : 64u;
-        unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
-        ParseServerEntries(fetchOverall(type, diff, offset, limit), allRows);
-    }
+    unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
+    unsigned int limit  = (readCount > 0) ? readCount : 15u;
 
-    std::sort(allRows.begin(), allRows.end(),
-        [](const LeaderboardManager::ReadScore& a, const LeaderboardManager::ReadScore& b)
+    std::thread([this, callback, type, diff, filterMode, offset, limit]()
+    {
+        #ifndef MINECRAFT_SERVER_BUILD
+        if (!Windows64Launcher::IsInOfflineMode() || Windows64Minecraft::IsOfflineMode())
+            SendStats(static_cast<EStatsType>(type), static_cast<int>(diff));
+        #endif
+
+        std::vector<LeaderboardManager::ReadScore> rows;
+        int serverTotal = 0;
+
+        if (filterMode == eFM_Friends)
+            serverTotal = ParseServerEntries(fetchFriends(type, diff, offset, limit), rows);
+        else if (filterMode == eFM_MyScore)
+            serverTotal = ParseServerEntries(fetchMyscore(type, diff, offset, limit), rows);
+        else
+            serverTotal = ParseServerEntries(fetchOverall(type, diff, offset, limit), rows);
+
+        if (m_eStatsState == eStatsState_Canceled)
+            return;
+
+        AssignRanks(rows, offset);
+
+        int totalResults;
+        if (filterMode == eFM_MyScore)
+            totalResults = static_cast<int>(rows.size());
+        else if (serverTotal > 0)
+            totalResults = serverTotal;
+        else
+            totalResults = static_cast<int>(rows.size());
+
+        if (rows.empty())
         {
-            if (a.m_totalScore != b.m_totalScore) return a.m_totalScore > b.m_totalScore;
-            const wchar_t* na = a.m_name.empty() ? L"" : a.m_name.c_str();
-            const wchar_t* nb = b.m_name.empty() ? L"" : b.m_name.c_str();
-            int cmp = _wcsicmp(na, nb);
-            if (cmp != 0) return cmp < 0;
-            return _wcsicmp(na, nb) < 0;
-        });
+            m_eStatsState = eStatsState_Idle;
+            ReadView empty = {};
+            callback->OnStatsReadComplete(eStatsReturn_NoResults, 0, empty);
+            return;
+        }
 
-    AssignRanks(allRows);
+        ReadView view = {};
+        view.m_numQueries = static_cast<unsigned int>(rows.size());
+        view.m_queries    = rows.data();
 
-    if (allRows.empty())
-    {
-        ReadView empty = {};
-        callback->OnStatsReadComplete(eStatsReturn_NoResults, 0, empty);
-        return true;
-    }
+        m_eStatsState = eStatsState_Idle;
+        callback->OnStatsReadComplete(eStatsReturn_Success, totalResults, view);
+    }).detach();
 
-    size_t pageStart = 0;
-    size_t pageCount = allRows.size();
-
-    if (filterMode == eFM_TopRank)
-    {
-        if (startIndex > 1)
-            pageStart = (std::min<size_t>)(static_cast<size_t>(startIndex - 1), allRows.size());
-        pageCount = allRows.size() - pageStart;
-        if (readCount > 0)
-            pageCount = (std::min<size_t>)(pageCount, static_cast<size_t>(readCount));
-    }
-
-    if (pageStart >= allRows.size())
-    {
-        ReadView empty = {};
-        callback->OnStatsReadComplete(eStatsReturn_NoResults, 0, empty);
-        return true;
-    }
-
-    pageCount = (std::min)(pageCount, allRows.size() - pageStart);
-
-    std::vector<LeaderboardManager::ReadScore> page(
-        allRows.begin() + static_cast<std::ptrdiff_t>(pageStart),
-        allRows.begin() + static_cast<std::ptrdiff_t>(pageStart + pageCount));
-
-    if (page.empty())
-    {
-        ReadView empty = {};
-        callback->OnStatsReadComplete(eStatsReturn_NoResults, 0, empty);
-        return true;
-    }
-
-    ReadView view = {};
-    view.m_numQueries = static_cast<unsigned int>(page.size());
-    view.m_queries    = page.data();
-
-    int totalResults = (filterMode == eFM_MyScore)
-        ? static_cast<int>(page.size())
-        : static_cast<int>(allRows.size());
-
-    callback->OnStatsReadComplete(eStatsReturn_Success, totalResults, view);
     return true;
 }
-
-int WindowsLeaderboardManager::sendScores(const std::string& _data) {
+int WindowsLeaderboardManager::sendScores(const std::string& _data)
+{
     std::vector<std::wstring> headers;
     std::string authToken;
     #ifndef MINECRAFT_SERVER_BUILD
-    if (Windows64Minecraft::IsExternalLauncher()) {
+    if (Windows64Minecraft::IsExternalLauncher())
         authToken = Windows64Minecraft::GetAuthenticationTicket();
-    } else {
+    else
         authToken = Windows64Launcher::GetAuthenticationToken();
-    }
     #endif
     headers.push_back(L"Content-Type: application/json");
     headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
@@ -376,7 +356,8 @@ int WindowsLeaderboardManager::sendScores(const std::string& _data) {
     return response.status;
 }
 
-std::string WindowsLeaderboardManager::fetchOverall(int type, int difficulty, int offset, int limit) {
+std::string WindowsLeaderboardManager::fetchOverall(int type, int difficulty, int offset, int limit)
+{
     std::vector<std::wstring> headers;
     std::wstring path = L"/overall?type=" + std::to_wstring(type)
                       + L"&difficulty=" + std::to_wstring(difficulty)
@@ -386,18 +367,16 @@ std::string WindowsLeaderboardManager::fetchOverall(int type, int difficulty, in
     return response.body;
 }
 
-std::string WindowsLeaderboardManager::fetchFriends(int type, int difficulty, int offset, int limit) {
+std::string WindowsLeaderboardManager::fetchFriends(int type, int difficulty, int offset, int limit)
+{
     std::vector<std::wstring> headers;
-
     std::string authToken;
     #ifndef MINECRAFT_SERVER_BUILD
-    if (Windows64Minecraft::IsExternalLauncher()) {
+    if (Windows64Minecraft::IsExternalLauncher())
         authToken = Windows64Minecraft::GetAuthenticationTicket();
-    } else {
+    else
         authToken = Windows64Launcher::GetAuthenticationToken();
-    }
     #endif
-
     headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
     std::wstring path = L"/friends?type=" + std::to_wstring(type)
                       + L"&difficulty=" + std::to_wstring(difficulty)
@@ -407,18 +386,16 @@ std::string WindowsLeaderboardManager::fetchFriends(int type, int difficulty, in
     return response.body;
 }
 
-std::string WindowsLeaderboardManager::fetchMyscore(int type, int difficulty, int offset, int limit) {
+std::string WindowsLeaderboardManager::fetchMyscore(int type, int difficulty, int offset, int limit)
+{
     std::vector<std::wstring> headers;
-
     std::string authToken;
     #ifndef MINECRAFT_SERVER_BUILD
-    if (Windows64Minecraft::IsExternalLauncher()) {
+    if (Windows64Minecraft::IsExternalLauncher())
         authToken = Windows64Minecraft::GetAuthenticationTicket();
-    } else {
+    else
         authToken = Windows64Launcher::GetAuthenticationToken();
-    }
     #endif
-
     headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
     std::wstring path = L"/myscore?type=" + std::to_wstring(type)
                       + L"&difficulty=" + std::to_wstring(difficulty)

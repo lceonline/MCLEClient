@@ -25,7 +25,8 @@ UIScene_AchievementsMenu::UIScene_AchievementsMenu(int iPad, void* _initData, UI
 	ClientToScreen(g_hWnd, &center);
 	SetCursorPos(center.x, center.y);*/
 
-	m_labelAchievements.init(L"Achievements");
+	std::wstring title = app.GetString(IDS_ACHIEVEMENTS);
+	m_labelAchievements.init(title);
 	//m_labelDesc.init(L"");
 	m_labelName.init(L"");
 	m_achievementsList.init(0);
@@ -252,7 +253,7 @@ void UIScene_AchievementsMenu::tick()
 
 void UIScene_AchievementsMenu::updateTooltips()
 {
-	ui.SetTooltips(m_iPad, -1, IDS_TOOLTIPS_CANCEL, -1, IDS_TOOLTIPS_SHOW_DESCRIPTION);
+	ui.SetTooltips(m_iPad, -1, IDS_TOOLTIPS_BACK, -1, IDS_TOOLTIPS_SHOW_DESCRIPTION);
 }
 
 void UIScene_AchievementsMenu::handleFocusChange(F64 controlId, F64 childId)
