@@ -39,7 +39,6 @@ target_include_directories(Minecraft.Client PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/${PLATFORM_NAME}/Iggy/include"
   "${CMAKE_SOURCE_DIR}/include/"
-  "${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/webview2/build/native/include"
 )
 target_compile_definitions(Minecraft.Client PRIVATE
   ${MINECRAFT_SHARED_DEFINES}
@@ -67,7 +66,6 @@ target_link_libraries(Minecraft.Client PRIVATE
   4JLibs.${PLATFORM_NAME}.Storage
   4JLibs.${PLATFORM_NAME}.Render
   $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/discordsdk/discord_game_sdk.dll.lib>
-  $<$<STREQUAL:${PLATFORM_NAME},Windows64>:${CMAKE_CURRENT_SOURCE_DIR}/Windows64/ExtraLibs/webview2/build/native/x64/WebView2LoaderStatic.lib>
   $<$<STREQUAL:${PLATFORM_NAME},Windows64>:shlwapi>
   $<$<STREQUAL:${PLATFORM_NAME},Windows64>:ole32>
 )
