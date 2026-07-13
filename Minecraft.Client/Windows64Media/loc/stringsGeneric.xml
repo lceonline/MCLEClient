@@ -652,10 +652,10 @@ so they can easily join you.
 	<data name="IDS_TITLEUPDATE">
 		<value>{*ETB*}Welcome back! You may not have noticed but your Minecraft has just been updated.{*B*}{*B*}
 There are lots of new features for you and friends to play with so here’s just a few highlights. Have a read and then go and have fun!{*B*}{*B*}
-{*T1*}New Items{*ETB*} - Hardened Clay, Stained Clay, Block of Coal, Hay Bale, Activator Rail, Block of Redstone, Daylight Sensor, Dropper, Hopper, Minecart with Hopper, Minecart with TNT, Redstone Comparator, Weighted Pressure Plate, Beacon, Trapped Chest, Firework Rocket, Firework Star, Nether Star, Lead, Horse Armor, Name Tag, Horse Spawn Egg{*B*}{*B*}
-{*T1*}New Mobs{*ETB*} - Wither, Wither Skeletons, Witches, Bats, Horses, Donkeys and Mules{*B*}{*B*}
-{*T1*}New Features{*ETB*} -  Tame and ride a horse, craft fireworks and put on a show, name animals and monsters with a Name Tag, create more advanced Redstone circuits, and new Host Options to help control what guests to your world can do!{*B*}{*B*}
-{*T1*}New Tutorial World{*ETB*} – Learn how to use the old and new features in the Tutorial World. See if you can find all the secret Music Discs hidden in the world!{*B*}{*B*}
+{*T1*}Minecraft Store Update{*ETB*} - The default DLCs have been completely removed out of the base game, to get them, download them through the now stable, fast and fixed Minecraft Store!{*B*}{*B*}
+{*T1*}Enhanced Leaderboards{*ETB*} - Now with proper loading screen and less lag! This is just a general QoL feature.{*B*}{*B*}
+{*T1*}Map Packs & Bundle Packs{*ETB*} – Map Packs and Bundle Packs have been added to the store! These will gradually be added overtime.{*B*}{*B*}
+{*T1*}New Update Screen!{*ETB*} – As you are seeing right now, we have added the new update screen! This will show 3 times like in LCE.{*B*}{*B*}
     </value>
 	</data>	
 

@@ -14,6 +14,7 @@ UIScene_NewUpdateMessage::UIScene_NewUpdateMessage(int iPad, void *initData, UIL
 	m_buttonConfirm.init(app.GetString(IDS_TOOLTIPS_ACCEPT),eControl_Confirm);
 
 	wstring message = app.GetString(IDS_TITLEUPDATE);
+	assert(!message.empty());
 	message.append(L"\r\n");
 
 	message=app.FormatHTMLString(m_iPad,message);

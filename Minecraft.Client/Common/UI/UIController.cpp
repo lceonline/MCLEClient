@@ -1938,7 +1938,7 @@ void UIController::unregisterSubstitutionTexture(const wstring &textureName, boo
 bool UIController::NavigateToScene(int iPad, EUIScene scene, void *initData, EUILayer layer, EUIGroup group)
 {
 	static bool bSeenUpdateTextThisSession = false;
-	#if 0 // Disable since we don't use this
+	#if 1 // Disable since we don't use this
 	// If you're navigating to the multigamejoinload, and the player hasn't seen the updates message yet, display it now
 	// display this message the first 3 times
 	if((scene==eUIScene_LoadOrJoinMenu) && (bSeenUpdateTextThisSession==false) && ( app.GetGameSettings(ProfileManager.GetPrimaryPad(),eGameSetting_DisplayUpdateMessage)!=0))

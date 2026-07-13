@@ -228,11 +228,16 @@ static std::vector<LCEZipEntry> CollectEntries(const std::vector<BYTE>& zipData)
 	return entries;
 }
 
-bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const std::string& packId, const std::string& packName, bool isCommunity)
+bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const std::string& packId, const std::string& packName, const std::string& destToken)
 {
 	if(zipData.empty()) return false;
 
-	std::string outDir = GetGameDir() + "Windows64Media\\DLC\\" + packId + "\\";
+	std::string outDir;
+	if(destToken == "{GameHDDDir}")
+		outDir = GetGameDir() + "Windows64\\GameHDD\\";
+	else
+		outDir = GetGameDir() + "Windows64Media\\DLC\\" + packName + "\\";
+
 	EnsureDirExists(outDir);
 
 	std::vector<LCEZipEntry> entries = CollectEntries(zipData);
@@ -281,14 +286,38 @@ bool UIScene_DLCOffersMenu::InstallPack(const std::vector<BYTE>& zipData, const 
 
 bool UIScene_DLCOffersMenu::IsPackInstalled(const std::string& packId, const std::string& packName)
 {
-	std::string dirById = GetGameDir() + "Windows64Media\\DLC\\" + packId;
-	DWORD attr = GetFileAttributesA(dirById.c_str());
+	std::string dirByName = GetGameDir() + "Windows64Media\\DLC\\" + packName;
+	DWORD attr = GetFileAttributesA(dirByName.c_str());
 	if(attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
 		return true;
 
-	std::string dirByName = GetGameDir() + "Windows64Media\\DLC\\" + packName;
-	attr = GetFileAttributesA(dirByName.c_str());
+	std::string dirByNameHDD = GetGameDir() + "Windows64\\GameHDD\\" + packName;
+	attr = GetFileAttributesA(dirByNameHDD.c_str());
+	if(attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
+		return true;
+
+	std::string dirById = GetGameDir() + "Windows64Media\\DLC\\" + packId;
+	attr = GetFileAttributesA(dirById.c_str());
 	return (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+bool UIScene_DLCOffersMenu::IsBundleInstalled(const WorkshopPack* pk)
+{
+	for(int b = 0; b < (int)pk->bundledPackIds.size(); b++)
+	{
+		const std::string& bid = pk->bundledPackIds[b];
+		for(int i = 0; i < (int)m_packs.size(); i++)
+		{
+			if(m_packs[i].id == bid)
+			{
+				std::string bName(m_packs[i].name.begin(), m_packs[i].name.end());
+				if(!IsPackInstalled(bid, bName))
+					return false;
+				break;
+			}
+		}
+	}
+	return !pk->bundledPackIds.empty();
 }
 
 static void SkipWhitespace(const char*& p)
@@ -413,15 +442,33 @@ bool UIScene_DLCOffersMenu::ParseRegistry(const std::string& json, const std::st
 					else ++p;
 				}
 			}
+			else if(key == "bundledPacks")
+			{
+				if(*p == '[') ++p;
+				while(true)
+				{
+					SkipWhitespace(p);
+					if(*p == ']' || *p == '\0') { if(*p == ']') ++p; break; }
+					if(*p == ',') { ++p; continue; }
+					if(*p == '"') { std::string pid; ReadString(p, pid); pack.bundledPackIds.push_back(pid); }
+					else ++p;
+				}
+			}
 			else SkipValue(p);
 		}
 		if(*p == '}') ++p;
 
-		bool allDLC = !pack.zips.empty();
-		for(int i = 0; i < (int)pack.zips.size(); i++)
-			if(pack.zips[i].destToken != "{DLCDir}") { allDLC = false; break; }
+		bool hasZips = !pack.zips.empty();
+		bool hasBundle = !pack.bundledPackIds.empty();
+		if(!hasZips && !hasBundle) continue;
 
-		if(!allDLC) continue;
+		bool validDests = true;
+		for(int i = 0; i < (int)pack.zips.size(); i++)
+		{
+			const std::string& dest = pack.zips[i].destToken;
+			if(dest != "{DLCDir}" && dest != "{GameHDDDir}") { validDests = false; break; }
+		}
+		if(!validDests) continue;
 
 		if(!pack.id.empty() && !thumbFile.empty())
 			pack.thumbnailUrl = rawBase + "/" + pack.id + "/" + thumbFile;
@@ -444,6 +491,7 @@ UIScene_DLCOffersMenu::UIScene_DLCOffersMenu(int iPad, void* initData, UILayer* 
 	, m_bIsSelected(false)
 	, m_bThumbnailDirty(false)
 	, m_bAlive(true)
+	, m_activeInstalls(0)
 {
 	DLCOffersParam* param = static_cast<DLCOffersParam*>(initData);
 	m_iProductInfoIndex   = param ? param->iType : 0;
@@ -483,18 +531,17 @@ void UIScene_DLCOffersMenu::PreloadAllThumbnails()
 
 		pk->thumbnailFetching.store(true);
 
-		std::string url        = pk->thumbnailUrl;
-		std::string id         = pk->id;
-		std::atomic<bool>* pLoaded    = &pk->thumbnailLoaded;
-		std::atomic<bool>* pFetching  = &pk->thumbnailFetching;
-		std::vector<BYTE>* pData      = &pk->thumbnailData;
-		std::atomic<bool>* pAlive     = &m_bAlive;
-		std::atomic<bool>* pDirty     = &m_bThumbnailDirty;
+		std::string url             = pk->thumbnailUrl;
+		std::atomic<bool>* pLoaded  = &pk->thumbnailLoaded;
+		std::atomic<bool>* pFetching = &pk->thumbnailFetching;
+		std::vector<BYTE>* pData    = &pk->thumbnailData;
+		std::atomic<bool>* pAlive   = &m_bAlive;
+		std::atomic<bool>* pDirty   = &m_bThumbnailDirty;
 
 		std::thread([url, pLoaded, pFetching, pData, pAlive, pDirty]()
 		{
 			std::vector<BYTE> imgData;
-			if(FetchURL(url, imgData) && !imgData.empty())
+			if(UIScene_DLCOffersMenu::FetchURL(url, imgData) && !imgData.empty())
 			{
 				if(pAlive->load())
 				{
@@ -522,6 +569,24 @@ void UIScene_DLCOffersMenu::tick()
 				ApplyThumbnail(pk);
 		}
 	}
+
+	{
+		std::lock_guard<std::mutex> lock(m_pendingInstallMutex);
+		for(size_t i = 0; i < m_pendingInstallResults.size(); i++)
+		{
+			PendingInstallResult& r = m_pendingInstallResults[i];
+			if(r.success && r.listIndex >= 0 && r.listIndex < (int)m_filteredPacks.size())
+			{
+				m_buttonListOffers.showTick(r.listIndex, true);
+				if(m_iCurrentPack == r.listIndex)
+					m_labelPriceTag.setLabel(L"Installed");
+			}
+		}
+		m_pendingInstallResults.clear();
+	}
+
+	if(m_activeInstalls.load() == 0)
+		m_Timer.setVisible(false);
 
 	if(m_eFetchState != eFetch_Idle)
 		return;
@@ -613,7 +678,9 @@ void UIScene_DLCOffersMenu::PopulateList()
 	{
 		WorkshopPack* pk = m_filteredPacks[i];
 		std::string packName(pk->name.begin(), pk->name.end());
-		bool installed = IsPackInstalled(pk->id, packName);
+		bool installed = pk->bundledPackIds.empty()
+			? IsPackInstalled(pk->id, packName)
+			: IsBundleInstalled(pk);
 		m_buttonListOffers.addItem(pk->name, installed, i);
 	}
 
@@ -654,7 +721,10 @@ void UIScene_DLCOffersMenu::UpdateDetailPanel()
 	m_labelHTMLSellText.setLabel(desc.c_str());
 
 	std::string packName(pk->name.begin(), pk->name.end());
-	m_labelPriceTag.setLabel(IsPackInstalled(pk->id, packName) ? L"Installed" : L"Free");
+	bool installed = pk->bundledPackIds.empty()
+		? IsPackInstalled(pk->id, packName)
+		: IsBundleInstalled(pk);
+	m_labelPriceTag.setLabel(installed ? L"Installed" : L"Free");
 
 	if(pk->thumbnailLoaded.load() && !pk->thumbnailData.empty())
 		ApplyThumbnail(pk);
@@ -673,6 +743,87 @@ void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
 	WorkshopPack* pk = m_filteredPacks[iIndex];
 	std::string packName(pk->name.begin(), pk->name.end());
 
+	if(!pk->bundledPackIds.empty())
+	{
+		if(IsBundleInstalled(pk))
+		{
+			m_buttonListOffers.showTick(iIndex, true);
+			return;
+		}
+
+		struct SubPackJob
+		{
+			std::string id;
+			std::string name;
+			std::vector<WorkshopZip> zips;
+		};
+
+		std::vector<SubPackJob> jobs;
+		for(int b = 0; b < (int)pk->bundledPackIds.size(); b++)
+		{
+			const std::string& bid = pk->bundledPackIds[b];
+			for(int i = 0; i < (int)m_packs.size(); i++)
+			{
+				if(m_packs[i].id == bid)
+				{
+					std::string bName(m_packs[i].name.begin(), m_packs[i].name.end());
+					if(!IsPackInstalled(bid, bName) && !m_packs[i].zips.empty())
+					{
+						SubPackJob j;
+						j.id   = m_packs[i].id;
+						j.name = bName;
+						j.zips = m_packs[i].zips;
+						jobs.push_back(j);
+					}
+					break;
+				}
+			}
+		}
+
+		if(jobs.empty())
+		{
+			m_buttonListOffers.showTick(iIndex, true);
+			return;
+		}
+
+		m_activeInstalls.fetch_add(1);
+		m_Timer.setVisible(true);
+
+		std::string rawBase                             = m_rawBase;
+		std::vector<PendingInstallResult>* pResults     = &m_pendingInstallResults;
+		std::mutex* pMutex                              = &m_pendingInstallMutex;
+		std::atomic<bool>* pAlive                       = &m_bAlive;
+		std::atomic<int>* pActive                       = &m_activeInstalls;
+
+		std::thread([jobs, rawBase, iIndex, pResults, pMutex, pAlive, pActive]()
+		{
+			bool anyInstalled = false;
+			for(size_t b = 0; b < jobs.size(); b++)
+			{
+				const SubPackJob& job = jobs[b];
+				for(size_t z = 0; z < job.zips.size(); z++)
+				{
+					std::string zipUrl = rawBase + "/" + job.id + "/" + job.zips[z].filename;
+					std::vector<BYTE> zipData;
+					if(!UIScene_DLCOffersMenu::FetchURL(zipUrl, zipData) || zipData.empty()) continue;
+					if(UIScene_DLCOffersMenu::InstallPack(zipData, job.id, job.name, job.zips[z].destToken))
+						anyInstalled = true;
+				}
+			}
+			if(pAlive->load())
+			{
+				std::lock_guard<std::mutex> lock(*pMutex);
+				PendingInstallResult r;
+				r.listIndex = iIndex;
+				r.success   = anyInstalled;
+				pResults->push_back(r);
+			}
+			pActive->fetch_sub(1);
+		}).detach();
+
+		return;
+	}
+
 	if(IsPackInstalled(pk->id, packName))
 	{
 		m_buttonListOffers.showTick(iIndex, true);
@@ -681,26 +832,48 @@ void UIScene_DLCOffersMenu::handlePress(F64 controlId, F64 childId)
 
 	if(pk->zips.empty()) return;
 
+	struct SingleJob
+	{
+		std::string id;
+		std::string name;
+		std::vector<WorkshopZip> zips;
+	};
+
+	SingleJob job;
+	job.id   = pk->id;
+	job.name = packName;
+	job.zips = pk->zips;
+
+	m_activeInstalls.fetch_add(1);
 	m_Timer.setVisible(true);
 
-	const WorkshopZip& zip = pk->zips[0];
-	std::string zipUrl = m_rawBase + "/" + pk->id + "/" + zip.filename;
+	std::string rawBase                             = m_rawBase;
+	std::vector<PendingInstallResult>* pResults     = &m_pendingInstallResults;
+	std::mutex* pMutex                              = &m_pendingInstallMutex;
+	std::atomic<bool>* pAlive                       = &m_bAlive;
+	std::atomic<int>* pActive                       = &m_activeInstalls;
 
-	std::vector<BYTE> zipData;
-	if(!FetchURL(zipUrl, zipData) || zipData.empty())
+	std::thread([job, rawBase, iIndex, pResults, pMutex, pAlive, pActive]()
 	{
-		m_Timer.setVisible(false);
-		return;
-	}
-
-	bool installed = InstallPack(zipData, pk->id, packName, m_bIsCommunity);
-	m_Timer.setVisible(false);
-
-	if(installed)
-	{
-		m_buttonListOffers.showTick(iIndex, true);
-		m_labelPriceTag.setLabel(L"Installed");
-	}
+		bool installed = false;
+		for(size_t z = 0; z < job.zips.size(); z++)
+		{
+			std::string zipUrl = rawBase + "/" + job.id + "/" + job.zips[z].filename;
+			std::vector<BYTE> zipData;
+			if(!UIScene_DLCOffersMenu::FetchURL(zipUrl, zipData) || zipData.empty()) continue;
+			if(UIScene_DLCOffersMenu::InstallPack(zipData, job.id, job.name, job.zips[z].destToken))
+				installed = true;
+		}
+		if(pAlive->load())
+		{
+			std::lock_guard<std::mutex> lock(*pMutex);
+			PendingInstallResult r;
+			r.listIndex = iIndex;
+			r.success   = installed;
+			pResults->push_back(r);
+		}
+		pActive->fetch_sub(1);
+	}).detach();
 }
 
 void UIScene_DLCOffersMenu::handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool& handled)

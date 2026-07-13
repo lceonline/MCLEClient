@@ -6549,9 +6549,9 @@ wstring CMinecraftApp::FormatHTMLString(int iPad, const wstring &desc, int shado
 	text = replaceAll(text, L"{*T2*}", replacements );
 	swprintf(replacements,64,L"<font color=\"#%08x\">", GetHTMLColour(eHTMLColor_T3));
 	text = replaceAll(text, L"{*T3*}", replacements ); // for How To Play
-	swprintf(replacements,64,L"</font><font color=\"#%08x\">", GetHTMLColour(eHTMLColor_Black));
+	swprintf(replacements,64,L"<font color=\"#%08x\">", GetHTMLColour(eHTMLColor_Black));
 	text = replaceAll(text, L"{*ETB*}", replacements );
-	swprintf(replacements,64,L"</font><font color=\"#%08x\">", GetHTMLColour(eHTMLColor_White));
+	swprintf(replacements,64,L"<font color=\"#%08x\">", GetHTMLColour(eHTMLColor_White));
 	text = replaceAll(text, L"{*ETW*}", replacements );
 	text = replaceAll(text, L"{*EF*}", L"</font>" );
 

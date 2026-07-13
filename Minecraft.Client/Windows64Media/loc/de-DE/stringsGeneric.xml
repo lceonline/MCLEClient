@@ -532,12 +532,11 @@ Sobald du Das Ende besuchst, sehen deine Freunde die Lage des Endportals in den 
 	</data>
 	<data name="IDS_TITLEUPDATE">
 		<value>{*ETB*}Willkommen zurück! Vielleicht hast du es gar nicht bemerkt, aber dein Minecraft wurde gerade aktualisiert.{*B*}{*B*}
-Es gibt jede Menge neue Funktionen für dich und deine Freunde. Hier stellen wir dir nur ein paar Highlights vor. Lies sie dir durch und dann zieh los und hab Spaß!{*B*}{*B*}
-{*T1*}Neue Gegenstände{*ETB*} – Smaragd, Smaragderz, Smaragdblock, Endertruhe, Stolperdrahthaken, verzauberter goldener Apfel, Amboss, Blumentopf, Pflastersteinmauern, bemooste Pflastersteinmauern, Withergemälde, Kartoffel, Ofenkartoffel, giftige Kartoffel, Karotte, goldene Karotte, Karottenrute, Kürbiskuchen, Trank der Nachtsicht, Trank der Unsichtbarkeit, Netherquarz, Netherquarzerz, Quarzblock, Quarzstufe, Quarzstufen, gemeißelter Quarzblock, Quarzsäule, Zauberbuch, Teppich.{*B*}{*B*}
-{*T1*}Neue NPCs{*ETB*} – Zombie-Dorfbewohner.{*B*}{*B*}
-{*T1*}Neue Features{*ETB*} – Handel mit Dorfbewohnern, Waffen und Werkzeug auf dem Amboss reparieren und verzaubern, Gegenstände in Endertruhen aufbewahren, Schwein beim Reiten mit Karottenrute steuern!{*B*}{*B*}
-{*T1*}Neue Mini-Tutorials{*ETB*} – Hier erfährst du, wie die neuen Features in der Tutorial-Welt funktionieren!{*B*}{*B*}
-{*T1*}Neue Easter Eggs{*ETB*} – Wir haben alle geheimen Schallplatten in der Tutorial-Welt neu versteckt! Findest du sie noch einmal?{*B*}{*B*}</value>
+Es gibt jede Menge neue Funktionen für dich und deine Freunde. Hier sind einige der wichtigsten Neuerungen. Lies sie dir durch und hab anschließend viel Spaß!{*B*}{*B*}
+{*T1*}Minecraft-Store-Update{*ETB*} – Die standardmäßig enthaltenen DLCs wurden vollständig aus dem Basisspiel entfernt. Du kannst sie jetzt über den stabilen, schnellen und überarbeiteten Minecraft Store herunterladen!{*B*}{*B*}
+{*T1*}Verbesserte Bestenlisten{*ETB*} – Bestenlisten verfügen jetzt über einen richtigen Ladebildschirm und verursachen deutlich weniger Verzögerungen. Eine allgemeine Verbesserung der Benutzerfreundlichkeit.{*B*}{*B*}
+{*T1*}Kartenpakete & Bundle-Pakete{*ETB*} – Kartenpakete und Bundle-Pakete wurden dem Store hinzugefügt. Das Angebot wird nach und nach erweitert.{*B*}{*B*}
+{*T1*}Neuer Update-Bildschirm{*ETB*} – Wie du gerade siehst, gibt es jetzt einen neuen Update-Bildschirm! Genau wie in der Legacy Console Edition wird er insgesamt dreimal angezeigt.{*B*}{*B*}</value>
 	</data>
 	<data name="IDS_DESC_SWORD">
 		<value>Fügt mehr Schaden zu als eine leere Hand.</value>
