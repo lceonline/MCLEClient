@@ -27,6 +27,16 @@ namespace ServerRuntime
 
 			EnterCriticalSection(&m_lock);
 
+			// security: hard cap on tracked IPs. if we're at the cap, refuse
+			// the new entry rather than letting the map grow unbounded.
+			// (MCLE-05)
+			if (m_connectionTimes.size() >= kMaxTrackedIps &&
+			    m_connectionTimes.find(ip) == m_connectionTimes.end())
+			{
+				LeaveCriticalSection(&m_lock);
+				return false;
+			}
+
 			auto &timestamps = m_connectionTimes[ip];
 
 			// Remove timestamps outside the sliding window
