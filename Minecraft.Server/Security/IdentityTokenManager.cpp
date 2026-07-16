@@ -3,6 +3,13 @@
 
 #ifdef _WINDOWS64
 #include <bcrypt.h>
+#include <accctrl.h>
+#include <aclapi.h>
+#include <sddl.h>
+#include <securitybaseapi.h>
+#else
+#include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 #include "../Common/FileUtils.h"
@@ -280,9 +287,69 @@ namespace ServerRuntime
 			// security: identity-tokens.json is a bearer-secret file. disclosure
 			// = total identity theft for every recorded player (including ops).
 			// restrict access to the server account only. (MCLE-03)
-			// TODO: set a restrictive DACL (S-1-3-0 owner full, everyone deny)
-			// via SetSecurityInfo / SetNamedSecurityInfo after the atomic write.
-			// on POSIX builds, chmod 0600.
+#ifdef _WINDOWS64
+			{
+				std::wstring widePath = ServerRuntime::StringUtils::Utf8ToWide(m_filePath);
+				if (!widePath.empty())
+				{
+					// open the file with WRITE_DAC so we can replace its DACL.
+					HANDLE hFile = CreateFileW(widePath.c_str(),
+						READ_CONTROL | WRITE_DAC, 0, nullptr, OPEN_ALWAYS,
+						FILE_ATTRIBUTE_NORMAL, nullptr);
+					if (hFile != INVALID_HANDLE_VALUE)
+					{
+						// build a DACL granting GENERIC_ALL to the current user
+						// only. deny everyone else (no inheritable ACE).
+						PSID pUserSid = nullptr;
+						HANDLE hToken = nullptr;
+						if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+						{
+							DWORD needed = 0;
+							GetTokenInformation(hToken, TokenUser, nullptr, 0, &needed);
+							if (needed > 0)
+							{
+								std::vector<BYTE> buf(needed);
+								if (GetTokenInformation(hToken, TokenUser, buf.data(),
+									needed, &needed))
+								{
+									pUserSid = ((TOKEN_USER*)buf.data())->User.Sid;
+								}
+							}
+							CloseHandle(hToken);
+						}
+
+						PACL pNewDacl = nullptr;
+						if (pUserSid != nullptr)
+						{
+							EXPLICIT_ACCESSW ea = {};
+							ea.grfAccessPermissions = GENERIC_ALL;
+							ea.grfAccessMode = SET_ACCESS;
+							ea.grfInheritance = NO_INHERITANCE;
+							ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+							ea.Trustee.TrusteeType = TRUSTEE_IS_USER;
+							ea.Trustee.ptstrName = (LPWCH)pUserSid;
+							if (SetEntriesInAclW(1, &ea, nullptr, &pNewDacl) == ERROR_SUCCESS)
+							{
+								if (SetSecurityInfo(hFile, SE_FILE_OBJECT,
+									DACL_SECURITY_INFORMATION, nullptr, nullptr,
+									pNewDacl, nullptr) != ERROR_SUCCESS)
+								{
+									LogErrorf("security", "SetSecurityInfo failed for %s",
+										m_filePath.c_str());
+								}
+								LocalFree(pNewDacl);
+							}
+						}
+						CloseHandle(hFile);
+					}
+				}
+			}
+#else
+			{
+				// POSIX: chmod 0600 (owner read/write only).
+				(void)chmod(m_filePath.c_str(), S_IRUSR | S_IWUSR);
+			}
+#endif
 			return true;
 		}
 
