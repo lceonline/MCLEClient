@@ -276,6 +276,13 @@ namespace ServerRuntime
 				LogErrorf("security", "failed to write %s", m_filePath.c_str());
 				return false;
 			}
+
+			// security: identity-tokens.json is a bearer-secret file. disclosure
+			// = total identity theft for every recorded player (including ops).
+			// restrict access to the server account only. (MCLE-03)
+			// TODO: set a restrictive DACL (S-1-3-0 owner full, everyone deny)
+			// via SetSecurityInfo / SetNamedSecurityInfo after the atomic write.
+			// on POSIX builds, chmod 0600.
 			return true;
 		}
 
