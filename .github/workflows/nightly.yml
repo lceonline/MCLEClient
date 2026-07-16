@@ -1,213 +1,107 @@
 name: Nightly Release
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: 
+  push:
+    branches:
+    - 'main'
+    paths:
+      - '**'
+      - '!.gitignore'
+      - '!*.md'
+      - '!.github/**'
+      - '.github/workflows/nightly.yml'
 
 permissions:
   contents: write
-  id-token: write
-  attestations: write
-  packages: write
 
 concurrency:
   group: nightly
   cancel-in-progress: true
 
 jobs:
-  build-client:
-    name: Build Client
-    runs-on: [self-hosted, windows]
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        platform: [Windows64]
 
     steps:
     - name: Checkout
-      uses: https://github.com/actions/checkout@v6
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
+    - name: Set platform lowercase
+      run: echo "MATRIX_PLATFORM=$('${{ matrix.platform }}'.ToLower())" >> $env:GITHUB_ENV
+
     - name: Setup MSVC
-      uses: https://github.com/ilammy/msvc-dev-cmd@v1
+      uses: ilammy/msvc-dev-cmd@v1
 
     - name: Setup CMake
-      uses: https://github.com/lukka/get-cmake@latest
-
+      uses: lukka/get-cmake@latest
+    
     - name: Run CMake
-      uses: https://github.com/lukka/run-cmake@v10
+      uses: lukka/run-cmake@v10
       env:
-        VCPKG_ROOT: ""
+        VCPKG_ROOT: "" # Disable vcpkg for CI builds
       with:
-        configurePreset: windows64
-        buildPreset: windows64-release
+        configurePreset: ${{ env.MATRIX_PLATFORM }}
+        buildPreset: ${{ env.MATRIX_PLATFORM }}-release
         buildPresetAdditionalArgs: "['--target', 'Minecraft.Client']"
 
     - name: Zip Build
-      shell: pwsh
-      run: |
-        $source = "./build/windows64/Minecraft.Client/Release"
-        $zip = "LCE-Online-Client-Win64.zip"
-        $topLevel = "LCE-Online-Client-Win64"
-
-        $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.pdb', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
-
-        Add-Type -AssemblyName System.IO.Compression
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-        $basePath = (Resolve-Path $source).Path
-        $fs = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
-        try {
-          $archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
-          try {
-            Get-ChildItem -Path $basePath -Recurse -Directory | ForEach-Object {
-              $rel = $_.FullName.Substring($basePath.Length).TrimStart('\', '/')
-              $archive.CreateEntry("$topLevel/$($rel -replace '\\','/')/") | Out-Null
-            }
-            foreach ($file in $files) {
-              $rel = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
-              $entryName = "$topLevel/$($rel -replace '\\','/')"
-              [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $archive, $file.FullName, $entryName,
-                [System.IO.Compression.CompressionLevel]::Optimal
-              ) | Out-Null
-            }
-          } finally { $archive.Dispose() }
-        } finally { $fs.Dispose() }
-
-        Write-Host "Created $zip"
+      run: 7z a -r LCEN${{ matrix.platform }}.zip ./build/${{ env.MATRIX_PLATFORM }}/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj"
 
     - name: Stage artifacts
-      shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path staging
-        Copy-Item LCE-Online-Client-Win64.zip staging/
-        Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.exe staging/
-        Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.pdb staging/
+        Copy-Item LCEN${{ matrix.platform }}.zip staging/
+
+    - name: Stage exe and pdb
+      if: matrix.platform == 'Windows64'
+      run: |
+        Copy-Item ./build/${{ env.MATRIX_PLATFORM }}/Minecraft.Client/Release/Minecraft.Client.exe staging/
 
     - name: Upload artifacts
-      uses: https://github.com/actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
-        name: client-build
+        name: build-${{ matrix.platform }}
         path: staging/*
 
-  release-client:
-    name: Release Client
-    needs: build-client
-    runs-on: [self-hosted, linux]
+  release:
+    needs: build
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: https://github.com/actions/checkout@v6
-
-    - name: Download client artifacts
-      uses: https://github.com/actions/download-artifact@v3
+    - name: Download all artifacts
+      uses: actions/download-artifact@v7
       with:
-        name: client-build
         path: artifacts
+        merge-multiple: true
 
-    - name: Install jq
-      run: apt-get update && apt-get install -y --no-install-recommends jq
-
-    - name: Get short SHA
-      id: sha
-      run: echo "short=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
-
-    - name: Delete old release and tag
+    - name: Update release
+      uses: andelf/nightly-release@main
       env:
-        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -euo pipefail
-        TAG="Nightly"
-        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
-        AUTH="Authorization: token $FORGEJO_TOKEN"
-        EXISTING_ID=$(curl -sf -H "$AUTH" "$API/releases/tags/$TAG" 2>/dev/null | jq -r '.id // empty' || true)
-        if [ -n "$EXISTING_ID" ]; then
-          curl -sf -X DELETE -H "$AUTH" "$API/releases/$EXISTING_ID"
-        fi
-        curl -s -X DELETE -H "$AUTH" "$API/tags/$TAG" > /dev/null || true
-
-    - name: Import GPG key
-      uses: https://github.com/crazy-max/ghaction-import-gpg@v6
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-        passphrase: ${{ secrets.GPG_PASSPHRASE }}
-        git_user_signingkey: true
-        git_tag_gpgsign: true
+        tag_name: nightly
+        name: Nightly Client Release
+        body: |
+          Requires at least Windows 7 and DirectX 11 compatible GPU to run.
+          
+          # 🚨 First time here? 🚨
+          If you've never downloaded the game before, you need to download `LCENWindows64.zip` and extract it to the folder where you'd like to keep the game. The other files are included in this `.zip` file!
+        files: |
+          artifacts/*
 
-    - name: Create signed tag
-      run: |
-        git tag -s -f Nightly -m "Nightly release ${{ steps.sha.outputs.short }}"
-        git push origin Nightly --force
-
-    - name: Write release notes
-      run: |
-        cat > notes.md <<'NOTES'
-        # Instructions:
-        **Newcomers:**
-        - If this is your first time, download `LCE-Online-Client-Win64.zip` and extract it wherever you would like to keep it.
-        - I would recommend to set your username prior to launch (create a file called `username.txt`, put your desired username into the file, and save).
-        - To play, simply run `Minecraft.Client.exe`.
-
-        **For those that wish to update their existing installation with the latest build:**
-        - Download `Minecraft.Client.exe` and copy it over to your existing LCE-Online-Client-Win64 build (overwrite your old version of Minecraft.Client.exe).
-
-        **For developers:**
-        - `Minecraft.Client.pdb` contains debug symbols for crash analysis and development. Place it next to `Minecraft.Client.exe` for stack traces to show function names and line numbers.
-
-        **Steam Deck & Linux:**
-        - Y'all know the drill. Download the `LCE-Online-Client-Win64.zip`, extract it, add the `Minecraft.Client.exe` as a "Non-Steam Game" within the Steam library, turn on compatibility mode with Proton Experimental, and then run it!
-
-        # Multiplayer instructions:
-        LAN games are natively supported, and any LAN games will appear automatically on the right. However, if you'd like to play with your friends online (and if you don't want to require them to setup a vpn, and/or if you don't want to port forward), I would recommend the following setup. Please keep in mind, you do NOT need to do this to enjoy the game. This is just how I have it setup for me so my friends can join without any hassle:
-
-        Prerequisites:
-        - Premium playit.gg account, costs about $3 USD per month. This is for setting up the tunnel.
-        - playit.gg agent installed on host PC.
-
-        How-to:
-        - Ensure your playit.gg agent is connected to your playit.gg account
-        - On the playit.gg website, setup a new tunnel (choose TCP). Ensure the configurable settings are set to the below values, assuming your agent is installed on the same computer as your LCE Online game is hosted from.
-        - Configurable settings:
-          - Local IP: `127.0.0.1`
-          - Local Port: `25565`
-          - Proxy Protocol: `None`
-        - After creating your tunnel, navigate to the "Tunnels" main page. You'll see the IP address and port for your tunnel. This is what your friends will input when adding your server in order to join your online game!
-        NOTES
-
-    - name: Create release on Forgejo
-      env:
-        FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        set -euo pipefail
-        TAG="Nightly"
-        TITLE="Client: ${{ steps.sha.outputs.short }}"
-        API="${{ github.server_url }}/api/v1/repos/${{ github.repository }}"
-        AUTH="Authorization: token $FORGEJO_TOKEN"
-
-        BODY=$(cat notes.md)
-        PAYLOAD=$(jq -nc --arg tag "$TAG" --arg name "$TITLE" --arg body "$BODY" \
-          '{tag_name:$tag, name:$name, body:$body, draft:false, prerelease:false}')
-
-        RID=$(curl -sf -X POST -H "$AUTH" -H "Content-Type: application/json" \
-          -d "$PAYLOAD" "$API/releases" | jq -r '.id')
-
-        if [ -z "$RID" ] || [ "$RID" = "null" ]; then
-          echo "Failed to create release" >&2
-          exit 1
-        fi
-        echo "Created release id=$RID"
-
-        for asset in artifacts/*; do
-          name=$(basename "$asset")
-          size=$(stat -c%s "$asset")
-          echo "Uploading $name ($size bytes)"
-          HTTP=$(curl -sS -w '%{http_code}' -o /tmp/upload-resp -X POST -H "$AUTH" \
-            -F "attachment=@$asset" \
-            "$API/releases/$RID/assets?name=$name")
-          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
-            echo "Upload failed: HTTP $HTTP" >&2
-            echo "--- response body ---" >&2
-            cat /tmp/upload-resp >&2 || true
-            echo "" >&2
-            exit 1
-          fi
-          echo "Uploaded $name OK (HTTP $HTTP)"
-        done
+  cleanup:
+    needs: [build, release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Cleanup artifacts
+      uses: geekyeggo/delete-artifact@v5
+      with:
+        name: build-*
