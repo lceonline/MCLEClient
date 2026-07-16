@@ -419,7 +419,8 @@ bool PlayerList::placeNewPlayer(Connection *connection, shared_ptr<ServerPlayer>
 
 #if defined(_WINDOWS64) && defined(MINECRAFT_SERVER_BUILD)
 	// Initiate stream cipher handshake if enabled.
-	// Send MC|CKey with the generated key. Old clients will ignore the unknown channel.
+	// Send MC|CKey with the server's ephemeral X25519 public key. Old
+	// clients will ignore the unknown channel. (MCLE-01)
 	if (g_Win64DedicatedServer && ServerRuntime::Security::GetSettings().enableStreamCipher)
 	{
 		BYTE smallId = 0;
@@ -428,24 +429,14 @@ bool PlayerList::placeNewPlayer(Connection *connection, shared_ptr<ServerPlayer>
 		if (cipherNp != nullptr && !cipherNp->IsLocal())
 		{
 			smallId = cipherNp->GetSmallId();
-			uint8_t key[ServerRuntime::Security::StreamCipher::KEY_SIZE];
-			if (ServerRuntime::Security::GetCipherRegistry().PrepareKey(smallId, key))
+			uint8_t serverPubKey[ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE];
+			if (ServerRuntime::Security::GetCipherRegistry().PrepareEcdhKey(smallId, serverPubKey))
 			{
-				// security: the key below is sent in cleartext inside MC|CKey.
-				// any on-path observer (including the LCEOnline relay operator)
-				// recovers the symmetric key and can decrypt/forge all subsequent
-				// traffic. (MCLE-01)
-				// TODO: replace with an authenticated key exchange:
-				//   - server sends an ephemeral X25519 public key
-				//   - client responds with its ephemeral X25519 public key
-				//   - both derive the shared secret via HKDF
-				//   - the symmetric key is never transmitted
-				byteArray keyData(ServerRuntime::Security::StreamCipher::KEY_SIZE);
-				memcpy(keyData.data, key, ServerRuntime::Security::StreamCipher::KEY_SIZE);
+				byteArray keyData(ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE);
+				memcpy(keyData.data, serverPubKey, ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE);
 				playerConnection->send(std::make_shared<CustomPayloadPacket>(
 					CustomPayloadPacket::CIPHER_KEY_CHANNEL, keyData));
-				SecureZeroMemory(key, sizeof(key));
-				app.DebugPrintf("Server: Sent MC|CKey to player %ls (smallId=%d)\n",
+				app.DebugPrintf("Server: Sent MC|CKey (X25519 pubkey) to player %ls (smallId=%d)\n",
 					player->getName().c_str(), smallId);
 
 				// Register with enforcer for timeout tracking

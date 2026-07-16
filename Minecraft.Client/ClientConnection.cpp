@@ -3897,14 +3897,14 @@ void ClientConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 		return;
 	}
 
-	// Stream cipher handshake: server sent us a key
+	// Stream cipher handshake: server sent us its ephemeral X25519 public key
 	if (CustomPayloadPacket::CIPHER_KEY_CHANNEL.compare(customPayloadPacket->identifier) == 0)
 	{
-		if (customPayloadPacket->length == ServerRuntime::Security::StreamCipher::KEY_SIZE &&
+		if (customPayloadPacket->length == ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE &&
 			customPayloadPacket->data.data != nullptr)
 		{
-			app.DebugPrintf("Client: Received MC|CKey from server (%d bytes)\n", customPayloadPacket->length);
-			// Store key and send ack+activate atomically to prevent ResetClientCipher race
+			app.DebugPrintf("Client: Received MC|CKey (X25519 pubkey) from server (%d bytes)\n", customPayloadPacket->length);
+			// Store server pubkey and send ack+activate atomically to prevent race
 			WinsockNetLayer::StoreClientCipherKey(customPayloadPacket->data.data);
 			if (!WinsockNetLayer::SendAckAndActivateClientSendCipher())
 			{

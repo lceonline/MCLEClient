@@ -146,7 +146,7 @@ public:
 
     
     static void StoreClientCipherKey(
-        const uint8_t key[ServerRuntime::Security::StreamCipher::KEY_SIZE]);
+        const uint8_t serverPubKey[ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE]);
 
     
     static bool SendAckAndActivateClientSendCipher();
@@ -162,7 +162,7 @@ public:
 
 #if defined(MINECRAFT_SERVER_BUILD)
     
-    static bool SendCOnAndCommitServerCipher(BYTE smallId);
+    static bool SendCOnAndCommitServerCipher(BYTE smallId, const uint8_t *clientPubKey);
 #endif
 
 private:
@@ -230,8 +230,18 @@ private:
     static ServerRuntime::Security::StreamCipher s_clientSendCipher;
     static ServerRuntime::Security::StreamCipher s_clientRecvCipher;
     static CRITICAL_SECTION s_clientCipherLock;
+    // security: the symmetric key derived from the ECDH exchange. stored
+    // temporarily between SendAckAndActivateClientSendCipher (which sets
+    // it) and ActivateClientRecvCipher (which uses it then zeroes it).
+    // (MCLE-01)
     static uint8_t s_clientPendingKey[ServerRuntime::Security::StreamCipher::KEY_SIZE];
     static bool    s_clientKeyStored;
+    // security: client-side ECDH state. the server sends its ephemeral
+    // X25519 public key in MC|CKey; we generate our own keypair and
+    // derive the shared secret. (MCLE-01)
+    static ServerRuntime::Security::EcdhKeyExchange s_clientEcdh;
+    static uint8_t s_clientServerPubKey[ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE];
+    static bool    s_clientServerPubKeyStored;
 };
 
 extern bool g_Win64MultiplayerHost;
