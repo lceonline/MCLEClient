@@ -11,44 +11,60 @@ namespace ServerRuntime
 		{
 			InitializeCriticalSection(&m_lock);
 			memset(m_pending, 0, sizeof(m_pending));
-			memset(m_pendingKeys, 0, sizeof(m_pendingKeys));
 		}
 
 		ConnectionCipherRegistry::~ConnectionCipherRegistry()
 		{
-			SecureZeroMemory(m_pendingKeys, sizeof(m_pendingKeys));
 			DeleteCriticalSection(&m_lock);
 		}
 
-		bool ConnectionCipherRegistry::PrepareKey(unsigned char smallId, uint8_t outKey[StreamCipher::KEY_SIZE])
+		bool ConnectionCipherRegistry::PrepareEcdhKey(unsigned char smallId,
+													 uint8_t outPubKey[EcdhKeyExchange::PUBLIC_KEY_SIZE])
 		{
-			uint8_t key[StreamCipher::KEY_SIZE];
-			if (!StreamCipher::GenerateKey(key))
+			if (!m_ecdh[smallId].GenerateKeypair())
 			{
 				return false;
 			}
 
 			EnterCriticalSection(&m_lock);
-			memcpy(m_pendingKeys[smallId], key, StreamCipher::KEY_SIZE);
+			m_ecdh[smallId].GetPublicKey(outPubKey);
 			m_pending[smallId] = true;
 			LeaveCriticalSection(&m_lock);
-
-			memcpy(outKey, key, StreamCipher::KEY_SIZE);
-			SecureZeroMemory(key, sizeof(key));
 			return true;
 		}
 
-		bool ConnectionCipherRegistry::CommitCipher(unsigned char smallId)
+		bool ConnectionCipherRegistry::CommitCipherWithPeerPub(unsigned char smallId,
+															  const uint8_t peerPubKey[EcdhKeyExchange::PUBLIC_KEY_SIZE])
 		{
+			uint8_t derivedKey[StreamCipher::KEY_SIZE];
+			if (!m_ecdh[smallId].DeriveSharedKey(peerPubKey, derivedKey))
+			{
+				return false;
+			}
+
 			EnterCriticalSection(&m_lock);
 			if (!m_pending[smallId])
 			{
+				SecureZeroMemory(derivedKey, sizeof(derivedKey));
 				LeaveCriticalSection(&m_lock);
 				return false;
 			}
 
-			m_ciphers[smallId].Initialize(m_pendingKeys[smallId]);
-			SecureZeroMemory(m_pendingKeys[smallId], StreamCipher::KEY_SIZE);
+			// StreamCipher wants 32 bytes: 16-byte AES key + 16-byte IV.
+			// We derive 32 bytes via HKDF; split into key (first 16) and IV (last 16).
+			uint8_t aesKey[16];
+			uint8_t iv[16];
+			memcpy(aesKey, derivedKey, 16);
+			memcpy(iv, derivedKey + 16, 16);
+
+			uint8_t keyMaterial[32];
+			memcpy(keyMaterial, aesKey, 16);
+			memcpy(keyMaterial + 16, iv, 16);
+
+			m_ciphers[smallId].Initialize(keyMaterial);
+			SecureZeroMemory(keyMaterial, sizeof(keyMaterial));
+			SecureZeroMemory(derivedKey, sizeof(derivedKey));
+			m_ecdh[smallId].Reset();
 			m_pending[smallId] = false;
 			LeaveCriticalSection(&m_lock);
 			return true;
@@ -57,7 +73,7 @@ namespace ServerRuntime
 		void ConnectionCipherRegistry::CancelPending(unsigned char smallId)
 		{
 			EnterCriticalSection(&m_lock);
-			SecureZeroMemory(m_pendingKeys[smallId], StreamCipher::KEY_SIZE);
+			m_ecdh[smallId].Reset();
 			m_pending[smallId] = false;
 			LeaveCriticalSection(&m_lock);
 		}
@@ -74,7 +90,7 @@ namespace ServerRuntime
 		{
 			EnterCriticalSection(&m_lock);
 			m_ciphers[smallId].Reset();
-			SecureZeroMemory(m_pendingKeys[smallId], StreamCipher::KEY_SIZE);
+			m_ecdh[smallId].Reset();
 			m_pending[smallId] = false;
 			LeaveCriticalSection(&m_lock);
 		}

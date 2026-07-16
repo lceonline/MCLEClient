@@ -104,8 +104,13 @@ DisconnectPacket::eDisconnectReason WinsockNetLayer::s_joinRejectReason    = Dis
 ServerRuntime::Security::StreamCipher WinsockNetLayer::s_clientSendCipher;
 ServerRuntime::Security::StreamCipher WinsockNetLayer::s_clientRecvCipher;
 CRITICAL_SECTION WinsockNetLayer::s_clientCipherLock;
-uint8_t  WinsockNetLayer::s_clientPendingKey[ServerRuntime::Security::StreamCipher::KEY_SIZE] = {};
-bool     WinsockNetLayer::s_clientKeyStored = false;
+// security: client-side ECDH state. the server sends its ephemeral
+// X25519 public key in MC|CKey; we generate our own keypair, derive
+// the shared secret, and send our public key back in MC|CAck. the
+// symmetric key never travels on the wire. (MCLE-01)
+ServerRuntime::Security::EcdhKeyExchange WinsockNetLayer::s_clientEcdh;
+uint8_t  WinsockNetLayer::s_clientServerPubKey[ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE] = {};
+bool     WinsockNetLayer::s_clientServerPubKeyStored = false;
 
 bool g_Win64MultiplayerHost             = false;
 bool g_Win64MultiplayerJoin             = false;
@@ -335,44 +340,98 @@ void WinsockNetLayer::Shutdown()
     }
 }
 
-void WinsockNetLayer::StoreClientCipherKey(const uint8_t key[ServerRuntime::Security::StreamCipher::KEY_SIZE])
+void WinsockNetLayer::StoreClientCipherKey(const uint8_t serverPubKey[ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE])
 {
     EnterCriticalSection(&s_clientCipherLock);
-    memcpy(s_clientPendingKey, key, ServerRuntime::Security::StreamCipher::KEY_SIZE);
-    s_clientKeyStored = true;
+    memcpy(s_clientServerPubKey, serverPubKey, ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE);
+    s_clientServerPubKeyStored = true;
     LeaveCriticalSection(&s_clientCipherLock);
 }
 
 bool WinsockNetLayer::SendAckAndActivateClientSendCipher()
 {
     if (s_hostConnectionSocket==INVALID_SOCKET) return false;
-    EnterCriticalSection(&s_sendLock);
 
-    BYTE hdr[4];
-    hdr[0]=(BYTE)((kCipherAckPatternSize>>24)&0xFF); hdr[1]=(BYTE)((kCipherAckPatternSize>>16)&0xFF);
-    hdr[2]=(BYTE)((kCipherAckPatternSize>> 8)&0xFF); hdr[3]=(BYTE)( kCipherAckPatternSize     &0xFF);
-
-    bool ok=true; int t=0;
-    while(ok&&t<4){ int s=send(s_hostConnectionSocket,(const char*)hdr+t,4-t,0); if(s<=0){ok=false;break;} t+=s; }
-    t=0;
-    while(ok&&t<kCipherAckPatternSize){ int s=send(s_hostConnectionSocket,(const char*)kCipherAckPattern+t,kCipherAckPatternSize-t,0); if(s<=0){ok=false;break;} t+=s; }
-
-    if (ok)
+    // security: derive the symmetric key from the server's ephemeral
+    // X25519 public key (received in MC|CKey) and our own ephemeral
+    // keypair. the symmetric key never travels on the wire. (MCLE-01)
+    uint8_t derivedKey[ServerRuntime::Security::StreamCipher::KEY_SIZE];
     {
         EnterCriticalSection(&s_clientCipherLock);
-        s_clientSendCipher.Initialize(s_clientPendingKey, ServerRuntime::Security::StreamCipher::Client);
+        if (!s_clientServerPubKeyStored)
+        {
+            LeaveCriticalSection(&s_clientCipherLock);
+            return false;
+        }
+        if (!s_clientEcdh.GenerateKeypair())
+        {
+            LeaveCriticalSection(&s_clientCipherLock);
+            return false;
+        }
+        if (!s_clientEcdh.DeriveSharedKey(s_clientServerPubKey, derivedKey))
+        {
+            LeaveCriticalSection(&s_clientCipherLock);
+            return false;
+        }
+        // grab our public key to send back in MC|CAck
+        uint8_t clientPubKey[ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE];
+        s_clientEcdh.GetPublicKey(clientPubKey);
         LeaveCriticalSection(&s_clientCipherLock);
-        app.DebugPrintf("Client: Send cipher activated\n");
-    }
-    else
-    { app.DebugPrintf("Client: MC|CAck send failed\n"); closesocket(s_hostConnectionSocket); s_hostConnectionSocket=INVALID_SOCKET; }
 
+        EnterCriticalSection(&s_sendLock);
+        // send MC|CAck: 32-byte client ephemeral public key.
+        BYTE hdr[4];
+        hdr[0]=(BYTE)((ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE>>24)&0xFF);
+        hdr[1]=(BYTE)((ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE>>16)&0xFF);
+        hdr[2]=(BYTE)((ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE>> 8)&0xFF);
+        hdr[3]=(BYTE)(ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE     &0xFF);
+        bool ok=true; int t=0;
+        while(ok&&t<4){ int s=send(s_hostConnectionSocket,(const char*)hdr+t,4-t,0); if(s<=0){ok=false;break;} t+=s; }
+        t=0;
+        while(ok&&t<ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE){
+            int s=send(s_hostConnectionSocket,(const char*)clientPubKey+t,
+                ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE-t,0);
+            if(s<=0){ok=false;break;} t+=s;
+        }
+        if (!ok)
+        {
+            LeaveCriticalSection(&s_sendLock);
+            SecureZeroMemory(derivedKey, sizeof(derivedKey));
+            return false;
+        }
+    }
+
+    // split derived key into AES key (16) + IV (16) for StreamCipher.
+    uint8_t keyMaterial[ServerRuntime::Security::StreamCipher::KEY_SIZE];
+    memcpy(keyMaterial, derivedKey, 16);
+    memcpy(keyMaterial + 16, derivedKey + 16, 16);
+    SecureZeroMemory(derivedKey, sizeof(derivedKey));
+
+    EnterCriticalSection(&s_clientCipherLock);
+    s_clientSendCipher.Initialize(keyMaterial, ServerRuntime::Security::StreamCipher::Client);
+    // store the same key for ActivateClientRecvCipher to use when MC|COn
+    // arrives. zeroed in ActivateClientRecvCipher / ResetClientCipher.
+    memcpy(s_clientPendingKey, keyMaterial, ServerRuntime::Security::StreamCipher::KEY_SIZE);
+    s_clientKeyStored = true;
+    s_clientEcdh.Reset();
+    SecureZeroMemory(keyMaterial, sizeof(keyMaterial));
+    LeaveCriticalSection(&s_clientCipherLock);
+    app.DebugPrintf("Client: Send cipher activated (ECDH-derived key)\n");
+
+    LeaveCriticalSection(&s_sendLock);
+    return true;
+}
+
+bool WinsockNetLayer::SendCOnAndCommitServerCipher(BYTE smallId)
     LeaveCriticalSection(&s_sendLock);
     return ok;
 }
 
 void WinsockNetLayer::ActivateClientRecvCipher()
 {
+    // security: the recv cipher is initialized with the same ECDH-derived
+    // key as the send cipher. the key was stored in s_clientPendingKey by
+    // SendAckAndActivateClientSendCipher and is zeroed here. (MCLE-01)
     EnterCriticalSection(&s_clientCipherLock);
     s_clientRecvCipher.Initialize(s_clientPendingKey, ServerRuntime::Security::StreamCipher::Client);
     SecureZeroMemory(s_clientPendingKey, sizeof(s_clientPendingKey));
@@ -400,12 +459,22 @@ bool WinsockNetLayer::TryEncryptClientOutgoing(uint8_t* data, int length)
 }
 
 #if defined(MINECRAFT_SERVER_BUILD)
-bool WinsockNetLayer::SendCOnAndCommitServerCipher(BYTE smallId)
+bool WinsockNetLayer::SendCOnAndCommitServerCipher(BYTE smallId, const uint8_t *clientPubKey)
 {
     auto& reg=ServerRuntime::Security::GetCipherRegistry();
     SOCKET sock=GetSocketForSmallId(smallId);
     if (sock==INVALID_SOCKET) return false;
     if (!reg.HasPendingKey(smallId)){ app.DebugPrintf("Server: no pending key for smallId=%d\n",smallId); return false; }
+
+    // security: derive the symmetric key from the client's ephemeral
+    // X25519 public key (received in MC|CAck) and our own keypair.
+    // the symmetric key never travels on the wire. (MCLE-01)
+    if (!reg.CommitCipherWithPeerPub(smallId, clientPubKey))
+    {
+        app.DebugPrintf("Server: ECDH key derivation failed for smallId=%d\n", smallId);
+        reg.CancelPending(smallId);
+        return false;
+    }
 
     EnterCriticalSection(&s_sendLock);
     BYTE hdr[4];
@@ -415,7 +484,7 @@ bool WinsockNetLayer::SendCOnAndCommitServerCipher(BYTE smallId)
     while(ok&&t<4){ int s=send(sock,(const char*)hdr+t,4-t,0); if(s<=0){ok=false;break;} t+=s; }
     t=0;
     while(ok&&t<kCipherOnPatternSize){ int s=send(sock,(const char*)kCipherOnPattern+t,kCipherOnPatternSize-t,0); if(s<=0){ok=false;break;} t+=s; }
-    if (ok){ reg.CommitCipher(smallId); app.DebugPrintf("Server: Cipher committed smallId=%d\n",smallId); }
+    if (ok){ app.DebugPrintf("Server: Cipher committed (ECDH) smallId=%d\n",smallId); }
     else   { app.DebugPrintf("Server: MC|COn send failed smallId=%d\n",smallId); reg.CancelPending(smallId); closesocket(sock); ClearSocketForSmallId(smallId); }
     LeaveCriticalSection(&s_sendLock);
     return ok;
@@ -914,8 +983,13 @@ DWORD WINAPI WinsockNetLayer::RecvThreadProc(LPVOID param)
         if ((int)buf.size()<sz) buf.resize(sz);
         if (!RecvExact(sock,buf.data(),sz)){ app.DebugPrintf("Win64: smallId=%d disconnected (body)\n",clientSmallId); break; }
 #if defined(MINECRAFT_SERVER_BUILD)
-        if (g_Win64DedicatedServer&&sz==kCipherAckPatternSize&&memcmp(buf.data(),kCipherAckPattern,kCipherAckPatternSize)==0)
-        { SendCOnAndCommitServerCipher(clientSmallId); continue; }
+        // security: MC|CAck now carries the client's ephemeral X25519
+        // public key (32 bytes), not a fixed pattern. (MCLE-01)
+        if (g_Win64DedicatedServer && sz == ServerRuntime::Security::EcdhKeyExchange::PUBLIC_KEY_SIZE)
+        {
+            SendCOnAndCommitServerCipher(clientSmallId, buf.data());
+            continue;
+        }
         if (g_Win64DedicatedServer) ServerRuntime::Security::GetCipherRegistry().DecryptIncoming(clientSmallId,buf.data(),sz);
 #endif
         HandleDataReceived(clientSmallId,s_hostSmallId,buf.data(),sz);
