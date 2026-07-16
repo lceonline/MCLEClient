@@ -149,12 +149,11 @@ static bool LoadHostfxr()
         return true;
     }
 
-    // Legacy fallback: hostfxr.dll dropped directly next to the exe.
-    if (TryLoadHostfxrFromPath(exeDir + L"\\hostfxr.dll"))
-    {
-        s_dotnetRoot = FindNet10SystemRoot();
-        return true;
-    }
+    // security: removed the legacy <exeDir>\hostfxr.dll fallback.
+    // a single file drop next to the exe would have loaded as native code
+    // at server startup, before any plugin runs. (MCLE-02)
+    // only the staged self-contained layout (<exeDir>\runtime\hostfxr.dll)
+    // or the system .NET install under %DOTNET_ROOT% are honored now.
 
     wchar_t dotnetRoot[MAX_PATH] = {};
     DWORD len = GetEnvironmentVariableW(L"DOTNET_ROOT", dotnetRoot, MAX_PATH);
