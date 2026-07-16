@@ -135,7 +135,7 @@ static bool IsValidUsername(const std::string& s)
 
 static bool IsValidPassword(const std::string& s)
 {
-    std::regex p("^[A-Za-z0-9%$#@&_]+$");
+    std::regex p("^(?=.*[A-Za-z])(?!.*:).{8,}$");
     return std::regex_match(s, p);
 }
 

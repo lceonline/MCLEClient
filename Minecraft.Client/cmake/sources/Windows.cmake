@@ -349,7 +349,6 @@ set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS64
   "${BASE_DIR}/Minecraft_Macros.h"
   "${BASE_DIR}/PostProcesser.cpp"
   "${BASE_DIR}/Windows64_Minecraft.cpp"
-  "${BASE_DIR}/ExtraLibs/webview2/build/native/include/WebView2.h"
 )
 source_group("Windows64" FILES ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64})
 

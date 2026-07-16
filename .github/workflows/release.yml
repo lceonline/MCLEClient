@@ -1,37 +1,34 @@
-name: Nightly Release
-
+name: Build Release
 on:
-  workflow_dispatch: 
-  push:
-    branches:
-    - 'main'
-    paths:
-      - '**'
-      - '!.gitignore'
-      - '!*.md'
-      - '!.github/**'
-      - '.github/workflows/nightly.yml'
-
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for a manual release (e.g. v1.0.0b).'
+        required: true
+        default: ''
 permissions:
   contents: write
-
 concurrency:
-  group: nightly
+  group: release
   cancel-in-progress: true
-
 jobs:
   build:
     runs-on: windows-latest
-
     strategy:
       matrix:
         platform: [Windows64]
-
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Validate version format
+      run: |
+        if (-not ("${{ inputs.version }}" -match '^v\d+\.\d+\.\d+[a-zA-Z0-9.-]*$')) {
+          Write-Error "Version '${{ inputs.version }}' doesn't match expected format (e.g. v1.0.0b)"
+          exit 1
+        }
 
     - name: Set platform lowercase
       run: echo "MATRIX_PLATFORM=$('${{ matrix.platform }}'.ToLower())" >> $env:GITHUB_ENV
@@ -41,7 +38,7 @@ jobs:
 
     - name: Setup CMake
       uses: lukka/get-cmake@latest
-    
+
     - name: Run CMake
       uses: lukka/run-cmake@v10
       env:
@@ -53,7 +50,6 @@ jobs:
 
     - name: Zip Build
       run: 7z a -r LCEN${{ matrix.platform }}.zip ./build/${{ env.MATRIX_PLATFORM }}/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj"
-
     - name: Stage artifacts
       run: |
         New-Item -ItemType Directory -Force -Path staging
@@ -73,29 +69,29 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
+    - name: Checkout
+      uses: actions/checkout@v6
     - name: Download all artifacts
       uses: actions/download-artifact@v7
       with:
         path: artifacts
         merge-multiple: true
 
-    - name: Update release
-      uses: andelf/nightly-release@main
+    - name: Release
+      if: github.event_name == 'workflow_dispatch' && inputs.version != ''
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: nightly
-        name: Nightly Client Release
-        body: |
-          Requires at least Windows 7 and DirectX 11 compatible GPU to run.
-          
-          # 🚨 First time here? 🚨
-          If you've never downloaded the game before, you need to download `LCENWindows64.zip` and extract it to the folder where you'd like to keep the game. The other files are included in this `.zip` file!
-        files: |
-          artifacts/*
-
+        tag_name: ${{ inputs.version }}
+        name: ${{ inputs.version }}
+        body_path: .github/NOTES.md
+        target_commitish: ${{ github.sha }}
+        files: artifacts/*
+        draft: false
+        prerelease: false
+  
   cleanup:
     needs: [build, release]
     if: always()
