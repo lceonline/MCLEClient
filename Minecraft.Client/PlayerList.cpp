@@ -431,6 +431,15 @@ bool PlayerList::placeNewPlayer(Connection *connection, shared_ptr<ServerPlayer>
 			uint8_t key[ServerRuntime::Security::StreamCipher::KEY_SIZE];
 			if (ServerRuntime::Security::GetCipherRegistry().PrepareKey(smallId, key))
 			{
+				// security: the key below is sent in cleartext inside MC|CKey.
+				// any on-path observer (including the LCEOnline relay operator)
+				// recovers the symmetric key and can decrypt/forge all subsequent
+				// traffic. (MCLE-01)
+				// TODO: replace with an authenticated key exchange:
+				//   - server sends an ephemeral X25519 public key
+				//   - client responds with its ephemeral X25519 public key
+				//   - both derive the shared secret via HKDF
+				//   - the symmetric key is never transmitted
 				byteArray keyData(ServerRuntime::Security::StreamCipher::KEY_SIZE);
 				memcpy(keyData.data, key, ServerRuntime::Security::StreamCipher::KEY_SIZE);
 				playerConnection->send(std::make_shared<CustomPayloadPacket>(
