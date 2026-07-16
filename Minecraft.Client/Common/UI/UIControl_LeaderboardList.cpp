@@ -11,7 +11,6 @@ bool UIControl_LeaderboardList::setupControl(UIScene *scene, IggyValuePath *pare
 	UIControl::setControlType(UIControl::eLeaderboardList);
 	bool success = UIControl_Base::setupControl(scene,parent,controlName);
 
-	//UIControl_LeaderboardList specific initialisers
 	m_funcInitLeaderboard = registerFastName(L"InitLeaderboard");
 	m_funcAddDataSet = registerFastName(L"AddDataSet");
 	m_funcResetLeaderboard = registerFastName(L"ResetLeaderboard");
@@ -27,13 +26,14 @@ bool UIControl_LeaderboardList::setupControl(UIScene *scene, IggyValuePath *pare
 
 void UIControl_LeaderboardList::init(int id)
 {
+	if(!m_parentScene || !m_parentScene->getMovie()) return;
 	m_id = id;
 
 	IggyDataValue result;
 	IggyDataValue value[1];
 	value[0].type = IGGY_DATATYPE_number;
 	value[0].number = id;
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_initFunc , 1 , value );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_initFunc, 1, value);
 }
 
 void UIControl_LeaderboardList::ReInit()
@@ -44,12 +44,16 @@ void UIControl_LeaderboardList::ReInit()
 
 void UIControl_LeaderboardList::clearList()
 {
+	if(!m_parentScene || !m_parentScene->getMovie()) return;
+
 	IggyDataValue result;
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_funcResetLeaderboard , 0 , nullptr );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcResetLeaderboard, 0, nullptr);
 }
 
 void UIControl_LeaderboardList::setupTitles(const wstring &rank, const wstring &gamertag)
 {
+	if(!m_parentScene || !m_parentScene->getMovie()) return;
+
 	IggyDataValue result;
 	IggyDataValue value[2];
 
@@ -65,11 +69,13 @@ void UIControl_LeaderboardList::setupTitles(const wstring &rank, const wstring &
 	value[1].type = IGGY_DATATYPE_string_UTF16;
 	value[1].string16 = stringVal1;
 
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_funcSetupTitles , 2 , value );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcSetupTitles, 2, value);
 }
 
 void UIControl_LeaderboardList::initLeaderboard(int iFirstFocus, int iTotalEntries, int iNumColumns)
 {
+	if(!m_parentScene || !m_parentScene->getMovie()) return;
+
 	IggyDataValue result;
 	IggyDataValue value[3];
 	value[0].type = IGGY_DATATYPE_number;
@@ -80,17 +86,16 @@ void UIControl_LeaderboardList::initLeaderboard(int iFirstFocus, int iTotalEntri
 
 	value[2].type = IGGY_DATATYPE_number;
 	value[2].number = iNumColumns;
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_funcInitLeaderboard , 3 , value );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcInitLeaderboard, 3, value);
 
 #ifdef __PSVITA__
-	// 4J-PB - add this button to the vita touch box list
 	if(!m_bTouchInitialised)
 	{
 		switch(m_parentScene->GetParentLayer()->m_iLayer)
 		{
 		case eUILayer_Fullscreen:
 		case eUILayer_Scene:
-			ui.TouchBoxAdd(this,m_parentScene);
+			ui.TouchBoxAdd(this, m_parentScene);
 			break;
 		}
 		m_bTouchInitialised = true;
@@ -100,19 +105,25 @@ void UIControl_LeaderboardList::initLeaderboard(int iFirstFocus, int iTotalEntri
 
 void UIControl_LeaderboardList::setColumnIcon(int iColumn, int iType)
 {
+	if (!m_parentScene || !m_parentScene->getMovie()) return;
+
+	int xzpIcon = (iType <= 32000) ? 0 : (iType - 32000);
+	if (xzpIcon == 0) return;
+
 	IggyDataValue result;
 	IggyDataValue value[2];
 	value[0].type = IGGY_DATATYPE_number;
 	value[0].number = iColumn;
-
 	value[1].type = IGGY_DATATYPE_number;
-	value[1].number = (iType<=32000)?0:(iType-32000);
+	value[1].number = xzpIcon;
 
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_funcSetColumnIcon , 2 , value );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcSetColumnIcon, 2, value);
 }
 
 void UIControl_LeaderboardList::addDataSet(bool bLast, int iId, int iRank, const wstring &gamertag, bool bDisplayMessage, const wstring &col0, const wstring &col1, const wstring &col2, const wstring &col3, const wstring &col4, const wstring &col5, const wstring &col6)
 {
+	if(!m_parentScene || !m_parentScene->getMovie()) return;
+
 	IggyDataValue result;
 	IggyDataValue value[12];
 
@@ -217,12 +228,14 @@ void UIControl_LeaderboardList::addDataSet(bool bLast, int iId, int iRank, const
 		value[11].type = IGGY_DATATYPE_string_UTF16;
 		value[11].string16 = stringVal7;
 	}
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath(), m_funcAddDataSet , 12 , value );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcAddDataSet, 12, value);
 }
 
 #ifdef __PSVITA__
 void UIControl_LeaderboardList::SetTouchFocus(S32 iX, S32 iY, bool bRepeat)
 {
+	if(!m_parentScene || !m_parentScene->getMovie()) return;
+
 	IggyDataValue result;
 	IggyDataValue value[3];
 
@@ -233,6 +246,6 @@ void UIControl_LeaderboardList::SetTouchFocus(S32 iX, S32 iY, bool bRepeat)
 	value[2].type = IGGY_DATATYPE_boolean;
 	value[2].boolval = bRepeat;
 
-	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcSetTouchFocus, 3 , value );
+	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcSetTouchFocus, 3, value);
 }
 #endif

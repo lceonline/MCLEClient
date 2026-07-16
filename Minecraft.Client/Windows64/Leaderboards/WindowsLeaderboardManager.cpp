@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 #include "../Network/json.hpp"
 using json = nlohmann::json;
@@ -177,7 +178,13 @@ LeaderboardManager* LeaderboardManager::m_instance = new WindowsLeaderboardManag
 WindowsLeaderboardManager::WindowsLeaderboardManager()
     : m_eStatsState(eStatsState_Idle)
     , m_tickCount(0)
+    , m_alive(std::make_shared<std::atomic<bool>>(true))
 {
+}
+
+WindowsLeaderboardManager::~WindowsLeaderboardManager()
+{
+    m_alive->store(false);
 }
 
 bool WindowsLeaderboardManager::isIdle()
@@ -200,7 +207,9 @@ void WindowsLeaderboardManager::Tick()
     if (++m_tickCount < 1000) return;
     m_tickCount = 0;
 
-    std::thread([this]()
+    std::shared_ptr<std::atomic<bool>> alive = m_alive;
+
+    std::thread([this, alive]()
     {
         static const EStatsType types[] = {
             eStatsType_Travelling,
@@ -209,15 +218,19 @@ void WindowsLeaderboardManager::Tick()
             eStatsType_Kills,
         };
         for (EStatsType t : types)
+        {
             for (int diff = 0; diff <= 3; ++diff)
+            {
+                if (!alive->load()) return;
                 SendStats(t, diff);
+            }
+        }
     }).detach();
 }
 
-
 bool WindowsLeaderboardManager::SendStats(EStatsType type, int diff)
 {
-    #ifndef MINECRAFT_SERVER_BUILD
+#ifndef MINECRAFT_SERVER_BUILD
     if (!Windows64Launcher::IsInOfflineMode() || Windows64Minecraft::IsOfflineMode())
     {
         Minecraft* mc = Minecraft::GetInstance();
@@ -245,7 +258,7 @@ bool WindowsLeaderboardManager::SendStats(EStatsType type, int diff)
             }
         }
     }
-    #endif
+#endif
     return false;
 }
 
@@ -281,22 +294,42 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
     unsigned int startIndex, unsigned int readCount)
 {
     if (!callback) return false;
-    if (m_eStatsState != eStatsState_Idle) return false;
 
     unsigned int diff = static_cast<unsigned int>(ClampDifficulty(difficulty));
     if (type == eStatsType_Kills && diff == 0) diff = 1;
 
-    m_eStatsState = eStatsState_Getting;
-
     unsigned int offset = (startIndex > 1) ? (startIndex - 1) : 0;
     unsigned int limit  = (readCount > 0) ? readCount : 15u;
 
-    std::thread([this, callback, type, diff, filterMode, offset, limit]()
+    if (m_eStatsState != eStatsState_Idle)
     {
-        #ifndef MINECRAFT_SERVER_BUILD
+        std::lock_guard<std::mutex> lock(m_pendingMutex);
+        m_pending.pending    = true;
+        m_pending.callback   = callback;
+        m_pending.difficulty = static_cast<int>(diff);
+        m_pending.type       = type;
+        m_pending.filterMode = filterMode;
+        m_pending.startIndex = startIndex;
+        m_pending.readCount  = readCount;
+        m_hasPending.store(true);
+        return true;
+    }
+
+    m_hasPending.store(false);
+    m_eStatsState = eStatsState_Getting;
+
+    std::shared_ptr<std::atomic<bool>> alive = m_alive;
+
+    std::thread([this, alive, callback, type, diff, filterMode, offset, limit]()
+    {
+        if (!alive->load()) return;
+
+#ifndef MINECRAFT_SERVER_BUILD
         if (!Windows64Launcher::IsInOfflineMode() || Windows64Minecraft::IsOfflineMode())
             SendStats(static_cast<EStatsType>(type), static_cast<int>(diff));
-        #endif
+#endif
+
+        if (!alive->load()) return;
 
         std::vector<LeaderboardManager::ReadScore> rows;
         int serverTotal = 0;
@@ -308,8 +341,13 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
         else
             serverTotal = ParseServerEntries(fetchOverall(type, diff, offset, limit), rows);
 
+        if (!alive->load()) return;
+
         if (m_eStatsState == eStatsState_Canceled)
+        {
+            m_eStatsState = eStatsState_Idle;
             return;
+        }
 
         AssignRanks(rows, offset);
 
@@ -321,34 +359,53 @@ bool WindowsLeaderboardManager::ReadNetworkStats(LeaderboardReadListener* callba
         else
             totalResults = static_cast<int>(rows.size());
 
+        m_eStatsState = eStatsState_Idle;
+
         if (rows.empty())
         {
-            m_eStatsState = eStatsState_Idle;
+            if (!alive->load()) return;
             ReadView empty = {};
             callback->OnStatsReadComplete(eStatsReturn_NoResults, 0, empty);
-            return;
+        }
+        else
+        {
+            ReadView view = {};
+            view.m_numQueries = static_cast<unsigned int>(rows.size());
+            view.m_queries    = rows.data();
+
+            if (!alive->load()) return;
+            callback->OnStatsReadComplete(eStatsReturn_Success, totalResults, view);
         }
 
-        ReadView view = {};
-        view.m_numQueries = static_cast<unsigned int>(rows.size());
-        view.m_queries    = rows.data();
+        if (!alive->load()) return;
 
-        m_eStatsState = eStatsState_Idle;
-        callback->OnStatsReadComplete(eStatsReturn_Success, totalResults, view);
+        if (m_hasPending.load())
+        {
+            PendingRead p;
+            {
+                std::lock_guard<std::mutex> lock(m_pendingMutex);
+                if (!m_pending.pending) return;
+                p = m_pending;
+                m_pending.pending = false;
+                m_hasPending.store(false);
+            }
+            ReadNetworkStats(p.callback, p.difficulty, p.type, p.filterMode, p.startIndex, p.readCount);
+        }
     }).detach();
 
     return true;
 }
+
 int WindowsLeaderboardManager::sendScores(const std::string& _data)
 {
     std::vector<std::wstring> headers;
     std::string authToken;
-    #ifndef MINECRAFT_SERVER_BUILD
+#ifndef MINECRAFT_SERVER_BUILD
     if (Windows64Minecraft::IsExternalLauncher())
         authToken = Windows64Minecraft::GetAuthenticationTicket();
     else
         authToken = Windows64Launcher::GetAuthenticationToken();
-    #endif
+#endif
     headers.push_back(L"Content-Type: application/json");
     headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
 
@@ -371,12 +428,12 @@ std::string WindowsLeaderboardManager::fetchFriends(int type, int difficulty, in
 {
     std::vector<std::wstring> headers;
     std::string authToken;
-    #ifndef MINECRAFT_SERVER_BUILD
+#ifndef MINECRAFT_SERVER_BUILD
     if (Windows64Minecraft::IsExternalLauncher())
         authToken = Windows64Minecraft::GetAuthenticationTicket();
     else
         authToken = Windows64Launcher::GetAuthenticationToken();
-    #endif
+#endif
     headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
     std::wstring path = L"/friends?type=" + std::to_wstring(type)
                       + L"&difficulty=" + std::to_wstring(difficulty)
@@ -390,12 +447,12 @@ std::string WindowsLeaderboardManager::fetchMyscore(int type, int difficulty, in
 {
     std::vector<std::wstring> headers;
     std::string authToken;
-    #ifndef MINECRAFT_SERVER_BUILD
+#ifndef MINECRAFT_SERVER_BUILD
     if (Windows64Minecraft::IsExternalLauncher())
         authToken = Windows64Minecraft::GetAuthenticationTicket();
     else
         authToken = Windows64Launcher::GetAuthenticationToken();
-    #endif
+#endif
     headers.push_back(L"Authorization: " + std::wstring(authToken.begin(), authToken.end()));
     std::wstring path = L"/myscore?type=" + std::to_wstring(type)
                       + L"&difficulty=" + std::to_wstring(difficulty)

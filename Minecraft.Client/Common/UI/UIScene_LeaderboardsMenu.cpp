@@ -994,30 +994,30 @@ void UIScene_LeaderboardsMenu::handleSelectionChanged(F64 selectedId)
 // Handle a request from Iggy for more data
 void UIScene_LeaderboardsMenu::handleRequestMoreData(F64 startIndex, bool up)
 {
-	unsigned int item = static_cast<int>(startIndex);
+    unsigned int item = static_cast<int>(startIndex);
 
-	if( m_leaderboard.m_totalEntryCount > 0 && (item+1) < GetEntryStartIndex() )
-	{
-		if( LeaderboardManager::Instance()->isIdle() )
-		{
-			int readIndex = (GetEntryStartIndex() + 1) - READ_SIZE;
-			if( readIndex <= 0 )
-				readIndex = 1;
-            assert( readIndex >= 1 && readIndex <= static_cast<int>(m_leaderboard.m_totalEntryCount));
-			ReadStats(readIndex);
-		}
-	}
-	else if( m_leaderboard.m_totalEntryCount > 0 && (item+1) >= (GetEntryStartIndex() + m_leaderboard.m_entries.size()) )
-	{
-		if( LeaderboardManager::Instance()->isIdle() )
-		{
-			int readIndex = (GetEntryStartIndex() + 1) + m_leaderboard.m_entries.size();
-            assert( readIndex >= 1 && readIndex <= static_cast<int>(m_leaderboard.m_totalEntryCount));
-			ReadStats(readIndex);
-		}
-	}
+    if (m_isProcessingStatsRead) return;
+
+    if (m_leaderboard.m_totalEntryCount > 0 && (item + 1) < GetEntryStartIndex())
+    {
+        if (LeaderboardManager::Instance()->isIdle())
+        {
+            int readIndex = (GetEntryStartIndex() + 1) - READ_SIZE;
+            if (readIndex <= 0) readIndex = 1;
+            assert(readIndex >= 1 && readIndex <= static_cast<int>(m_leaderboard.m_totalEntryCount));
+            ReadStats(readIndex);
+        }
+    }
+    else if (m_leaderboard.m_totalEntryCount > 0 && (item + 1) >= (GetEntryStartIndex() + m_leaderboard.m_entries.size()))
+    {
+        if (LeaderboardManager::Instance()->isIdle())
+        {
+            int readIndex = (GetEntryStartIndex() + 1) + m_leaderboard.m_entries.size();
+            assert(readIndex >= 1 && readIndex <= static_cast<int>(m_leaderboard.m_totalEntryCount));
+            ReadStats(readIndex);
+        }
+    }
 }
-
 void UIScene_LeaderboardsMenu::handleTimerComplete(int id)
 {
 #if ( defined __PS3__ || defined __ORBIS__  || defined __PSVITA__)
