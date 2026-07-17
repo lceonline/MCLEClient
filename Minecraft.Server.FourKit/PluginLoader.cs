@@ -38,43 +38,26 @@ internal sealed class PluginLoader
             }
         }
 
+        // security: flattened the loader to plugins/ root only. a stray
+        // DLL anywhere under plugins/ used to load as a plugin. (MCLE-04)
+        // we still scan subdirectories for the conventional
+        // "<folder>/<folder>.dll" layout so existing plugins keep working,
+        // but we no longer load every DLL in every subdirectory.
         foreach (var subDir in Directory.GetDirectories(pluginsDirectory))
         {
             string folderName = Path.GetFileName(subDir);
-            var allDlls = Directory.GetFiles(subDir, "*.dll");
-            if (allDlls.Length == 0)
+            string? mainDll = Path.Combine(subDir, folderName + ".dll");
+            if (!File.Exists(mainDll))
                 continue;
 
-            string? mainDll = allDlls.FirstOrDefault(f =>
-                string.Equals(Path.GetFileNameWithoutExtension(f), folderName, StringComparison.OrdinalIgnoreCase));
-
-            if (mainDll != null)
+            try
             {
-                try
-                { 
-                    LoadPluginAssembly(mainDll);
-                }
-                catch (Exception ex) 
-                { 
-                    ServerLog.Error("fourkit", $"Failed to load {Path.GetFileName(mainDll)}: {ex.Message}");
-                    FourKit.FireEvent(new PluginLoadFailedEvent(mainDll, ex.Message));
-                }
+                LoadPluginAssembly(mainDll);
             }
-            else
+            catch (Exception ex)
             {
-                foreach (var dll in allDlls)
-                {
-                    try
-                    {
-                        LoadPluginAssembly(dll);
-                    }
-                    catch (Exception ex)
-                    {
-                        ServerLog.Error("fourkit", $"Failed to load {Path.GetFileName(dll)}: {ex.Message}");
-                        FourKit.FireEvent(new PluginLoadFailedEvent(dll, ex.Message));
-
-                    }
-                }
+                ServerLog.Error("fourkit", $"Failed to load {Path.GetFileName(mainDll)}: {ex.Message}");
+                FourKit.FireEvent(new PluginLoadFailedEvent(mainDll, ex.Message));
             }
         }
         FourKit.FireEvent(new PluginsLoadedEvent());
@@ -82,6 +65,26 @@ internal sealed class PluginLoader
 
     private void LoadPluginAssembly(string dllPath)
     {
+        // security: log the absolute path and SHA-256 of every plugin DLL
+        // at load time. this gives operators a record of what was loaded
+        // and a fingerprint to verify against an allowlist. (MCLE-04)
+        try
+        {
+            string fullPath = Path.GetFullPath(dllPath);
+            string hash;
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (var fs = File.OpenRead(fullPath))
+            {
+                var bytes = sha.ComputeHash(fs);
+                hash = BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+            }
+            ServerLog.Info("fourkit", $"Loading plugin DLL: {fullPath} (sha256={hash})");
+        }
+        catch (Exception ex)
+        {
+            ServerLog.Warn("fourkit", $"Could not hash {Path.GetFileName(dllPath)}: {ex.Message}");
+        }
+
         var context = new PluginLoadContext(dllPath);
         var assembly = context.LoadFromAssemblyPath(Path.GetFullPath(dllPath));
 
