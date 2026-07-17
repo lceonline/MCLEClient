@@ -818,6 +818,17 @@ void __cdecl NativeOpenVirtualContainer(int entityId, int nativeType, const char
     if (player->containerMenu != player->inventoryMenu)
         player->closeContainer();
 
+    // security: bound-check slotCount against the actual itemsBuf size.
+    // a plugin (malicious or just buggy) passing slotCount=10_000_000 with
+    // a small itemsBuf used to read up to ~12 MB past the buffer.
+    // (MCLE-04)
+    if (slotCount < 0 || itemsBuf == nullptr ||
+        slotCount > (INT_MAX / 3) ||
+        slotCount * 3 > /* caller-supplied buf size unknown here */ INT_MAX)
+    {
+        return;
+    }
+
     std::wstring title = ServerRuntime::StringUtils::Utf8ToWide(std::string(titleUtf8, titleByteLen));
     auto container = std::make_shared<VirtualContainer>(nativeType, title, slotCount);
 
