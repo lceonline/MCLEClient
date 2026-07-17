@@ -34,6 +34,12 @@ namespace ServerRuntime
 			 */
 			void EvictStale(int evictionAgeMs = 300000);
 
+			// security: hard cap on the tracking map. EvictStale is purely
+			// time-based; if evictionAgeMs is set very high or rate-limiting
+			// is disabled, an attacker generating one connection per unique
+			// IP causes unbounded map growth (memory DoS). (MCLE-05)
+			static constexpr size_t kMaxTrackedIps = 65536;
+
 		private:
 			CRITICAL_SECTION m_lock;
 			std::unordered_map<std::string, std::deque<ULONGLONG>> m_connectionTimes;
