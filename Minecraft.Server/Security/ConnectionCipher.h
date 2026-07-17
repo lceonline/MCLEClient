@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StreamCipher.h"
+#include "EcdhKeyExchange.h"
 
 #ifdef _WINDOWS64
 #include <Windows.h>
@@ -14,11 +15,20 @@ namespace ServerRuntime
 		 * Per-connection cipher registry for the dedicated server.
 		 *
 		 * Handshake protocol (4-message, via CustomPayloadPacket):
-		 * 1. Server calls PrepareKey(smallId) -> sends MC|CKey with key to client
-		 * 2. Client stores key, sends MC|CAck, activates send cipher
-		 * 3. Server recv thread detects MC|CAck -> calls SendCOnAndCommit which
-		 *    atomically sends MC|COn plaintext then calls CommitCipher(smallId)
-		 * 4. Client recv thread detects MC|COn -> activates recv cipher
+		 * 1. Server calls PrepareEcdhKey(smallId) -> sends MC|CKey with server
+		 *    ephemeral X25519 public key (NOT the symmetric key) to client.
+		 * 2. Client stores server pubkey, generates its own keypair, sends
+		 *    MC|CAck with its ephemeral X25519 public key, derives shared
+		 *    secret via X25519(serverPub, clientPriv), derives symmetric
+		 *    key via HKDF-SHA256, activates send cipher.
+		 * 3. Server recv thread detects MC|CAck -> calls CommitCipherWithPeerPub
+		 *    which derives the same shared secret + symmetric key, sends
+		 *    MC|COn plaintext, then activates cipher.
+		 * 4. Client recv thread detects MC|COn -> activates recv cipher.
+		 *
+		 * The symmetric key never travels on the wire. An on-path observer
+		 * sees only the two ephemeral public keys and cannot recover the
+		 * shared secret without one of the private keys. (MCLE-01)
 		 *
 		 * Backwards compatible: old clients ignore MC|CKey, server never gets ack,
 		 * cipher stays inactive. Old servers never send MC|CKey, client stays plaintext.
@@ -35,31 +45,37 @@ namespace ServerRuntime
 			ConnectionCipherRegistry &operator=(ConnectionCipherRegistry &&) = delete;
 
 			/**
-			 * Generate a random key and store it in pending state for the given smallId.
-			 * Does NOT activate the cipher. Call CommitCipher() after the client acks.
-			 * Returns the generated key in outKey.
+			 * Generate an ephemeral X25519 keypair and store it as pending
+			 * for the given smallId. The server's public key is returned
+			 * via outPubKey (32 bytes) for inclusion in MC|CKey.
+			 * Does NOT activate the cipher. Call CommitCipherWithPeerPub()
+			 * after the client sends back its public key in MC|CAck.
 			 */
-			bool PrepareKey(unsigned char smallId, uint8_t outKey[StreamCipher::KEY_SIZE]);
+			bool PrepareEcdhKey(unsigned char smallId,
+								uint8_t outPubKey[EcdhKeyExchange::PUBLIC_KEY_SIZE]);
 
 			/**
-			 * Activate a previously prepared cipher. Called from the recv thread
-			 * when the client's MC|CAck is detected by raw byte matching.
-			 * Returns false if no key was pending for this smallId.
+			 * Activate the cipher by deriving the shared key from the
+			 * peer's public key (sent in MC|CAck). Called from the recv
+			 * thread when the client's MC|CAck is detected.
+			 * Returns false if no keypair was pending for this smallId
+			 * or if derivation failed.
 			 */
-			bool CommitCipher(unsigned char smallId);
+			bool CommitCipherWithPeerPub(unsigned char smallId,
+										 const uint8_t peerPubKey[EcdhKeyExchange::PUBLIC_KEY_SIZE]);
 
 			/**
-			 * Cancel a pending key (e.g., client disconnected before ack).
+			 * Cancel a pending keypair (e.g., client disconnected before ack).
 			 */
 			void CancelPending(unsigned char smallId);
 
 			/**
-			 * Check if a key is pending for the given smallId (no side effects).
+			 * Check if a keypair is pending for the given smallId (no side effects).
 			 */
 			bool HasPendingKey(unsigned char smallId) const;
 
 			/**
-			 * Deactivate the cipher and cancel any pending key for a disconnected connection.
+			 * Deactivate the cipher and cancel any pending keypair for a disconnected connection.
 			 */
 			void DeactivateCipher(unsigned char smallId);
 
@@ -84,8 +100,8 @@ namespace ServerRuntime
 		private:
 			static const int MAX_CONNECTIONS = 256;
 			StreamCipher m_ciphers[MAX_CONNECTIONS];
+			EcdhKeyExchange m_ecdh[MAX_CONNECTIONS];
 			bool m_pending[MAX_CONNECTIONS];
-			uint8_t m_pendingKeys[MAX_CONNECTIONS][StreamCipher::KEY_SIZE];
 			mutable CRITICAL_SECTION m_lock;
 		};
 
